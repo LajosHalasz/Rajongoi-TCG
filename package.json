@@ -1,0 +1,13 @@
+{
+  "name": "riftmasters",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Duel Masters-style card game with Riftbound mechanics - play vs AI in the browser.",
+  "scripts": {
+    "test": "node tests/sim.test.mjs",
+    "gen": "node tools/gen-placeholders.mjs",
+    "import": "node tools/import-riftcardmaker.mjs",
+    "serve": "python3 -m http.server 8080"
+  }
+}

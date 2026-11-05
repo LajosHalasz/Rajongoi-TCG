@@ -1,0 +1,2178 @@
+[
+ {
+  "id": "OGN-005",
+  "set": "OGN",
+  "number": "005",
+  "placeholder": true,
+  "setInfo": "OGN 005/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [],
+  "tribes": [],
+  "name": "Ember Recruit",
+  "type": "unit",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 1,
+  "power": 2
+ },
+ {
+  "id": "OGN-006",
+  "set": "OGN",
+  "number": "006",
+  "placeholder": true,
+  "setInfo": "OGN 006/300",
+  "rarity": "common",
+  "keywords": [
+   "Haste"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Blazing Duelist",
+  "type": "unit",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 2,
+  "power": 2
+ },
+ {
+  "id": "OGN-007",
+  "set": "OGN",
+  "number": "007",
+  "placeholder": true,
+  "setInfo": "OGN 007/300",
+  "rarity": "uncommon",
+  "keywords": [],
+  "effects": [],
+  "tribes": [],
+  "name": "Molten Brute",
+  "type": "unit",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 3,
+  "power": 4
+ },
+ {
+  "id": "OGN-008",
+  "set": "OGN",
+  "number": "008",
+  "placeholder": true,
+  "setInfo": "OGN 008/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Breaker"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Pyre Berserker",
+  "type": "unit",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 4,
+  "power": 5
+ },
+ {
+  "id": "OGN-009",
+  "set": "OGN",
+  "number": "009",
+  "placeholder": true,
+  "setInfo": "OGN 009/300",
+  "rarity": "epic",
+  "keywords": [
+   "Haste",
+   "Breaker"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Inferno Titan",
+  "type": "unit",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 8,
+  "power": 9
+ },
+ {
+  "id": "OGN-010",
+  "set": "OGN",
+  "number": "010",
+  "placeholder": true,
+  "setInfo": "OGN 010/300",
+  "rarity": "common",
+  "keywords": [
+   "Action"
+  ],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "enemyUnit",
+    "maxPower": 3
+   }
+  ],
+  "tribes": [],
+  "name": "Flame Lash",
+  "type": "spell",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 2
+ },
+ {
+  "id": "OGN-011",
+  "set": "OGN",
+  "number": "011",
+  "placeholder": true,
+  "setInfo": "OGN 011/300",
+  "rarity": "common",
+  "keywords": [
+   "Reaction"
+  ],
+  "effects": [
+   {
+    "do": "buff",
+    "target": "friendlyUnit",
+    "amount": 3,
+    "duration": "turn"
+   }
+  ],
+  "tribes": [],
+  "name": "War Cry",
+  "type": "spell",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 1
+ },
+ {
+  "id": "OGN-012",
+  "set": "OGN",
+  "number": "012",
+  "placeholder": true,
+  "setInfo": "OGN 012/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "buff",
+    "target": "friendlyUnit",
+    "amount": 2,
+    "duration": "turn",
+    "on": "activate"
+   }
+  ],
+  "tribes": [],
+  "name": "Forge of Rage",
+  "type": "gear",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 2
+ },
+ {
+  "id": "OGN-013",
+  "set": "OGN",
+  "number": "013",
+  "placeholder": true,
+  "setInfo": "OGN 013/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "discard",
+    "amount": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Rift Imp",
+  "type": "unit",
+  "colors": [
+   "Chaos"
+  ],
+  "cost": 1,
+  "power": 1
+ },
+ {
+  "id": "OGN-014",
+  "set": "OGN",
+  "number": "014",
+  "placeholder": true,
+  "setInfo": "OGN 014/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [],
+  "tribes": [],
+  "name": "Gloom Crawler",
+  "type": "unit",
+  "colors": [
+   "Chaos"
+  ],
+  "cost": 2,
+  "power": 3
+ },
+ {
+  "id": "OGN-015",
+  "set": "OGN",
+  "number": "015",
+  "placeholder": true,
+  "setInfo": "OGN 015/300",
+  "rarity": "uncommon",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "tap",
+    "target": "enemyUnit"
+   }
+  ],
+  "tribes": [],
+  "name": "Void Stalker",
+  "type": "unit",
+  "colors": [
+   "Chaos"
+  ],
+  "cost": 3,
+  "power": 3
+ },
+ {
+  "id": "OGN-016",
+  "set": "OGN",
+  "number": "016",
+  "placeholder": true,
+  "setInfo": "OGN 016/300",
+  "rarity": "rare",
+  "keywords": [
+   "Breaker"
+  ],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 1,
+    "on": "destroyed"
+   }
+  ],
+  "tribes": [],
+  "name": "Shard Horror",
+  "type": "unit",
+  "colors": [
+   "Chaos"
+  ],
+  "cost": 5,
+  "power": 6
+ },
+ {
+  "id": "OGN-017",
+  "set": "OGN",
+  "number": "017",
+  "placeholder": true,
+  "setInfo": "OGN 017/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "token",
+    "tokenId": "TKN-001",
+    "tokenName": "Black Pawn",
+    "amount": 2
+   }
+  ],
+  "tribes": [],
+  "name": "Pawn Storm",
+  "type": "spell",
+  "colors": [
+   "Chaos"
+  ],
+  "cost": 2
+ },
+ {
+  "id": "OGN-018",
+  "set": "OGN",
+  "number": "018",
+  "placeholder": true,
+  "setInfo": "OGN 018/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Action"
+  ],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "enemyUnit",
+    "maxPower": 5
+   }
+  ],
+  "tribes": [],
+  "name": "Chaos Bolt",
+  "type": "spell",
+  "colors": [
+   "Chaos"
+  ],
+  "cost": 3
+ },
+ {
+  "id": "OGN-019",
+  "set": "OGN",
+  "number": "019",
+  "placeholder": true,
+  "setInfo": "OGN 019/300",
+  "rarity": "common",
+  "keywords": [
+   "Reaction",
+   "Shield Trigger"
+  ],
+  "effects": [
+   {
+    "do": "bounce",
+    "target": "anyUnit"
+   }
+  ],
+  "tribes": [],
+  "name": "Unravel",
+  "type": "spell",
+  "colors": [
+   "Chaos"
+  ],
+  "cost": 2
+ },
+ {
+  "id": "OGN-020",
+  "set": "OGN",
+  "number": "020",
+  "placeholder": true,
+  "setInfo": "OGN 020/300",
+  "rarity": "epic",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "allUnits",
+    "maxPower": 6
+   }
+  ],
+  "tribes": [],
+  "name": "Oblivion Gate",
+  "type": "spell",
+  "colors": [
+   "Chaos"
+  ],
+  "cost": 7
+ },
+ {
+  "id": "OGN-021",
+  "set": "OGN",
+  "number": "021",
+  "placeholder": true,
+  "setInfo": "OGN 021/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "discard",
+    "amount": 1,
+    "on": "turnStart"
+   }
+  ],
+  "tribes": [],
+  "name": "Cursed Idol",
+  "type": "gear",
+  "colors": [
+   "Chaos"
+  ],
+  "cost": 1,
+  "uses": 3
+ },
+ {
+  "id": "OGN-022",
+  "set": "OGN",
+  "number": "022",
+  "placeholder": true,
+  "setInfo": "OGN 022/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "channel",
+    "amount": 1,
+    "tapped": true
+   }
+  ],
+  "tribes": [],
+  "name": "Seedling",
+  "type": "unit",
+  "colors": [
+   "Calm"
+  ],
+  "cost": 1,
+  "power": 1
+ },
+ {
+  "id": "OGN-023",
+  "set": "OGN",
+  "number": "023",
+  "placeholder": true,
+  "setInfo": "OGN 023/300",
+  "rarity": "common",
+  "keywords": [
+   "Defensive"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Grove Sentinel",
+  "type": "unit",
+  "colors": [
+   "Calm"
+  ],
+  "cost": 2,
+  "power": 3
+ },
+ {
+  "id": "OGN-024",
+  "set": "OGN",
+  "number": "024",
+  "placeholder": true,
+  "setInfo": "OGN 024/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "token",
+    "tokenId": "TKN-002",
+    "tokenName": "White Pawn",
+    "amount": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Chess Club",
+  "type": "unit",
+  "colors": [
+   "Calm"
+  ],
+  "cost": 2,
+  "power": 1
+ },
+ {
+  "id": "OGN-025",
+  "set": "OGN",
+  "number": "025",
+  "placeholder": true,
+  "setInfo": "OGN 025/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Defensive"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Moss Tortoise",
+  "type": "unit",
+  "colors": [
+   "Calm"
+  ],
+  "cost": 3,
+  "power": 4
+ },
+ {
+  "id": "OGN-026",
+  "set": "OGN",
+  "number": "026",
+  "placeholder": true,
+  "setInfo": "OGN 026/300",
+  "rarity": "rare",
+  "keywords": [
+   "Defensive",
+   "Breaker"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Ancient Oak",
+  "type": "unit",
+  "colors": [
+   "Calm"
+  ],
+  "cost": 6,
+  "power": 8
+ },
+ {
+  "id": "OGN-027",
+  "set": "OGN",
+  "number": "027",
+  "placeholder": true,
+  "setInfo": "OGN 027/300",
+  "rarity": "common",
+  "keywords": [
+   "Shield Trigger"
+  ],
+  "effects": [
+   {
+    "do": "addShield",
+    "amount": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Healing Spring",
+  "type": "spell",
+  "colors": [
+   "Calm"
+  ],
+  "cost": 2
+ },
+ {
+  "id": "OGN-028",
+  "set": "OGN",
+  "number": "028",
+  "placeholder": true,
+  "setInfo": "OGN 028/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "channel",
+    "amount": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Wildgrowth",
+  "type": "spell",
+  "colors": [
+   "Calm"
+  ],
+  "cost": 1
+ },
+ {
+  "id": "OGN-029",
+  "set": "OGN",
+  "number": "029",
+  "placeholder": true,
+  "setInfo": "OGN 029/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Action"
+  ],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "enemyTappedUnit"
+   }
+  ],
+  "tribes": [],
+  "name": "Nature's Wrath",
+  "type": "spell",
+  "colors": [
+   "Calm"
+  ],
+  "cost": 4
+ },
+ {
+  "id": "OGN-030",
+  "set": "OGN",
+  "number": "030",
+  "placeholder": true,
+  "setInfo": "OGN 030/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "untap",
+    "target": "friendlyUnit",
+    "on": "activate"
+   }
+  ],
+  "tribes": [],
+  "name": "Sacred Grove",
+  "type": "gear",
+  "colors": [
+   "Calm"
+  ],
+  "cost": 2
+ },
+ {
+  "id": "OGN-031",
+  "set": "OGN",
+  "number": "031",
+  "placeholder": true,
+  "setInfo": "OGN 031/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Arcane Student",
+  "type": "unit",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 1,
+  "power": 1
+ },
+ {
+  "id": "OGN-032",
+  "set": "OGN",
+  "number": "032",
+  "placeholder": true,
+  "setInfo": "OGN 032/300",
+  "rarity": "uncommon",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "bounce",
+    "target": "enemyUnit",
+    "maxPower": 3
+   }
+  ],
+  "tribes": [],
+  "name": "Mirror Mage",
+  "type": "unit",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 3,
+  "power": 3
+ },
+ {
+  "id": "OGN-033",
+  "set": "OGN",
+  "number": "033",
+  "placeholder": true,
+  "setInfo": "OGN 033/300",
+  "rarity": "uncommon",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 2
+   }
+  ],
+  "tribes": [],
+  "name": "Thought Weaver",
+  "type": "unit",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 4,
+  "power": 3
+ },
+ {
+  "id": "OGN-034",
+  "set": "OGN",
+  "number": "034",
+  "placeholder": true,
+  "setInfo": "OGN 034/300",
+  "rarity": "rare",
+  "keywords": [
+   "Defensive"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Astral Sentinel",
+  "type": "unit",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 5,
+  "power": 5
+ },
+ {
+  "id": "OGN-035",
+  "set": "OGN",
+  "number": "035",
+  "placeholder": true,
+  "setInfo": "OGN 035/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 2
+   }
+  ],
+  "tribes": [],
+  "name": "Insight",
+  "type": "spell",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 2
+ },
+ {
+  "id": "OGN-036",
+  "set": "OGN",
+  "number": "036",
+  "placeholder": true,
+  "setInfo": "OGN 036/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Reaction",
+   "Shield Trigger"
+  ],
+  "effects": [
+   {
+    "do": "bounce",
+    "target": "enemyUnit",
+    "maxPower": 4
+   }
+  ],
+  "tribes": [],
+  "name": "Dispel",
+  "type": "spell",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 3
+ },
+ {
+  "id": "OGN-037",
+  "set": "OGN",
+  "number": "037",
+  "placeholder": true,
+  "setInfo": "OGN 037/300",
+  "rarity": "rare",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 2
+   },
+   {
+    "do": "tap",
+    "target": "allEnemyUnits"
+   }
+  ],
+  "tribes": [],
+  "name": "Mind Storm",
+  "type": "spell",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 6
+ },
+ {
+  "id": "OGN-038",
+  "set": "OGN",
+  "number": "038",
+  "placeholder": true,
+  "setInfo": "OGN 038/300",
+  "rarity": "uncommon",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 1,
+    "on": "activate"
+   }
+  ],
+  "tribes": [],
+  "name": "Spellbook Archive",
+  "type": "gear",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 3,
+  "uses": 3
+ },
+ {
+  "id": "OGN-039",
+  "set": "OGN",
+  "number": "039",
+  "placeholder": true,
+  "setInfo": "OGN 039/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "on": "static",
+    "do": "buff",
+    "target": "allFriendlyUnits",
+    "amount": 1,
+    "filter": {
+     "color": "Fury"
+    }
+   }
+  ],
+  "tribes": [],
+  "name": "Varok, Ashen Warlord",
+  "type": "legend",
+  "colors": [
+   "Fury",
+   "Chaos"
+  ],
+  "cost": 0
+ },
+ {
+  "id": "OGN-040",
+  "set": "OGN",
+  "number": "040",
+  "placeholder": true,
+  "setInfo": "OGN 040/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Haste"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Varok, Blade of Cinders",
+  "type": "champion",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 4,
+  "power": 5
+ },
+ {
+  "id": "OGN-041",
+  "set": "OGN",
+  "number": "041",
+  "placeholder": true,
+  "setInfo": "OGN 041/300",
+  "rarity": "uncommon",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "enemyUnit",
+    "maxPower": 2
+   }
+  ],
+  "tribes": [],
+  "name": "Mara, Rift Witch",
+  "type": "champion",
+  "colors": [
+   "Chaos"
+  ],
+  "cost": 3,
+  "power": 3
+ },
+ {
+  "id": "OGN-042",
+  "set": "OGN",
+  "number": "042",
+  "placeholder": true,
+  "setInfo": "OGN 042/300",
+  "rarity": "rare",
+  "keywords": [
+   "Breaker"
+  ],
+  "effects": [
+   {
+    "do": "buff",
+    "target": "self",
+    "amount": 1,
+    "duration": "turn",
+    "on": "attack"
+   }
+  ],
+  "tribes": [],
+  "name": "Grix, Ash Goblin",
+  "type": "champion",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 5,
+  "power": 5
+ },
+ {
+  "id": "OGN-043",
+  "set": "OGN",
+  "number": "043",
+  "placeholder": true,
+  "setInfo": "OGN 043/300",
+  "rarity": "epic",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "allEnemyUnits",
+    "maxPower": 5
+   }
+  ],
+  "tribes": [
+   "Varok"
+  ],
+  "name": "Cinderstorm",
+  "type": "signature",
+  "sigType": "spell",
+  "colors": [
+   "Fury",
+   "Chaos"
+  ],
+  "cost": 9
+ },
+ {
+  "id": "OGN-044",
+  "set": "OGN",
+  "number": "044",
+  "placeholder": true,
+  "setInfo": "OGN 044/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "on": "static",
+    "do": "buff",
+    "target": "allFriendlyUnits",
+    "amount": 1
+   }
+  ],
+  "tribes": [
+   "Varok"
+  ],
+  "name": "Varok's Warbanner",
+  "type": "signature",
+  "sigType": "gear",
+  "colors": [
+   "Fury",
+   "Chaos"
+  ],
+  "cost": 1
+ },
+ {
+  "id": "OGN-045",
+  "set": "OGN",
+  "number": "045",
+  "placeholder": true,
+  "setInfo": "OGN 045/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "on": "static",
+    "do": "buff",
+    "target": "allFriendlyUnits",
+    "amount": 1,
+    "filter": {
+     "keyword": "Defensive"
+    }
+   }
+  ],
+  "tribes": [],
+  "name": "Selwyn, Tidewarden",
+  "type": "legend",
+  "colors": [
+   "Calm",
+   "Mind"
+  ],
+  "cost": 0
+ },
+ {
+  "id": "OGN-046",
+  "set": "OGN",
+  "number": "046",
+  "placeholder": true,
+  "setInfo": "OGN 046/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Defensive",
+   "Shieldify"
+  ],
+  "effects": [
+   {
+    "do": "shieldify",
+    "amount": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Selwyn, Keeper of the Tide",
+  "type": "champion",
+  "colors": [
+   "Calm"
+  ],
+  "cost": 4,
+  "power": 4
+ },
+ {
+  "id": "OGN-047",
+  "set": "OGN",
+  "number": "047",
+  "placeholder": true,
+  "setInfo": "OGN 047/300",
+  "rarity": "uncommon",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 2
+   }
+  ],
+  "tribes": [],
+  "name": "Orin, Star Scholar",
+  "type": "champion",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 3,
+  "power": 2
+ },
+ {
+  "id": "OGN-048",
+  "set": "OGN",
+  "number": "048",
+  "placeholder": true,
+  "setInfo": "OGN 048/300",
+  "rarity": "rare",
+  "keywords": [
+   "Defensive"
+  ],
+  "effects": [
+   {
+    "do": "addShield",
+    "amount": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Thalia, Grove Mother",
+  "type": "champion",
+  "colors": [
+   "Calm"
+  ],
+  "cost": 6,
+  "power": 6
+ },
+ {
+  "id": "OGN-049",
+  "set": "OGN",
+  "number": "049",
+  "placeholder": true,
+  "setInfo": "OGN 049/300",
+  "rarity": "common",
+  "keywords": [
+   "Reaction"
+  ],
+  "effects": [
+   {
+    "do": "bounce",
+    "target": "enemyUnit",
+    "maxPower": 3
+   }
+  ],
+  "tribes": [
+   "Selwyn"
+  ],
+  "name": "Riptide Ward",
+  "type": "signature",
+  "sigType": "spell",
+  "colors": [
+   "Calm",
+   "Mind"
+  ],
+  "cost": 1
+ },
+ {
+  "id": "OGN-050",
+  "set": "OGN",
+  "number": "050",
+  "placeholder": true,
+  "setInfo": "OGN 050/300",
+  "rarity": "epic",
+  "keywords": [
+   "Defensive",
+   "Breaker"
+  ],
+  "effects": [
+   {
+    "do": "tap",
+    "target": "allEnemyUnits"
+   }
+  ],
+  "tribes": [
+   "Selwyn"
+  ],
+  "name": "Tidal Colossus",
+  "type": "signature",
+  "sigType": "unit",
+  "colors": [
+   "Calm",
+   "Mind"
+  ],
+  "cost": 10,
+  "power": 10
+ },
+ {
+  "id": "DND-001",
+  "set": "DND",
+  "number": "001",
+  "placeholder": true,
+  "setInfo": "DND 001/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [],
+  "tribes": [],
+  "name": "Tavern Brawler",
+  "type": "unit",
+  "colors": [
+   "Body"
+  ],
+  "cost": 1,
+  "power": 2
+ },
+ {
+  "id": "DND-002",
+  "set": "DND",
+  "number": "002",
+  "placeholder": true,
+  "setInfo": "DND 002/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Haste"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Orc Bruiser",
+  "type": "unit",
+  "colors": [
+   "Body"
+  ],
+  "cost": 3,
+  "power": 4
+ },
+ {
+  "id": "DND-003",
+  "set": "DND",
+  "number": "003",
+  "placeholder": true,
+  "setInfo": "DND 003/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Breaker"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Dire Bear",
+  "type": "unit",
+  "colors": [
+   "Body"
+  ],
+  "cost": 4,
+  "power": 5
+ },
+ {
+  "id": "DND-004",
+  "set": "DND",
+  "number": "004",
+  "placeholder": true,
+  "setInfo": "DND 004/300",
+  "rarity": "rare",
+  "keywords": [],
+  "effects": [],
+  "tribes": [],
+  "name": "Hill Giant",
+  "type": "unit",
+  "colors": [
+   "Body"
+  ],
+  "cost": 5,
+  "power": 7
+ },
+ {
+  "id": "DND-005",
+  "set": "DND",
+  "number": "005",
+  "placeholder": true,
+  "setInfo": "DND 005/300",
+  "rarity": "epic",
+  "keywords": [
+   "Defensive",
+   "Breaker"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Mountain Behemoth",
+  "type": "unit",
+  "colors": [
+   "Body"
+  ],
+  "cost": 9,
+  "power": 11
+ },
+ {
+  "id": "DND-006",
+  "set": "DND",
+  "number": "006",
+  "placeholder": true,
+  "setInfo": "DND 006/300",
+  "rarity": "common",
+  "keywords": [
+   "Reaction"
+  ],
+  "effects": [
+   {
+    "do": "buff",
+    "target": "friendlyUnit",
+    "amount": 2,
+    "duration": "turn"
+   },
+   {
+    "do": "untap",
+    "target": "friendlyUnit"
+   }
+  ],
+  "tribes": [],
+  "name": "Second Wind",
+  "type": "spell",
+  "colors": [
+   "Body"
+  ],
+  "cost": 1
+ },
+ {
+  "id": "DND-007",
+  "set": "DND",
+  "number": "007",
+  "placeholder": true,
+  "setInfo": "DND 007/300",
+  "rarity": "common",
+  "keywords": [
+   "Action"
+  ],
+  "effects": [
+   {
+    "do": "buff",
+    "target": "friendlyUnit",
+    "amount": 4,
+    "duration": "turn"
+   }
+  ],
+  "tribes": [],
+  "name": "Barbarian Rage",
+  "type": "spell",
+  "colors": [
+   "Body"
+  ],
+  "cost": 2
+ },
+ {
+  "id": "DND-008",
+  "set": "DND",
+  "number": "008",
+  "placeholder": true,
+  "setInfo": "DND 008/300",
+  "rarity": "rare",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "tap",
+    "target": "allEnemyUnits"
+   },
+   {
+    "do": "buff",
+    "target": "allFriendlyUnits",
+    "amount": 1,
+    "duration": "turn"
+   }
+  ],
+  "tribes": [],
+  "name": "Earthshaker",
+  "type": "spell",
+  "colors": [
+   "Body"
+  ],
+  "cost": 6
+ },
+ {
+  "id": "DND-009",
+  "set": "DND",
+  "number": "009",
+  "placeholder": true,
+  "setInfo": "DND 009/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "buff",
+    "target": "friendlyUnit",
+    "amount": 1,
+    "duration": "turn",
+    "on": "activate"
+   }
+  ],
+  "tribes": [],
+  "name": "Training Dummy",
+  "type": "gear",
+  "colors": [
+   "Body"
+  ],
+  "cost": 1
+ },
+ {
+  "id": "DND-010",
+  "set": "DND",
+  "number": "010",
+  "placeholder": true,
+  "setInfo": "DND 010/300",
+  "rarity": "common",
+  "keywords": [
+   "Defensive"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Squire",
+  "type": "unit",
+  "colors": [
+   "Order"
+  ],
+  "cost": 1,
+  "power": 2
+ },
+ {
+  "id": "DND-011",
+  "set": "DND",
+  "number": "011",
+  "placeholder": true,
+  "setInfo": "DND 011/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "recover"
+   }
+  ],
+  "tribes": [],
+  "name": "Temple Cleric",
+  "type": "unit",
+  "colors": [
+   "Order"
+  ],
+  "cost": 2,
+  "power": 2
+ },
+ {
+  "id": "DND-012",
+  "set": "DND",
+  "number": "012",
+  "placeholder": true,
+  "setInfo": "DND 012/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Defensive",
+   "Shieldify"
+  ],
+  "effects": [
+   {
+    "do": "shieldify",
+    "amount": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Town Guard",
+  "type": "unit",
+  "colors": [
+   "Order"
+  ],
+  "cost": 3,
+  "power": 3
+ },
+ {
+  "id": "DND-013",
+  "set": "DND",
+  "number": "013",
+  "placeholder": true,
+  "setInfo": "DND 013/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Defensive"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Paladin of the Oath",
+  "type": "unit",
+  "colors": [
+   "Order"
+  ],
+  "cost": 4,
+  "power": 5
+ },
+ {
+  "id": "DND-014",
+  "set": "DND",
+  "number": "014",
+  "placeholder": true,
+  "setInfo": "DND 014/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Action",
+   "Shield Trigger"
+  ],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "enemyUnit",
+    "maxPower": 4
+   }
+  ],
+  "tribes": [],
+  "name": "Divine Smite",
+  "type": "spell",
+  "colors": [
+   "Order"
+  ],
+  "cost": 3
+ },
+ {
+  "id": "DND-015",
+  "set": "DND",
+  "number": "015",
+  "placeholder": true,
+  "setInfo": "DND 015/300",
+  "rarity": "common",
+  "keywords": [
+   "Reaction"
+  ],
+  "effects": [
+   {
+    "do": "buff",
+    "target": "friendlyUnit",
+    "amount": 3,
+    "duration": "turn"
+   }
+  ],
+  "tribes": [],
+  "name": "Shield of Faith",
+  "type": "spell",
+  "colors": [
+   "Order"
+  ],
+  "cost": 1
+ },
+ {
+  "id": "DND-016",
+  "set": "DND",
+  "number": "016",
+  "placeholder": true,
+  "setInfo": "DND 016/300",
+  "rarity": "epic",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "addShield",
+    "amount": 2
+   },
+   {
+    "do": "untap",
+    "target": "allFriendlyUnits"
+   }
+  ],
+  "tribes": [],
+  "name": "Mass Sanctuary",
+  "type": "spell",
+  "colors": [
+   "Order"
+  ],
+  "cost": 7
+ },
+ {
+  "id": "DND-017",
+  "set": "DND",
+  "number": "017",
+  "placeholder": true,
+  "setInfo": "DND 017/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "addShield",
+    "amount": 1,
+    "on": "turnStart"
+   }
+  ],
+  "tribes": [],
+  "name": "Holy Relic",
+  "type": "gear",
+  "colors": [
+   "Order"
+  ],
+  "cost": 2,
+  "uses": 2
+ },
+ {
+  "id": "DND-018",
+  "set": "DND",
+  "number": "018",
+  "placeholder": true,
+  "setInfo": "DND 018/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Scrying Owl",
+  "type": "unit",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 1,
+  "power": 1
+ },
+ {
+  "id": "DND-019",
+  "set": "DND",
+  "number": "019",
+  "placeholder": true,
+  "setInfo": "DND 019/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Apprentice Wizard",
+  "type": "unit",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 2,
+  "power": 2
+ },
+ {
+  "id": "DND-020",
+  "set": "DND",
+  "number": "020",
+  "placeholder": true,
+  "setInfo": "DND 020/300",
+  "rarity": "uncommon",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "tap",
+    "target": "enemyUnit"
+   }
+  ],
+  "tribes": [],
+  "name": "Illusionist",
+  "type": "unit",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 3,
+  "power": 2
+ },
+ {
+  "id": "DND-021",
+  "set": "DND",
+  "number": "021",
+  "placeholder": true,
+  "setInfo": "DND 021/300",
+  "rarity": "rare",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Archivist Golem",
+  "type": "unit",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 5,
+  "power": 5
+ },
+ {
+  "id": "DND-022",
+  "set": "DND",
+  "number": "022",
+  "placeholder": true,
+  "setInfo": "DND 022/300",
+  "rarity": "common",
+  "keywords": [
+   "Action"
+  ],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "enemyUnit",
+    "maxPower": 2
+   }
+  ],
+  "tribes": [],
+  "name": "Magic Missile",
+  "type": "spell",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 1
+ },
+ {
+  "id": "DND-023",
+  "set": "DND",
+  "number": "023",
+  "placeholder": true,
+  "setInfo": "DND 023/300",
+  "rarity": "common",
+  "keywords": [
+   "Reaction"
+  ],
+  "effects": [
+   {
+    "do": "bounce",
+    "target": "enemyUnit"
+   }
+  ],
+  "tribes": [],
+  "name": "Counterspell",
+  "type": "spell",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 2
+ },
+ {
+  "id": "DND-024",
+  "set": "DND",
+  "number": "024",
+  "placeholder": true,
+  "setInfo": "DND 024/300",
+  "rarity": "epic",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "tap",
+    "target": "allEnemyUnits"
+   },
+   {
+    "do": "draw",
+    "amount": 2
+   }
+  ],
+  "tribes": [],
+  "name": "Time Stop",
+  "type": "spell",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 8
+ },
+ {
+  "id": "DND-025",
+  "set": "DND",
+  "number": "025",
+  "placeholder": true,
+  "setInfo": "DND 025/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 1,
+    "on": "activate"
+   }
+  ],
+  "tribes": [],
+  "name": "Crystal Ball",
+  "type": "gear",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 2,
+  "activateCost": 1
+ },
+ {
+  "id": "DND-026",
+  "set": "DND",
+  "number": "026",
+  "placeholder": true,
+  "setInfo": "DND 026/300",
+  "rarity": "common",
+  "keywords": [
+   "Haste"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Kobold Skirmisher",
+  "type": "unit",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 1,
+  "power": 1
+ },
+ {
+  "id": "DND-027",
+  "set": "DND",
+  "number": "027",
+  "placeholder": true,
+  "setInfo": "DND 027/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [],
+  "tribes": [],
+  "name": "Flame Dancer",
+  "type": "unit",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 2,
+  "power": 3
+ },
+ {
+  "id": "DND-028",
+  "set": "DND",
+  "number": "028",
+  "placeholder": true,
+  "setInfo": "DND 028/300",
+  "rarity": "uncommon",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "buff",
+    "target": "self",
+    "amount": 2,
+    "duration": "turn",
+    "on": "attack"
+   }
+  ],
+  "tribes": [],
+  "name": "Dragon Whelp",
+  "type": "unit",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 3,
+  "power": 3
+ },
+ {
+  "id": "DND-029",
+  "set": "DND",
+  "number": "029",
+  "placeholder": true,
+  "setInfo": "DND 029/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Haste"
+  ],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "enemyUnit",
+    "maxPower": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Fire Elemental",
+  "type": "unit",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 4,
+  "power": 4
+ },
+ {
+  "id": "DND-030",
+  "set": "DND",
+  "number": "030",
+  "placeholder": true,
+  "setInfo": "DND 030/300",
+  "rarity": "epic",
+  "keywords": [
+   "Haste",
+   "Breaker"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Ancient Wyrm",
+  "type": "unit",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 10,
+  "power": 12
+ },
+ {
+  "id": "DND-031",
+  "set": "DND",
+  "number": "031",
+  "placeholder": true,
+  "setInfo": "DND 031/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Action"
+  ],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "enemyUnit",
+    "maxPower": 4
+   }
+  ],
+  "tribes": [],
+  "name": "Scorching Ray",
+  "type": "spell",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 3
+ },
+ {
+  "id": "DND-032",
+  "set": "DND",
+  "number": "032",
+  "placeholder": true,
+  "setInfo": "DND 032/300",
+  "rarity": "uncommon",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "allEnemyUnits",
+    "maxPower": 2
+   }
+  ],
+  "tribes": [],
+  "name": "Fireball",
+  "type": "spell",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 4
+ },
+ {
+  "id": "DND-033",
+  "set": "DND",
+  "number": "033",
+  "placeholder": true,
+  "setInfo": "DND 033/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "buff",
+    "target": "allFriendlyUnits",
+    "amount": 1,
+    "duration": "turn",
+    "on": "turnStart"
+   }
+  ],
+  "tribes": [],
+  "name": "Brazier of Flames",
+  "type": "gear",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 2
+ },
+ {
+  "id": "DND-034",
+  "set": "DND",
+  "number": "034",
+  "placeholder": true,
+  "setInfo": "DND 034/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "buff",
+    "target": "allFriendlyUnits",
+    "amount": 1,
+    "duration": "turn",
+    "on": "turnStart"
+   }
+  ],
+  "tribes": [],
+  "name": "Brenna, Oathsworn",
+  "type": "legend",
+  "colors": [
+   "Body",
+   "Order"
+  ],
+  "cost": 0
+ },
+ {
+  "id": "DND-035",
+  "set": "DND",
+  "number": "035",
+  "placeholder": true,
+  "setInfo": "DND 035/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Defensive"
+  ],
+  "effects": [
+   {
+    "do": "addShield",
+    "amount": 1,
+    "on": "destroyed"
+   }
+  ],
+  "tribes": [],
+  "name": "Brenna, Shieldmaiden",
+  "type": "champion",
+  "colors": [
+   "Order"
+  ],
+  "cost": 4,
+  "power": 5
+ },
+ {
+  "id": "DND-036",
+  "set": "DND",
+  "number": "036",
+  "placeholder": true,
+  "setInfo": "DND 036/300",
+  "rarity": "rare",
+  "keywords": [
+   "Breaker"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Torg, Mountain Born",
+  "type": "champion",
+  "colors": [
+   "Body"
+  ],
+  "cost": 5,
+  "power": 6
+ },
+ {
+  "id": "DND-037",
+  "set": "DND",
+  "number": "037",
+  "placeholder": true,
+  "setInfo": "DND 037/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Haste"
+  ],
+  "effects": [
+   {
+    "do": "recover"
+   }
+  ],
+  "tribes": [],
+  "name": "Elric, Holy Knight",
+  "type": "champion",
+  "colors": [
+   "Order"
+  ],
+  "cost": 3,
+  "power": 3
+ },
+ {
+  "id": "DND-038",
+  "set": "DND",
+  "number": "038",
+  "placeholder": true,
+  "setInfo": "DND 038/300",
+  "rarity": "common",
+  "keywords": [
+   "Reaction",
+   "Shield Trigger"
+  ],
+  "effects": [
+   {
+    "do": "buff",
+    "target": "allFriendlyUnits",
+    "amount": 2,
+    "duration": "turn"
+   }
+  ],
+  "tribes": [
+   "Brenna"
+  ],
+  "name": "Oathkeeper's Stand",
+  "type": "signature",
+  "sigType": "spell",
+  "colors": [
+   "Body",
+   "Order"
+  ],
+  "cost": 1
+ },
+ {
+  "id": "DND-039",
+  "set": "DND",
+  "number": "039",
+  "placeholder": true,
+  "setInfo": "DND 039/300",
+  "rarity": "epic",
+  "keywords": [
+   "Defensive",
+   "Shieldify"
+  ],
+  "effects": [
+   {
+    "do": "shieldify",
+    "amount": 2
+   }
+  ],
+  "tribes": [
+   "Brenna"
+  ],
+  "name": "Citadel Golem",
+  "type": "signature",
+  "sigType": "unit",
+  "colors": [
+   "Body",
+   "Order"
+  ],
+  "cost": 8,
+  "power": 9
+ },
+ {
+  "id": "DND-040",
+  "set": "DND",
+  "number": "040",
+  "placeholder": true,
+  "setInfo": "DND 040/300",
+  "rarity": "common",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "buff",
+    "target": "allFriendlyUnits",
+    "amount": 1,
+    "duration": "turn",
+    "on": "spellCast"
+   }
+  ],
+  "tribes": [],
+  "name": "Zara, Flamecaller",
+  "type": "legend",
+  "colors": [
+   "Mind",
+   "Fury"
+  ],
+  "cost": 0
+ },
+ {
+  "id": "DND-041",
+  "set": "DND",
+  "number": "041",
+  "placeholder": true,
+  "setInfo": "DND 041/300",
+  "rarity": "uncommon",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "enemyUnit",
+    "maxPower": 3
+   }
+  ],
+  "tribes": [],
+  "name": "Zara, Archmage",
+  "type": "champion",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 4,
+  "power": 3
+ },
+ {
+  "id": "DND-042",
+  "set": "DND",
+  "number": "042",
+  "placeholder": true,
+  "setInfo": "DND 042/300",
+  "rarity": "uncommon",
+  "keywords": [
+   "Haste"
+  ],
+  "effects": [],
+  "tribes": [],
+  "name": "Pip, Firebrand",
+  "type": "champion",
+  "colors": [
+   "Fury"
+  ],
+  "cost": 3,
+  "power": 3
+ },
+ {
+  "id": "DND-043",
+  "set": "DND",
+  "number": "043",
+  "placeholder": true,
+  "setInfo": "DND 043/300",
+  "rarity": "rare",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "tap",
+    "target": "enemyUnit"
+   },
+   {
+    "do": "draw",
+    "amount": 1
+   }
+  ],
+  "tribes": [],
+  "name": "Korr, Storm Sorcerer",
+  "type": "champion",
+  "colors": [
+   "Mind"
+  ],
+  "cost": 6,
+  "power": 5
+ },
+ {
+  "id": "DND-044",
+  "set": "DND",
+  "number": "044",
+  "placeholder": true,
+  "setInfo": "DND 044/300",
+  "rarity": "epic",
+  "keywords": [],
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "allEnemyUnits",
+    "maxPower": 6
+   },
+   {
+    "do": "breakShield",
+    "amount": 1
+   }
+  ],
+  "tribes": [
+   "Zara"
+  ],
+  "name": "Meteor Rain",
+  "type": "signature",
+  "sigType": "spell",
+  "colors": [
+   "Mind",
+   "Fury"
+  ],
+  "cost": 10
+ },
+ {
+  "id": "DND-045",
+  "set": "DND",
+  "number": "045",
+  "placeholder": true,
+  "setInfo": "DND 045/300",
+  "rarity": "common",
+  "keywords": [
+   "Haste"
+  ],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 1
+   }
+  ],
+  "tribes": [
+   "Zara"
+  ],
+  "name": "Zara's Familiar",
+  "type": "signature",
+  "sigType": "unit",
+  "colors": [
+   "Mind",
+   "Fury"
+  ],
+  "cost": 1,
+  "power": 1
+ }
+]

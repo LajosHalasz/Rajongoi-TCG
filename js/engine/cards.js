@@ -1,0 +1,150 @@
+// Card database + helpers. Pure JS (no DOM) so it runs in Node tests too.
+import { KEYWORDS } from './rules.js';
+
+let DB = new Map();
+
+/** Register card definitions. `overrides` (id -> partial def) is merged on top. */
+export function setCardDb(list, overrides = {}) {
+  DB = new Map();
+  for (const raw of list) {
+    const c = normalize({ ...raw, ...(overrides[raw.id] || {}) });
+    DB.set(c.id, c);
+  }
+  return DB;
+}
+
+export function getDef(id) {
+  const d = DB.get(id);
+  if (!d) throw new Error(`Unknown card id: ${id}`);
+  return d;
+}
+export function hasDef(id) { return DB.has(id); }
+export function allCards() { return [...DB.values()]; }
+
+export function normalize(c) {
+  const def = {
+    keywords: [], effects: [], colors: [], tribes: [], cost: 0, power: 0,
+    rarity: 'common', flavor: '', image: null, illustrator: '',
+    ...c,
+  };
+  def.colors = (def.colors || []).map(cap);
+  def.type = (def.type || 'unit').toLowerCase();
+  if (def.type === 'signature' && !def.sigType) def.sigType = 'spell';
+  def.text = def.text && def.text.trim() ? def.text : describe(def);
+  return def;
+}
+
+const cap = (s) => s ? s[0].toUpperCase() + s.slice(1).toLowerCase() : s;
+
+/** How the card behaves on the table: 'unit' | 'spell' | 'gear' | 'legend' */
+export function kindOf(def) {
+  switch (def.type) {
+    case 'unit': case 'champion': case 'token': return 'unit';
+    case 'spell': return 'spell';
+    case 'gear': return 'gear';
+    case 'legend': return 'legend';
+    case 'signature': return def.sigType || 'spell';
+    default: return 'unit';
+  }
+}
+
+/** "Varok, Ashen Warlord" -> "Varok" — used to link Legend / Champion / Signature. */
+export function baseName(name) { return String(name || '').split(',')[0].trim().toLowerCase(); }
+
+export function championMatchesLegend(champ, legend) {
+  return champ && legend && baseName(champ.name) === baseName(legend.name);
+}
+export function signatureMatchesLegend(sig, legend) {
+  if (!sig || !legend) return false;
+  if (sig.legend) return sig.legend === legend.id;
+  return (sig.tribes || []).some(t => baseName(t) === baseName(legend.name));
+}
+
+// ---------------------------------------------------------------------------
+// Rules-text generation (riftcardmaker-compatible markup):
+//   {Keyword#HEX}  -> coloured keyword badge
+//   __text__       -> italic reminder text
+//   [N]            -> mana icon, [T] tap icon, [M] might icon
+// ---------------------------------------------------------------------------
+
+export function keywordMarkup(kw, n) {
+  const k = KEYWORDS[kw];
+  if (!k) return `{${kw}#555555}`;
+  const label = n != null ? `${kw} ${n}` : kw;
+  const reminder = k.reminder.replace('[N]', `[${n ?? 1}]`);
+  return `{${label}#${k.hex.replace('#', '')}}__(${reminder})__`;
+}
+
+const TARGET_TEXT = {
+  enemyUnit: 'target enemy Unit',
+  friendlyUnit: 'target friendly Unit',
+  anyUnit: 'target Unit',
+  enemyTappedUnit: 'target tapped enemy Unit',
+  enemyGear: 'target enemy Gear',
+  allEnemyUnits: 'all enemy Units',
+  allFriendlyUnits: 'all your Units',
+  allUnits: 'all Units',
+  self: 'this Unit',
+  played: 'that Unit',
+};
+
+const TRIGGER_TEXT = {
+  play: (d) => (kindOf(d) === 'spell' ? '' : 'When you play this: '),
+  attack: () => 'When this attacks: ',
+  destroyed: () => 'When this is destroyed: ',
+  turnStart: () => 'At the start of your turn: ',
+  unitPlayed: () => 'Whenever you play a Unit: ',
+  spellCast: () => 'Whenever you cast a Spell: ',
+  static: () => '',
+  activate: (d) => `[T]${d.activateCost ? ` + [${d.activateCost}]` : ''}: `,
+};
+
+export function describeEffect(e, def) {
+  const t = TARGET_TEXT[e.target] || 'target Unit';
+  const n = e.amount ?? 1;
+  const pw = e.maxPower != null ? ` with [M]${e.maxPower} or less` : '';
+  const dur = e.duration === 'permanent' ? '' : ' this turn';
+  switch (e.do) {
+    case 'draw': return e.who === 'opponent' ? `Your opponent draws ${n}.` : `Draw ${n}.`;
+    case 'destroy': return `Destroy ${t}${pw}.`;
+    case 'buff': {
+      if (e.on === 'static') {
+        const f = e.filter || {};
+        const who = `Your ${f.color ? f.color + ' ' : ''}Units${f.keyword ? ' with ' + f.keyword : ''}`;
+        return `${who} have ${n >= 0 ? '+' : ''}${n} [M].`;
+      }
+      return n >= 0 ? `Give ${t} +${n} [M]${dur}.` : `Reduce ${t}'s [M]Might by [${-n}]${dur === ' this turn' ? ' until the end of this turn' : ''}.`;
+    }
+    case 'tap': return `Tap [T] ${t}${pw}.`;
+    case 'untap': return `Ready ${t}.`;
+    case 'bounce': return `Return ${t}${pw} to its owner's hand.`;
+    case 'breakShield': return `Break ${n} of your opponent's shields.`;
+    case 'addShield': return `Put the top ${n} card${n > 1 ? 's' : ''} of your deck into your Shield Zone.`;
+    case 'shieldify': return keywordMarkup('Shieldify', n);
+    case 'channel': return `Channel ${n} extra rune${n > 1 ? 's' : ''}${e.tapped ? ' tapped' : ''}.`;
+    case 'discard': return `Your opponent discards ${n} random card${n > 1 ? 's' : ''}.`;
+    case 'recover': return `Return a Unit from your Graveyard to your hand.`;
+    case 'grantKeyword': return `Give ${t} ${e.keyword}${dur}.`;
+    case 'token': return `Create ${n > 1 ? n + ' ' : 'a '}${e.tokenName || 'token'}${n > 1 ? 's' : ''}.`;
+    default: return e.text || '';
+  }
+}
+
+export function describe(def) {
+  const lines = [];
+  for (const kw of def.keywords || []) {
+    if (kw === 'Shieldify') continue; // rendered from its effect (has a number)
+    lines.push(keywordMarkup(kw));
+  }
+  if (def.uses) lines.push(`{Saga ${def.uses}#8A6D3B}__(Expires after ${def.uses} uses.)__`);
+  // group effects by trigger so "When you play this:" is printed once
+  const groups = new Map();
+  for (const e of def.effects || []) {
+    if (e.do === 'shieldify') { lines.push(describeEffect(e, def)); continue; }
+    const on = e.on || 'play';
+    if (!groups.has(on)) groups.set(on, []);
+    groups.get(on).push(describeEffect(e, def));
+  }
+  for (const [on, parts] of groups) lines.push((TRIGGER_TEXT[on] || (() => ''))(def) + parts.join(' '));
+  return lines.join('\n');
+}

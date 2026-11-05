@@ -1,0 +1,138 @@
+[
+  {
+    "id": "pre-varok",
+    "name": "Varok — Ashen Assault",
+    "premade": true,
+    "legend": "OGN-039",
+    "champion": "OGN-040",
+    "signature": "OGN-043",
+    "cards": {
+      "OGN-040": 1,
+      "OGN-041": 1,
+      "OGN-042": 1,
+      "OGN-043": 1,
+      "OGN-044": 1,
+      "OGN-005": 1,
+      "OGN-013": 1,
+      "OGN-006": 1,
+      "OGN-014": 1,
+      "OGN-007": 1,
+      "OGN-015": 1,
+      "OGN-008": 1,
+      "OGN-009": 1,
+      "OGN-011": 1,
+      "OGN-010": 1,
+      "OGN-017": 1,
+      "OGN-004": 1,
+      "OGN-018": 1,
+      "OGN-020": 1,
+      "OGN-012": 1
+    },
+    "runes": {
+      "Fury": 6,
+      "Chaos": 6
+    }
+  },
+  {
+    "id": "pre-selwyn",
+    "name": "Selwyn — Tide & Pizza",
+    "premade": true,
+    "legend": "OGN-045",
+    "champion": "OGN-046",
+    "signature": "OGN-049",
+    "cards": {
+      "OGN-046": 1,
+      "OGN-047": 1,
+      "OGN-048": 1,
+      "OGN-049": 1,
+      "OGN-050": 1,
+      "OGN-031": 1,
+      "OGN-023": 1,
+      "OGN-024": 1,
+      "OGN-001": 1,
+      "OGN-032": 1,
+      "OGN-002": 1,
+      "OGN-033": 1,
+      "OGN-026": 1,
+      "OGN-028": 1,
+      "OGN-035": 1,
+      "OGN-027": 1,
+      "OGN-036": 1,
+      "OGN-003": 1,
+      "OGN-037": 1,
+      "OGN-038": 1
+    },
+    "runes": {
+      "Calm": 6,
+      "Mind": 6
+    }
+  },
+  {
+    "id": "pre-brenna",
+    "name": "Brenna — Iron Oath",
+    "premade": true,
+    "legend": "DND-034",
+    "champion": "DND-035",
+    "signature": "DND-038",
+    "cards": {
+      "DND-035": 1,
+      "DND-036": 1,
+      "DND-037": 1,
+      "DND-038": 1,
+      "DND-039": 1,
+      "DND-001": 1,
+      "DND-010": 1,
+      "DND-011": 1,
+      "DND-002": 1,
+      "DND-012": 1,
+      "DND-003": 1,
+      "DND-013": 1,
+      "DND-005": 1,
+      "DND-006": 1,
+      "DND-015": 1,
+      "DND-007": 1,
+      "DND-014": 1,
+      "DND-008": 1,
+      "DND-016": 1,
+      "DND-017": 1
+    },
+    "runes": {
+      "Body": 6,
+      "Order": 6
+    }
+  },
+  {
+    "id": "pre-zara",
+    "name": "Zara — Spellfire",
+    "premade": true,
+    "legend": "DND-040",
+    "champion": "DND-041",
+    "signature": "DND-045",
+    "cards": {
+      "DND-041": 1,
+      "DND-042": 1,
+      "DND-043": 1,
+      "DND-044": 1,
+      "DND-045": 1,
+      "DND-026": 1,
+      "DND-018": 1,
+      "DND-019": 1,
+      "DND-027": 1,
+      "DND-028": 1,
+      "DND-020": 1,
+      "DND-029": 1,
+      "DND-030": 1,
+      "DND-022": 1,
+      "DND-023": 1,
+      "OGN-035": 1,
+      "DND-031": 1,
+      "DND-032": 1,
+      "DND-024": 1,
+      "DND-025": 1
+    },
+    "runes": {
+      "Mind": 6,
+      "Fury": 6
+    }
+  }
+]

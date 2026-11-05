@@ -1,0 +1,193 @@
+[
+  {
+    "id": "OGN-001",
+    "set": "OGN",
+    "number": "001",
+    "name": "Pizza with virsli and fries",
+    "type": "unit",
+    "colors": [
+      "Calm"
+    ],
+    "cost": 3,
+    "power": 2,
+    "keywords": [
+      "Shield Trigger",
+      "Shieldify"
+    ],
+    "effects": [
+      {
+        "on": "play",
+        "do": "shieldify",
+        "amount": 1
+      }
+    ],
+    "tribes": [
+      "Food"
+    ],
+    "text": "{Shield Trigger#CE356B}__(If you got this from your Shield Zone, you may play it immediately for [0] mana.)__\n{Shieldify 1#21705B}__(When you play this, put [1]card in your Shield Zone from your hand.)__",
+    "flavor": "\"Children's favourite in Italy. Don't ask how.\"",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 001/300",
+    "source": "riftcardmaker",
+    "image": "data/img/OGN-001.jpg",
+    "imageCrop": {
+      "x": 10.177852417930065,
+      "y": -8.362392423198212,
+      "width": 78.064012490242,
+      "height": 195.24735115009074
+    }
+  },
+  {
+    "id": "OGN-002",
+    "set": "OGN",
+    "number": "002",
+    "name": "Christmas Villamos  2❄",
+    "type": "unit",
+    "colors": [
+      "Calm"
+    ],
+    "cost": 4,
+    "power": 4,
+    "keywords": [
+      "Defensive",
+      "Nostalgia Line"
+    ],
+    "effects": [],
+    "tribes": [
+      "Villamos"
+    ],
+    "text": "{Defensive#CE356B}__(When an enemy Unit attacks, you may [T] this to redirect the attack to this Unit.)__\n{Nostalgia Line#CE356B}__(This enters untapped if you play it between 16.00 - 22.00 local time.)__",
+    "flavor": "\"Type UV - Nostalgia line - Bea Vonatos Nap 2025.12.\"",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 002/300",
+    "source": "riftcardmaker",
+    "powerCost": 1,
+    "image": "data/img/OGN-002.jpg",
+    "imageCrop": {
+      "x": 4.91861778948369,
+      "y": -8.39558826254919,
+      "width": 78.064012490242,
+      "height": 195.24735115009074
+    }
+  },
+  {
+    "id": "OGN-003",
+    "set": "OGN",
+    "number": "003",
+    "name": "Snowball fight",
+    "type": "spell",
+    "colors": [
+      "Calm"
+    ],
+    "cost": 4,
+    "power": 0,
+    "keywords": [],
+    "effects": [],
+    "tribes": [],
+    "text": "Reduce all enemy Units' [M]Might by [1] until the end of this turn. \n__(Units with [M]Might reduced to [0] are destroyed)__",
+    "flavor": "\"Chris recorded the whole thing - Szilveszter 2025.\"",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "OGN 003/300",
+    "source": "riftcardmaker",
+    "powerCost": 1,
+    "image": "data/img/OGN-003.jpg",
+    "imageCrop": {
+      "x": 10.057160683671556,
+      "y": -8.017305400271482,
+      "width": 78.064012490242,
+      "height": 195.24735115009074
+    }
+  },
+  {
+    "id": "OGN-004",
+    "set": "OGN",
+    "number": "004",
+    "name": "Te buzi vagy!",
+    "type": "spell",
+    "colors": [
+      "Chaos"
+    ],
+    "cost": 3,
+    "power": 0,
+    "keywords": [
+      "Being Áron"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": " Tap [T] target Unit.\n{Being Áron#6D6E6B} You may repeat this card's effect for each Áron in the room by paying [1][R] more mana.",
+    "flavor": "- Áron, te buzi vagy! - Bea to VaRon instead of saying hi.",
+    "rarity": "common",
+    "illustrator": "HLT",
+    "setInfo": "OGN 004/300",
+    "source": "riftcardmaker",
+    "powerCost": 1,
+    "image": "data/img/OGN-004.jpg",
+    "imageCrop": {
+      "x": 19.140219685856383,
+      "y": -8.971628912937678,
+      "width": 67.98096532970767,
+      "height": 170.0284546725127
+    }
+  },
+  {
+    "id": "TKN-001",
+    "set": "TKN",
+    "number": "001",
+    "name": "Black Pawn",
+    "type": "token",
+    "colors": [],
+    "cost": 0,
+    "power": 1,
+    "keywords": [
+      "Deathtouch"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Deathtouch#94B131#000000}__(Whenever this Unit loses in a fight, destroy the Unit that killed it.)__",
+    "flavor": "",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "Token 001",
+    "source": "riftcardmaker",
+    "token": true,
+    "image": "data/img/TKN-001.jpg",
+    "imageCrop": {
+      "x": 20.50625266261928,
+      "y": -5.289037450303144,
+      "width": 58.34305717619606,
+      "height": 145.92290363084385
+    }
+  },
+  {
+    "id": "TKN-002",
+    "set": "TKN",
+    "number": "002",
+    "name": "White Pawn",
+    "type": "token",
+    "colors": [],
+    "cost": 0,
+    "power": 1,
+    "keywords": [
+      "Defensive"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Defensive#CE356B}__(When an enemy Unit attacks, you may [T] this to redirect the attack to this Unit.)__",
+    "flavor": "",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "Token 002",
+    "source": "riftcardmaker",
+    "token": true,
+    "image": "data/img/TKN-002.jpg",
+    "imageCrop": {
+      "x": 22.371997918926436,
+      "y": 0.7624387725577928,
+      "width": 55.21811154058533,
+      "height": 138.10704407690022
+    }
+  }
+]

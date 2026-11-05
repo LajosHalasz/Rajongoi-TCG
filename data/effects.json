@@ -1,0 +1,5 @@
+{
+  "_readme": "Game logic for cards whose text is free-form (riftcardmaker imports). Keys are card ids; values are merged over the card definition. See README.md > Effect reference.",
+  "OGN-003": { "effects": [ { "do": "buff", "target": "allEnemyUnits", "amount": -1, "duration": "turn" } ] },
+  "OGN-004": { "effects": [ { "do": "tap", "target": "anyUnit" } ] }
+}
