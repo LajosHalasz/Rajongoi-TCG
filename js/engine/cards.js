@@ -38,6 +38,14 @@ export function mergeSources(dbCards, imported) {
   return [...byId.values()];
 }
 
+/** common | uncommon | rare | epic (legendary/showcase count as epic). */
+export function rarityOf(def) {
+  const r = String(def.rarity || '').toLowerCase();
+  if (['epic', 'legendary', 'showcase', 'overnumbered'].includes(r)) return 'epic';
+  if (['common', 'uncommon', 'rare'].includes(r)) return r;
+  return 'common';
+}
+
 export function getDef(id) {
   const d = DB.get(id);
   if (!d) throw new Error(`Unknown card id: ${id}`);

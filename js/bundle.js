@@ -92,6 +92,12 @@
     }
     return [...byId.values()];
   }
+  function rarityOf(def) {
+    const r = String(def.rarity || "").toLowerCase();
+    if (["epic", "legendary", "showcase", "overnumbered"].includes(r)) return "epic";
+    if (["common", "uncommon", "rare"].includes(r)) return r;
+    return "common";
+  }
   function getDef(id) {
     const d = DB.get(id);
     if (!d) throw new Error(`Unknown card id: ${id}`);
@@ -102,9 +108,6 @@
   }
   function allCards() {
     return [...DB.values()];
-  }
-  function artPool() {
-    return allCards().filter((c) => c.image);
   }
   function normalize(c) {
     const def = {
@@ -298,8 +301,8 @@ ${def.text}`;
     const defs = ids.map(getDef);
     for (const d of defs) {
       if (d.type === "legend" || d.type === "token" || d.type === "rune") errors.push(`${d.name} can't be in the main deck.`);
-      if (d.type === "signature") {
-        if (!signatureMatchesLegend(d, legend)) errors.push(`${d.name} is a Signature card of another Legend.`);
+      if (d.type === "signature" && !signatureMatchesLegend(d, legend)) {
+        errors.push(`${d.name} is a Signature card of another Legend.`);
       } else if (d.colors.some((c) => !legend.colors.includes(c))) {
         errors.push(`${d.name} is outside your Legend's colors (${legend.colors.join("/")}).`);
       }
@@ -390,43 +393,30 @@ ${def.text}`;
     h = h.replace(/\[([TMR])\]/g, (_, k) => ICONS[k]);
     h = h.replace(/\[P\]/g, '<span class="ico" title="Power rune">P</span>');
     h = h.replace(/\[\+(\d+)M\]/g, "+$1 " + ICONS.M);
+    h = h.replace(/\[(\d+)M\]/g, "$1" + ICONS.M);
+    h = h.replace(/\[(\d+)P\]/g, '$1<span class="ico" title="Power rune">P</span>');
     h = h.replace(/\[(\d+\+?)\]/g, '<span class="ico ico-num">$1</span>');
     return h.split("\n").map((l) => l.trim() ? `<p>${l}</p>` : "").join("");
   }
-  function hash(str) {
-    let h = 2166136261;
-    for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
-    return h >>> 0;
-  }
-  var GLYPH = { unit: "\u2694", champion: "\u2605", spell: "\u2726", gear: "\u2699", legend: "\u265B", signature: "\u272A", token: "\u265F" };
+  var GLYPH = { unit: "\u2694", champion: "\u2605", spell: "\u2726", gear: "\u2699", legend: "\u265B", signature: "\u272A", token: "\u265F", rune: "\u25C6" };
   function colorHex(def) {
     return def.colors.length ? COLORS[def.colors[0]]?.hex || "#777" : "#6d6e6b";
   }
-  function artHtml(def) {
-    if (def.image) {
-      let pos = "center";
-      if (def.imageCrop) {
-        const cx = def.imageCrop.x + def.imageCrop.width / 2;
-        pos = `${Math.max(0, Math.min(100, cx)).toFixed(0)}% center`;
-      }
-      return `<img class="art-img" src="${esc(def.image)}" alt="" loading="lazy" style="object-position:${pos}">`;
-    }
-    const c1 = colorHex(def);
-    const c2 = def.colors[1] ? COLORS[def.colors[1]].hex : "#1d1a16";
-    const pool = artPool();
-    if (pool.length) {
-      const same = pool.filter((c) => c.colors.some((x) => def.colors.includes(x)));
-      const src = same.length ? same : pool;
-      const h = hash(def.id);
-      const pick2 = src[h % src.length];
-      const zoom = 1.25 + (h >> 4) % 50 / 100;
-      const px = (h >> 8) % 100, py = (h >> 12) % 100;
-      return `<div class="art-ph borrowed" style="--c1:${c1};--c2:${c2}">
-      <img class="art-img" src="${esc(pick2.image)}" alt="" loading="lazy" style="object-position:${px}% ${py}%;transform:scale(${zoom.toFixed(2)})${h & 1 ? " scaleX(-1)" : ""}">
-      <span class="ph-label">placeholder art</span></div>`;
-    }
+  var color2 = (def) => def.colors[1] ? COLORS[def.colors[1]].hex : colorHex(def);
+  function isFullArt(def) {
+    return !!def.image && def.type !== "rune" && (rarityOf(def) === "epic" || def.type === "signature" || def.type === "legend");
+  }
+  var isRareArt = (def) => !!def.image && rarityOf(def) === "rare";
+  function cardImg(def) {
+    const c = def.imageCrop;
+    if (!c || !c.width || !c.height) return `<img class="card-img" src="${esc(def.image)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">`;
+    const w = 1e4 / c.width, h = 1e4 / c.height;
+    const l = -c.x / c.width * 100, t = -c.y / c.height * 100;
+    return `<img class="card-img" src="${esc(def.image)}" alt="" loading="lazy" style="width:${w.toFixed(2)}%;height:${h.toFixed(2)}%;left:${l.toFixed(2)}%;top:${t.toFixed(2)}%">`;
+  }
+  function placeholderArt(def) {
     const initials = def.name.replace(/[^A-Za-zÀ-ž ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-    return `<div class="art-ph" style="--c1:${c1};--c2:${c2}">
+    return `<div class="art-ph" style="--c1:${colorHex(def)};--c2:${def.colors[1] ? COLORS[def.colors[1]].hex : "#1d1a16"}">
     <span class="ph-glyph">${GLYPH[def.type] || "\u2726"}</span>
     <span class="ph-initials">${esc(initials)}</span>
     <span class="ph-label">artwork coming soon</span>
@@ -435,41 +425,138 @@ ${def.text}`;
   function typeLabel(def) {
     if (def.type === "signature") return `Signature ${def.sigType === "unit" ? "Unit" : def.sigType === "gear" ? "Gear" : "Spell"}`;
     if (def.type === "token") return "Token Unit";
+    if (def.type === "champion") return "Champion Unit";
     return TYPE_INFO[def.type]?.label || def.type;
   }
+  var recyclePill = (def) => def.recycle ? `<div class="rpill" title="Recycle ${def.recycle} rune(s) of this color">${Array.from({ length: def.recycle }, () => "<span></span>").join("")}</div>` : "";
+  function rulesHtml(def) {
+    const rules = def.text ? markup(def.text) : `<p class="wip-text">Design in progress${def.purpose ? ` \u2014 ${esc(def.purpose)}` : ""}.</p>`;
+    return `<div class="textbox"><div class="rules">${rules}</div>${def.flavor ? `<div class="flavor">${esc(def.flavor)}</div>` : ""}</div>`;
+  }
+  function runeHtml(def, opts) {
+    const cls = [
+      "card",
+      "rune-card",
+      def.name && !/^\s*$/.test(def.name) && !def.fullArtRune ? "" : "rune-bare",
+      `size-${opts.size || "md"}`,
+      opts.mini ? "mini" : "",
+      opts.classes || ""
+    ].join(" ");
+    return `<div class="${cls}" data-cid="${esc(def.id)}" style="--c1:${colorHex(def)};--c2:${colorHex(def)}">
+    <div class="art art-full">${def.image ? cardImg(def) : placeholderArt(def)}</div>
+    <div class="frame"></div>
+    <div class="typeline"><span class="domains"><span class="domain" style="background:${colorHex(def)}"></span></span><span class="type-badge">Rune</span></div>
+    <div class="rune-name">${esc(def.name)}</div>
+    <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || "")}</span></div>
+  </div>`;
+  }
   function cardHtml(def, opts = {}) {
+    if (def.type === "rune") return runeHtml(def, opts);
     const k = kindOf(def);
+    const rarity = rarityOf(def);
+    const full = isFullArt(def), rare = isRareArt(def);
+    const legend = def.type === "legend";
     const showMight = k === "unit";
     const might = opts.power ?? def.power;
     const mightCls = opts.power != null && opts.power !== def.power ? opts.power > def.power ? "up" : "down" : "";
-    const typeHex = TYPE_INFO[def.type]?.hex || "#555";
-    const cls = ["card", `size-${opts.size || "md"}`, opts.mini ? "mini" : "", opts.tapped ? "tapped" : "", opts.classes || ""].join(" ");
-    const data = `data-cid="${esc(def.id)}"${opts.uid ? ` data-uid="${esc(opts.uid)}"` : ""}`;
-    const tribes = (def.tribes || []).slice(0, 2).map((t) => `<span class="tribe">${esc(t)}</span>`).join("");
-    const domains = def.colors.map((c) => `<span class="domain" style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join("");
-    const badges = opts.badges || "";
     const prov = def.provisional || [];
-    return `<div class="${cls}" ${data} style="--domain:${colorHex(def)};--type:${typeHex}">
-    <div class="art">${artHtml(def)}</div>
+    const cls = [
+      "card",
+      `r-${rarity}`,
+      full ? "fullart" : rare ? "rareart" : "standard",
+      legend ? "is-legend" : "",
+      k === "gear" ? "is-gear" : "",
+      `size-${opts.size || "md"}`,
+      opts.mini ? "mini" : "",
+      opts.tapped ? "tapped" : "",
+      opts.classes || ""
+    ].join(" ");
+    const data = `data-cid="${esc(def.id)}"${opts.uid ? ` data-uid="${esc(opts.uid)}"` : ""}`;
+    const style = `--domain:${colorHex(def)};--c1:${colorHex(def)};--c2:${color2(def)};--type:${TYPE_INFO[def.type]?.hex || "#555"}`;
+    const tribes = (def.tribes || []).slice(0, 2);
+    const art = def.image ? `<div class="art ${full || rare ? "art-full" : "art-window"}">${cardImg(def)}</div>` : `<div class="art art-window">${placeholderArt(def)}</div>`;
+    const cost = legend || def.type === "rune" ? "" : `<div class="cost ${prov.includes("cost") ? "prov" : ""}" title="${prov.includes("cost") ? "Provisional cost" : "Cost"}"><span>${opts.cost ?? def.cost}</span></div>`;
+    const domainsTopLeft = full && legend ? `<div class="fa-domains">${def.colors.map((c) => `<span style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join("")}</div>` : "";
+    const mightHtml = showMight ? `<div class="might ${mightCls} ${prov.includes("might") ? "prov" : ""}"><span class="might-ico">\u26E8</span><span class="might-val">${might}</span></div>` : "";
+    const typeline = full ? `<div class="typeline gold"><span>${[typeLabel(def), ...tribes].map(esc).join(" <i>\u25C6</i> ")}</span></div>` : `<div class="typeline"><span class="domains">${def.colors.map((c) => `<span class="domain" style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join("")}</span><span class="type-badge">${esc(typeLabel(def))}</span>${tribes.map((t) => `<span class="tribe">${esc(t)}</span>`).join("")}</div>`;
+    return `<div class="${cls}" ${data} style="${style}">
+    ${art}
+    ${full || rare ? '<div class="art-shade"></div>' : ""}
     <div class="frame"></div>
-    ${def.type === "legend" || def.type === "rune" ? "" : `<div class="cost ${prov.includes("cost") ? "prov" : ""}" title="${prov.includes("cost") ? "Provisional cost" : "Cost"}"><span>${opts.cost ?? def.cost}</span></div>`}
-    ${def.recycle ? `<div class="recycle" title="Recycle ${def.recycle} rune(s) of this color"><i>\u21BB</i>${def.recycle}</div>` : ""}
-    ${showMight ? `<div class="might ${mightCls} ${prov.includes("might") ? "prov" : ""}"><span class="might-ico">\u26E8</span><span class="might-val">${might}</span></div>` : ""}
+    ${cost}${domainsTopLeft}${recyclePill(def)}${mightHtml}
     ${def.wip || def.placeholder ? `<div class="wip-tag">${def.filler ? "FILLER" : def.placeholder ? "PLACEHOLDER" : "WIP"}</div>` : ""}
-    <div class="typeline"><span class="domains">${domains}</span><span class="type-badge">${esc(typeLabel(def))}</span>${tribes}</div>
-    <div class="namebar"><span style="${nameSize(def.name, opts.mini)}">${esc(def.name)}</span>${def.subname && !opts.mini ? `<small>${esc(def.subname)}</small>` : ""}</div>
-    <div class="textbox">${def.text ? markup(def.text) : `<p class="wip-text">Design in progress${def.purpose ? ` \u2014 ${esc(def.purpose)}` : ""}.</p>`}${def.flavor ? `<div class="flavor">${esc(def.flavor)}</div>` : ""}</div>
+    ${typeline}
+    <div class="namebar"><span class="name">${esc(def.name)}</span>${def.subname && !opts.mini ? `<small>${esc(def.subname)}</small>` : ""}</div>
+    ${rulesHtml(def)}
     <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || (def.owners || []).join(" / "))}</span></div>
-    ${badges}
+    ${opts.badges || ""}
   </div>`;
   }
-  function nameSize(name, mini) {
-    if (mini) return "";
-    const n = name.length;
-    return n > 20 ? `font-size:${Math.max(3.6, 6.2 * 20 / n).toFixed(2)}cqw` : "";
+  function cardDetailsHtml(def, opts = {}) {
+    const k = kindOf(def);
+    const stats = [];
+    if (def.type !== "legend" && def.type !== "rune") stats.push(`Cost <b>${opts.cost ?? def.cost}</b>`);
+    if (def.recycle) stats.push(`Recycle <b>${def.recycle}</b>`);
+    if (k === "unit") stats.push(`Might <b>${opts.power ?? def.power}</b>${opts.power != null && opts.power !== def.power ? ` <span class="muted">(printed ${def.power})</span>` : ""}`);
+    const kwHelp = (def.keywords || []).filter((kw) => KEYWORDS[kw] && !(def.text || "").includes(kw)).map((kw) => `<p><span class="kw" style="background:${KEYWORDS[kw].hex}">${esc(kw)}</span> <i>${esc(KEYWORDS[kw].reminder.replace("[N]", ""))}</i></p>`).join("");
+    return `<div class="card-details" style="--domain:${colorHex(def)}">
+    <div class="cd-name">${esc(def.name)}${def.subname ? ` <span class="muted">\u2014 ${esc(def.subname)}</span>` : ""}</div>
+    <div class="cd-type">${esc(typeLabel(def))}${(def.tribes || []).length ? " \xB7 " + def.tribes.map(esc).join(", ") : ""} \xB7 ${def.colors.join(" / ") || "Neutral"}</div>
+    ${stats.length ? `<div class="cd-stats">${stats.join(" \xB7 ")}</div>` : ""}
+    <div class="cd-text">${def.text ? markup(def.text) : '<p class="muted">No rules text yet.</p>'}${kwHelp}</div>
+    ${def.flavor ? `<div class="cd-flavor">${esc(def.flavor)}</div>` : ""}
+  </div>`;
   }
   function cardBackHtml(opts = {}) {
-    return `<div class="card card-back size-${opts.size || "sm"} ${opts.classes || ""}" ${opts.attrs || ""}><div class="back-inner"><span>RIFT<br>MASTERS</span></div>${opts.label ? `<div class="back-label">${opts.label}</div>` : ""}</div>`;
+    return `<div class="card card-back size-${opts.size || "sm"} ${opts.classes || ""}" ${opts.attrs || ""}><div class="back-inner"><span>RAJONGOI<br>TCG</span></div>${opts.label ? `<div class="back-label">${opts.label}</div>` : ""}</div>`;
+  }
+  function fitCard(card) {
+    if (card.classList.contains("mini") || card.classList.contains("card-back")) return;
+    const box = card.querySelector(".textbox");
+    const name = card.querySelector(".namebar .name");
+    if (!box || box.offsetParent === null || box.clientHeight === 0) return;
+    box.style.fontSize = "";
+    let size = parseFloat(getComputedStyle(box).fontSize);
+    const min = size * 0.45;
+    for (let i = 0; i < 30 && box.scrollHeight > box.clientHeight + 1 && size > min; i++) {
+      size *= 0.94;
+      box.style.fontSize = size + "px";
+    }
+    if (name) {
+      name.style.fontSize = "";
+      let ns = parseFloat(getComputedStyle(name).fontSize);
+      const nmin = ns * 0.5;
+      for (let i = 0; i < 20 && name.scrollWidth > name.clientWidth + 1 && ns > nmin; i++) {
+        ns *= 0.94;
+        name.style.fontSize = ns + "px";
+      }
+    }
+    card.dataset.fitted = card.getBoundingClientRect().width.toFixed(0);
+  }
+  function fitCards(root = document, force = false) {
+    for (const card of root.querySelectorAll(".card")) {
+      const w = card.getBoundingClientRect().width.toFixed(0);
+      if (!force && card.dataset.fitted === w) continue;
+      fitCard(card);
+    }
+  }
+  var scheduled = false;
+  function installAutoFit() {
+    const run = () => {
+      scheduled = false;
+      fitCards();
+    };
+    const schedule = () => {
+      if (!scheduled) {
+        scheduled = true;
+        requestAnimationFrame(run);
+      }
+    };
+    new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+    window.addEventListener("resize", schedule);
+    document.addEventListener("load", schedule, true);
+    if (document.fonts?.ready) document.fonts.ready.then(() => fitCards(document, true));
+    schedule();
   }
 
   // js/ui/collection.js
@@ -483,7 +570,7 @@ ${def.text}`;
     m.innerHTML = `<div class="modal-box"><div class="modal-card">
     ${cardHtml(def, { size: "lg" })}
     <dl class="info">
-      <dt>Name</dt><dd><b>${esc(def.name)}</b></dd>
+      <dd>${cardDetailsHtml(def)}</dd>
       <dt>Type</dt><dd>${esc(TYPE_INFO[def.type]?.label || def.type)}${def.sigType ? " (" + def.sigType + ")" : ""}</dd>
       <dt>Colors</dt><dd>${def.colors.join(" / ") || "Neutral"}</dd>
       <dt>Cost / Might / Recycle</dt><dd>${def.cost} / ${kindOf(def) === "unit" ? def.power : "\u2014"} / ${def.recycle || 0}${def.provisional ? ` <span class="muted">(provisional: ${def.provisional.join(", ")})</span>` : ""}</dd>
@@ -637,7 +724,7 @@ ${def.text}`;
       const L = getDef(draft.legend);
       return allCards().filter((c) => {
         if (c.type === "legend" || c.type === "token" || c.type === "rune") return false;
-        if (c.type === "signature") return signatureMatchesLegend(c, L);
+        if (c.type === "signature" && !signatureMatchesLegend(c, L)) return false;
         return c.colors.every((x) => L.colors.includes(x));
       }).sort((a, b) => a.cost - b.cost || sortCards(a, b));
     };
@@ -2192,7 +2279,7 @@ ${def.text}`;
     const f = el.dataset.uid ? findInst(G.s, el.dataset.uid) : null;
     const d = getDef(el.dataset.cid);
     const pw = f && f.zone === "battle" ? power(G.s, f.inst) : void 0;
-    pv.innerHTML = cardHtml(d, { size: "lg", power: pw });
+    pv.innerHTML = `<div>${cardHtml(d, { size: "lg", power: pw })}${cardDetailsHtml(d, { power: pw })}</div>`;
   }
   function onClick(e) {
     if (!G) return;
@@ -2325,6 +2412,208 @@ ${def.text}`;
     }, g.s.pending?.kind === "mulligan" ? 250 : AI_DELAY);
   }
 
+  // js/engine/booster.js
+  var PACK_RULES = { commons: 10, uncommons: 3, hitChance: 1 / 8, legendChance: 1 / 6 };
+  var playable = (c) => ["unit", "spell", "gear"].includes(c.type);
+  function boosterSets() {
+    const sets = [...new Set(allCards().filter((c) => playable(c) && !c.filler).map((c) => c.set))];
+    const order = ["OGN", "DND"];
+    const rank = (x) => order.indexOf(x) + 1 || 50;
+    return sets.filter((s) => !["BAS", "TKN", "RUN"].includes(s)).sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+  }
+  function setPools(set) {
+    const cards = allCards().filter((c) => c.set === set && !c.filler && !(c.type === "legend" && c.placeholder));
+    const of = (r) => cards.filter((c) => playable(c) && rarityOf(c) === r);
+    return {
+      commons: of("common"),
+      uncommons: of("uncommon"),
+      rares: cards.filter((c) => playable(c) && ["rare", "epic"].includes(rarityOf(c))),
+      hits: cards.filter((c) => c.type === "champion" || c.type === "signature"),
+      legends: cards.filter((c) => c.type === "legend"),
+      extras: allCards().filter((c) => c.type === "rune" || c.type === "token")
+    };
+  }
+  function openPack(set, rand2 = Math.random) {
+    const P = setPools(set);
+    const pick2 = (...pools) => {
+      const pool = pools.find((p) => p && p.length) || [];
+      return pool[Math.floor(rand2() * pool.length)];
+    };
+    const out = [];
+    const legendAt = P.legends.length && rand2() < PACK_RULES.legendChance ? Math.floor(rand2() * PACK_RULES.commons) : -1;
+    for (let i = 0; i < PACK_RULES.commons; i++) {
+      if (i === legendAt) out.push({ def: pick2(P.legends), slot: "legend" });
+      else out.push({ def: pick2(P.commons, P.uncommons), slot: "common" });
+    }
+    out.push({ def: pick2(P.extras, P.commons), slot: "extra" });
+    for (let i = 0; i < PACK_RULES.uncommons; i++) out.push({ def: pick2(P.uncommons, P.commons), slot: "uncommon" });
+    const hit = P.hits.length && rand2() < PACK_RULES.hitChance;
+    out.push(hit ? { def: pick2(P.hits), slot: "hit" } : { def: pick2(P.rares, P.uncommons, P.commons), slot: "rare" });
+    const li = out.findIndex((e) => e.slot === "legend");
+    if (li >= 0) {
+      const [leg] = out.splice(li, 1);
+      out.splice(out.length - 1, 0, leg);
+    }
+    return out.filter((e) => e.def);
+  }
+
+  // js/ui/boosters.js
+  var SET_INFO = {
+    OGN: { name: "OGN 2026-01", sub: "Origins", c1: "#d8433b", c2: "#3b82c8" },
+    DND: { name: "DND", sub: "Dungeons & Dragons DLC", c1: "#8e4fc4", c2: "#4b9a4b" }
+  };
+  var LS_PULLS = "rajongoi.pulls.v1";
+  var loadPulls = () => {
+    try {
+      return JSON.parse(localStorage.getItem(LS_PULLS)) || {};
+    } catch {
+      return {};
+    }
+  };
+  var savePulls = (p) => {
+    try {
+      localStorage.setItem(LS_PULLS, JSON.stringify(p));
+    } catch {
+    }
+  };
+  var state = { set: null, pack: null, revealed: /* @__PURE__ */ new Set(), opened: 0, busy: false };
+  var tier = (e) => e.slot === "hit" ? "hit" : e.slot === "legend" ? "legend" : rarityOf(e.def);
+  function renderBoosters(app2) {
+    const sets = boosterSets();
+    if (!state.set || !sets.includes(state.set)) state.set = sets[0];
+    state.pack = null;
+    drawShop(app2, sets);
+  }
+  function packHtml(set, extra = "") {
+    const s = SET_INFO[set] || { name: set, sub: "", c1: "#b07335", c2: "#3a2a1a" };
+    return `<div class="booster ${extra}" style="--p1:${s.c1};--p2:${s.c2}">
+    <div class="booster-top"><span>RAJONGOI TCG</span></div>
+    <div class="booster-body">
+      <div class="booster-logo">RAJONGOI<br>TCG</div>
+      <div class="booster-set">${esc(s.name)}</div>
+      <div class="booster-sub">${esc(s.sub)}</div>
+      <div class="booster-count">15 cards</div>
+    </div>
+    <div class="booster-shine"></div>
+  </div>`;
+  }
+  function drawShop(app2, sets) {
+    const P = setPools(state.set);
+    app2.innerHTML = `<div class="page booster-page">
+    <h2>Booster packs</h2>
+    <div class="tabs">${sets.map((s) => `<button class="${s === state.set ? "active" : ""}" data-set="${s}">${esc(SET_INFO[s]?.name || s)}</button>`).join("")}</div>
+    <div class="booster-stage">
+      <div class="booster-wrap" id="pack" title="Click to open">${packHtml(state.set, "idle")}</div>
+      <p class="muted">Click the pack to tear it open.</p>
+    </div>
+    <div class="booster-odds muted">
+      Each pack: ${PACK_RULES.commons} Commons (a Legend may replace one) \xB7 ${PACK_RULES.uncommons} Uncommons \xB7 1 Rune or Token \xB7
+      1 Champion or Signature in ~1 of ${Math.round(1 / PACK_RULES.hitChance)} packs (otherwise a Rare).
+      <br>Pool: ${P.commons.length} commons, ${P.uncommons.length} uncommons, ${P.rares.length} rares, ${P.hits.length} champions/signatures, ${P.legends.length} legends.
+      ${state.opened ? `<br>Packs opened this session: <b>${state.opened}</b>` : ""}
+    </div>
+  </div>`;
+    app2.querySelectorAll("[data-set]").forEach((b) => b.onclick = () => {
+      state.set = b.dataset.set;
+      drawShop(app2, sets);
+    });
+    app2.querySelector("#pack").onclick = () => tearOpen(app2, sets);
+  }
+  function tearOpen(app2, sets) {
+    if (state.busy) return;
+    state.busy = true;
+    const wrap = app2.querySelector("#pack");
+    const pack = wrap.querySelector(".booster");
+    pack.classList.remove("idle");
+    pack.classList.add("shake");
+    setTimeout(() => {
+      pack.classList.remove("shake");
+      pack.classList.add("torn");
+      burst(wrap, ["#fff", "#ffd36b", SET_INFO[state.set]?.c1 || "#d8433b"], 26);
+    }, 520);
+    setTimeout(() => {
+      state.pack = openPack(state.set);
+      state.revealed = /* @__PURE__ */ new Set();
+      state.opened++;
+      const pulls = loadPulls();
+      state.pack.forEach((e) => {
+        e.isNew = !pulls[e.def.id];
+        pulls[e.def.id] = (pulls[e.def.id] || 0) + 1;
+      });
+      savePulls(pulls);
+      state.busy = false;
+      drawReveal(app2, sets);
+    }, 1250);
+  }
+  function drawReveal(app2, sets) {
+    const cards = state.pack.map((e, i) => {
+      const t = tier(e);
+      return `<div class="flip t-${t}" data-i="${i}" style="--d:${i * 55}ms">
+      <div class="flip-inner">
+        <div class="flip-face flip-back"><div class="pack-back"><span>RAJONGOI<br>TCG</span></div></div>
+        <div class="flip-face flip-front">${cardHtml(e.def, { size: "md" })}${e.isNew ? '<span class="new-badge">NEW</span>' : ""}</div>
+      </div>
+    </div>`;
+    }).join("");
+    app2.innerHTML = `<div class="page booster-page">
+    <div class="row" style="margin-bottom:10px"><h2 style="margin:0">${esc(SET_INFO[state.set]?.name || state.set)} booster</h2><span class="spacer"></span>
+      <button id="all" class="primary">Reveal all</button></div>
+    <p class="muted" style="margin-top:0">Click the cards to flip them. The best card is saved for last.</p>
+    <div class="reveal-grid">${cards}</div>
+    <div class="row" id="after" style="justify-content:center;margin-top:20px;visibility:hidden">
+      <button class="primary" id="again">Open another pack</button>
+      <button id="back">Back to packs</button>
+    </div>
+  </div>`;
+    const flip = (el) => {
+      const i = +el.dataset.i;
+      if (state.revealed.has(i)) {
+        showCardModal(getDef(state.pack[i].def.id));
+        return;
+      }
+      state.revealed.add(i);
+      el.classList.add("flipped");
+      const t = tier(state.pack[i]);
+      if (["rare", "epic", "hit", "legend"].includes(t)) {
+        setTimeout(() => {
+          burst(el, t === "hit" || t === "epic" ? ["#ff5fd2", "#6be3ff", "#ffe36b", "#8dff7a"] : ["#ffd36b", "#fff2b8", "#e6ad3c"], t === "rare" ? 18 : 34);
+          if (t !== "rare") app2.querySelector(".booster-page").classList.add("quake");
+          setTimeout(() => app2.querySelector(".booster-page")?.classList.remove("quake"), 450);
+        }, 260);
+      }
+      if (state.revealed.size === state.pack.length) app2.querySelector("#after").style.visibility = "visible";
+    };
+    app2.querySelectorAll(".flip").forEach((el) => el.onclick = () => flip(el));
+    app2.querySelector("#all").onclick = () => {
+      const els = [...app2.querySelectorAll(".flip")].filter((el) => !state.revealed.has(+el.dataset.i));
+      els.forEach((el, k) => setTimeout(() => flip(el), k * 140));
+    };
+    app2.querySelector("#again").onclick = () => {
+      drawShop(app2, sets);
+      setTimeout(() => app2.querySelector("#pack")?.click(), 50);
+    };
+    app2.querySelector("#back").onclick = () => drawShop(app2, sets);
+  }
+  function burst(el, colors, n) {
+    const r = el.getBoundingClientRect();
+    const layer = document.createElement("div");
+    layer.className = "burst";
+    layer.style.left = r.left + r.width / 2 + "px";
+    layer.style.top = r.top + r.height / 2 + "px";
+    for (let i = 0; i < n; i++) {
+      const p = document.createElement("i");
+      const a = Math.PI * 2 * i / n + Math.random() * 0.4;
+      const dist = 90 + Math.random() * 140;
+      p.style.setProperty("--x", Math.cos(a) * dist + "px");
+      p.style.setProperty("--y", Math.sin(a) * dist + "px");
+      p.style.background = colors[i % colors.length];
+      p.style.animationDelay = Math.random() * 80 + "ms";
+      layer.appendChild(p);
+    }
+    document.body.appendChild(layer);
+    setTimeout(() => layer.remove(), 1100);
+  }
+
   // js/app.js
   var app = document.getElementById("app");
   function renderHome() {
@@ -2334,10 +2623,11 @@ ${def.text}`;
       return cardHtml(d, { size: "md", classes: "fan-card" }).replace('class="card', `style="transform:rotate(${rot}deg) translateY(${Math.abs(rot) * 1.4}px)" class="card`);
     }).join("");
     app.innerHTML = `<section class="home"><div>
-    <h1>RIFT MASTERS</h1>
-    <div class="tag">Shields, runes &amp; legends \u2014 a duel card game</div>
+    <h1>RAJONGOI TCG</h1>
+    <div class="tag">Shields, runes &amp; legends \u2014 a fan-made duel card game</div>
     <div class="menu">
       <button class="primary" onclick="location.hash='#/play'">Play against AI</button>
+      <button onclick="location.hash='#/boosters'">Open boosters</button>
       <button onclick="location.hash='#/collection'">Collection</button>
       <button class="ghost" onclick="location.hash='#/decks'">Decks</button>
     </div>
@@ -2361,10 +2651,13 @@ ${def.text}`;
         return renderDecks(app);
       case "deck":
         return renderBuilder(app, arg || "new");
+      case "boosters":
+        return renderBoosters(app);
       default:
         return renderHome();
     }
   }
+  installAutoFit();
   loadData().then(() => {
     window.addEventListener("hashchange", route);
     route();

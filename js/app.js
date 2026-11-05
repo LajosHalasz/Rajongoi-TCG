@@ -1,8 +1,9 @@
 import { loadData } from './data.js';
 import { allCards, hasDef, getDef } from './engine/cards.js';
-import { cardHtml } from './ui/card.js';
+import { cardHtml, installAutoFit } from './ui/card.js';
 import { renderCollection, renderDecks, renderBuilder } from './ui/collection.js';
 import { renderSetup, stopGame } from './ui/play.js';
+import { renderBoosters } from './ui/boosters.js';
 
 const app = document.getElementById('app');
 
@@ -13,10 +14,11 @@ function renderHome() {
     return cardHtml(d, { size: 'md', classes: 'fan-card' }).replace('class="card', `style="transform:rotate(${rot}deg) translateY(${Math.abs(rot) * 1.4}px)" class="card`);
   }).join('');
   app.innerHTML = `<section class="home"><div>
-    <h1>RIFT MASTERS</h1>
-    <div class="tag">Shields, runes &amp; legends — a duel card game</div>
+    <h1>RAJONGOI TCG</h1>
+    <div class="tag">Shields, runes &amp; legends — a fan-made duel card game</div>
     <div class="menu">
       <button class="primary" onclick="location.hash='#/play'">Play against AI</button>
+      <button onclick="location.hash='#/boosters'">Open boosters</button>
       <button onclick="location.hash='#/collection'">Collection</button>
       <button class="ghost" onclick="location.hash='#/decks'">Decks</button>
     </div>
@@ -37,10 +39,12 @@ function route() {
     case 'collection': return renderCollection(app, arg || 'OGN');
     case 'decks': return renderDecks(app);
     case 'deck': return renderBuilder(app, arg || 'new');
+    case 'boosters': return renderBoosters(app);
     default: return renderHome();
   }
 }
 
+installAutoFit();
 loadData().then(() => {
   window.addEventListener('hashchange', route);
   route();

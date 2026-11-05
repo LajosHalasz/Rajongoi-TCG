@@ -1,7 +1,7 @@
 import { allCards, getDef, hasDef, kindOf, championMatchesLegend, signatureMatchesLegend } from '../engine/cards.js';
 import { COLORS, TYPE_INFO, GUIDE, RULES } from '../engine/rules.js';
 import { validateDeck } from '../engine/deck.js';
-import { cardHtml, esc } from './card.js';
+import { cardHtml, cardDetailsHtml, esc } from './card.js';
 import { allDecks, customDecks, saveCustomDecks, findDeck } from '../data.js';
 
 const SET_NAMES = { OGN: 'OGN 2026-01', DND: 'DND — DLC', BAS: 'Fillers', TKN: 'Tokens', RUN: 'Runes' };
@@ -16,7 +16,7 @@ export function showCardModal(def) {
   m.innerHTML = `<div class="modal-box"><div class="modal-card">
     ${cardHtml(def, { size: 'lg' })}
     <dl class="info">
-      <dt>Name</dt><dd><b>${esc(def.name)}</b></dd>
+      <dd>${cardDetailsHtml(def)}</dd>
       <dt>Type</dt><dd>${esc(TYPE_INFO[def.type]?.label || def.type)}${def.sigType ? ' (' + def.sigType + ')' : ''}</dd>
       <dt>Colors</dt><dd>${def.colors.join(' / ') || 'Neutral'}</dd>
       <dt>Cost / Might / Recycle</dt><dd>${def.cost} / ${kindOf(def) === 'unit' ? def.power : '—'} / ${def.recycle || 0}${def.provisional ? ` <span class="muted">(provisional: ${def.provisional.join(', ')})</span>` : ''}</dd>
@@ -151,7 +151,7 @@ export function renderBuilder(app, arg) {
     const L = getDef(draft.legend);
     return allCards().filter(c => {
       if (c.type === 'legend' || c.type === 'token' || c.type === 'rune') return false;
-      if (c.type === 'signature') return signatureMatchesLegend(c, L);
+      if (c.type === 'signature' && !signatureMatchesLegend(c, L)) return false;
       return c.colors.every(x => L.colors.includes(x));
     }).sort((a, b) => a.cost - b.cost || sortCards(a, b));
   };

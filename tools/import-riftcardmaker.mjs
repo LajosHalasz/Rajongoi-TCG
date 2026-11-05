@@ -112,14 +112,15 @@ function convert(j) {
   }
 
   const card = {
-    id, set, number, name: (j.name || '').trim() || `${colors[0] || ''} Rune`.trim(), type, ...(j.subname ? { subname: j.subname.trim() } : {}),
+    id, set, number, name: (j.name || '').trim() || `${colors[0] || ''} Rune`.trim(), type,
+    ...(type === 'rune' && !(j.name || '').trim() ? { fullArtRune: true } : {}), ...(j.subname ? { subname: j.subname.trim() } : {}),
     ...(owners.length ? { owners } : {}),
     colors, cost: j.energy ?? 0, power: j.might ?? 0,
     keywords, effects,
     tribes: (j.tribes || []).map(t => t.text).filter(Boolean),
     text: j.description || '',
     flavor: j.flavorText || '',
-    rarity: j.rarity || 'common',
+    rarity: j.rarity || (['common', 'uncommon', 'rare', 'epic', 'legendary'].includes(j.rarityIcon) ? j.rarityIcon : 'common'),
     illustrator: j.illustrator || '',
     setInfo: j.setInfo || '',
     source: 'riftcardmaker',

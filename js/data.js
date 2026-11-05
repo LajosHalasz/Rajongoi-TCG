@@ -2,7 +2,7 @@
 import { setCardDb, allCards, mergeSources } from './engine/cards.js';
 import { validateDeck } from './engine/deck.js';
 
-const LS_KEY = 'riftmasters.decks.v1';
+const LS_KEY = 'riftmasters.decks.v1'; // kept so decks saved before the rename still load
 let premade = [];
 
 async function getJson(url, fallback) {

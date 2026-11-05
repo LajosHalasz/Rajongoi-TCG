@@ -192,7 +192,7 @@ def convert(row, set_code):
         if might == 1:
             might = None  # 0/1/0 are the form's default values
     if acts_as in ('unit', 'champion'):
-        if might is None:
+        if might is None or might <= 0:  # a 0-Might unit would die instantly: treat as not designed yet
             bonus = 2 if kind == 'signature' else (1 if kind == 'champion' or mana <= 3 else 0)
             might = max(1, mana + bonus)
             provisional.append('might')
@@ -215,6 +215,10 @@ def convert(row, set_code):
         card['keywords'].insert(0, 'Shield Trigger')
     if provisional:
         card['provisional'] = provisional
+    # rarity (the database has none): Signatures/Legends epic, Champions rare,
+    # expensive cards uncommon, the rest common. Finished cards override this.
+    card['rarity'] = ('epic' if kind in ('signature', 'legend') else 'rare' if kind == 'champion'
+                      else 'uncommon' if card['cost'] >= 4 else 'common')
     logic = CARD_LOGIC.get(cid)
     if logic:
         for k, v in logic.items():

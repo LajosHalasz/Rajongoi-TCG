@@ -4,7 +4,7 @@ import { getDef, hasDef, kindOf } from '../engine/cards.js';
 import { COLORS, RULES } from '../engine/rules.js';
 import { validateDeck } from '../engine/deck.js';
 import { playableDecks, findDeck } from '../data.js';
-import { cardHtml, cardBackHtml, esc } from './card.js';
+import { cardHtml, cardBackHtml, cardDetailsHtml, esc } from './card.js';
 import { showCardModal } from './collection.js';
 
 const HUMAN = 0, AI = 1;
@@ -292,7 +292,7 @@ function onHover(e) {
   const f = el.dataset.uid ? findInst(G.s, el.dataset.uid) : null;
   const d = getDef(el.dataset.cid);
   const pw = f && f.zone === 'battle' ? power(G.s, f.inst) : undefined;
-  pv.innerHTML = cardHtml(d, { size: 'lg', power: pw });
+  pv.innerHTML = `<div>${cardHtml(d, { size: 'lg', power: pw })}${cardDetailsHtml(d, { power: pw })}</div>`;
 }
 
 function onClick(e) {

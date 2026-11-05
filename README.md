@@ -1,4 +1,4 @@
-# Rift Masters
+# Rajongoi TCG
 
 A browser card game: **Duel Masters** basics (shields, Shield Triggers, attacking tapped units, a direct attack to win) combined with **Riftbound**-style mechanics (Legend, Champion Slot, Signature cards, Gear, a rune Mana Deck, Action/Reaction spells on a stack).
 
@@ -7,6 +7,16 @@ A browser card game: **Duel Masters** basics (shields, Shield Triggers, attackin
 - **Decks**: four premade decks, a deck builder with live rule checks and a mana curve, and import/export as JSON.
 
 It's a static site with no build step and no dependencies, so it works on GitHub Pages as-is.
+
+## Booster packs
+
+The **Boosters** page opens 15-card packs with an animation: the pack tears open, the cards are dealt face down, and rarer cards glow before they flip. A pack contains:
+- 10 Commons. A Legend may replace one, in about 1 of 6 packs.
+- 3 Uncommons.
+- 1 Rune or Token.
+- 1 Champion or Signature in about 1 of 8 packs. Otherwise this slot is a Rare, or an Uncommon if the set has no Rares.
+
+Odds are set in `js/engine/booster.js`. The page remembers which cards you have pulled (in browser storage) and marks first-time pulls as **NEW**. The database has no rarity column, so its cards get a rarity from their type until a finished card sets the real one: Signatures and Legends are epic, Champions rare, cards costing 4 or more uncommon, and the rest common.
 
 ## Run
 
@@ -119,7 +129,20 @@ A card is matched to its database row by name and type, so a typo'd printed numb
 - **Runes**: their art is used for that player's runes on the table.
 - **Subnames**.
 
-For cards without artwork, the game borrows a finished card's art as placeholder art: it prefers the same color, uses a different crop per card, tints it to the card's color, and labels it "placeholder art".
+**Frames follow rarity and type:**
+- **Common:** copper frame.
+- **Uncommon:** silver frame.
+- **Rare:** gold frame, with the art behind the whole card and the text over it.
+- **Signature, Legend and EPIC cards:** full-art frame.
+- **Gear:** the cost sits in a diamond.
+- **Recycle:** a pill directly under the cost, with one rune per Recycle point. It is split in two colors for two-color cards, and either color can be recycled.
+- **Rules text:** auto-fitted to its box. The in-game preview also shows the card's text written out below the card.
+
+If an export has no `rarity`, its rarity icon decides the frame.
+
+The earlier full-art note still applies: **EPIC Champions and Legends** use the full-art frame: the artwork covers the whole card, placed with the export's crop data. They also get the gold frame, the colored name band and white rules text over the art.
+
+Cards without artwork show a generated placeholder: a gradient in the card's colors, a type symbol and the card's initials.
 
 The importer reads the id from `setInfo` (`OGN 005/300` → `OGN-005`, `Token 003` → `TKN-003`). It maps `energy` → cost, `might` → Might and `power` → Recycle, and extracts the image. Keywords written as `{Keyword#HEX}` are detected automatically. Plain-text effects need an entry in `data/effects.json`:
 

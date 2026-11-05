@@ -416,7 +416,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-004",
@@ -444,7 +445,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-005",
@@ -472,7 +474,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "DND-006",
@@ -500,7 +503,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-007",
@@ -528,7 +532,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-008",
@@ -556,7 +561,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-009",
@@ -581,7 +587,8 @@
    "Black Spider"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "epic"
  },
  {
   "id": "DND-010",
@@ -609,7 +616,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-011",
@@ -635,7 +643,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-012",
@@ -663,7 +672,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-013",
@@ -689,7 +699,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-014",
@@ -717,7 +728,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-015",
@@ -743,7 +755,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-016",
@@ -769,7 +782,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-017",
@@ -794,7 +808,8 @@
    "Lutheria"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "epic"
  },
  {
   "id": "DND-018",
@@ -819,7 +834,8 @@
    "Sydon"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "epic"
  },
  {
   "id": "DND-019",
@@ -854,6 +870,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -883,7 +900,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "DND-021",
@@ -915,7 +933,8 @@
    "Lui"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "rare"
  },
  {
   "id": "DND-022",
@@ -943,7 +962,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "DND-023",
@@ -971,7 +991,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-001",
@@ -1003,7 +1024,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-002",
@@ -1033,7 +1055,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-003",
@@ -1067,6 +1090,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -1100,6 +1124,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -1128,7 +1153,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-006",
@@ -1152,7 +1178,8 @@
    "Matyi"
   ],
   "purpose": "Early Ramp",
-  "wip": false
+  "wip": false,
+  "rarity": "rare"
  },
  {
   "id": "OGN-007",
@@ -1185,7 +1212,8 @@
   "wip": false,
   "provisional": [
    "cost"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-008",
@@ -1220,6 +1248,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "uses": 2,
   "provisionalEffect": true
  },
@@ -1249,7 +1278,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-010",
@@ -1275,7 +1305,8 @@
    "Matyi"
   ],
   "purpose": "Mid DEF",
-  "wip": false
+  "wip": false,
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-011",
@@ -1306,6 +1337,7 @@
   ],
   "purpose": "Draw engine",
   "wip": false,
+  "rarity": "common",
   "uses": 3,
   "provisionalEffect": true
  },
@@ -1342,6 +1374,7 @@
   ],
   "purpose": "Glass Cannon",
   "wip": false,
+  "rarity": "uncommon",
   "provisionalEffect": true
  },
  {
@@ -1370,7 +1403,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-014",
@@ -1400,7 +1434,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "epic"
  },
  {
   "id": "OGN-015",
@@ -1436,6 +1471,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -1464,7 +1500,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-017",
@@ -1501,6 +1538,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -1536,6 +1574,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -1571,6 +1610,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -1602,6 +1642,7 @@
    "cost",
    "might"
   ],
+  "rarity": "epic",
   "legend": "OGN-L-varon"
  },
  {
@@ -1635,7 +1676,8 @@
   "wip": false,
   "provisional": [
    "cost"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-022",
@@ -1668,6 +1710,7 @@
   ],
   "purpose": "Single Clear",
   "wip": false,
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -1692,7 +1735,8 @@
    "Balu"
   ],
   "purpose": "Draw Engine",
-  "wip": false
+  "wip": false,
+  "rarity": "common"
  },
  {
   "id": "OGN-024",
@@ -1716,7 +1760,8 @@
    "Balu"
   ],
   "purpose": "Whiskey, Mana ch",
-  "wip": false
+  "wip": false,
+  "rarity": "rare"
  },
  {
   "id": "OGN-025",
@@ -1742,7 +1787,8 @@
    "Balu"
   ],
   "purpose": "Early Aggro",
-  "wip": false
+  "wip": false,
+  "rarity": "common"
  },
  {
   "id": "OGN-026",
@@ -1771,7 +1817,8 @@
   "wip": true,
   "provisional": [
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-027",
@@ -1800,7 +1847,8 @@
   "wip": true,
   "provisional": [
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-028",
@@ -1834,6 +1882,7 @@
   ],
   "purpose": "Utility - Action",
   "wip": false,
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -1869,6 +1918,7 @@
   ],
   "purpose": "Utility - Reaction",
   "wip": false,
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -1896,7 +1946,8 @@
   "wip": true,
   "provisional": [
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-031",
@@ -1927,6 +1978,7 @@
   ],
   "purpose": "",
   "wip": true,
+  "rarity": "common",
   "uses": 3,
   "provisionalEffect": true
  },
@@ -1959,6 +2011,7 @@
   ],
   "purpose": "",
   "wip": true,
+  "rarity": "common",
   "uses": 3,
   "provisionalEffect": true
  },
@@ -1997,6 +2050,7 @@
   "purpose": "Mid Utility, Whiskey",
   "wip": true,
   "sigType": "gear",
+  "rarity": "epic",
   "provisionalEffect": true,
   "legend": "OGN-L-balu"
  },
@@ -2027,7 +2081,8 @@
   "wip": true,
   "provisional": [
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-035",
@@ -2063,6 +2118,7 @@
   ],
   "purpose": "Early",
   "wip": true,
+  "rarity": "uncommon",
   "provisionalEffect": true
  },
  {
@@ -2098,6 +2154,7 @@
   ],
   "purpose": "Finisher",
   "wip": true,
+  "rarity": "uncommon",
   "provisionalEffect": true
  },
  {
@@ -2128,6 +2185,7 @@
   ],
   "purpose": "Search Deck",
   "wip": true,
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -2155,7 +2213,8 @@
   "wip": true,
   "provisional": [
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-039",
@@ -2184,6 +2243,7 @@
   "provisional": [
    "might"
   ],
+  "rarity": "epic",
   "legend": "OGN-L-balu"
  },
  {
@@ -2211,7 +2271,8 @@
   "wip": true,
   "provisional": [
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-041",
@@ -2249,6 +2310,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "epic",
   "provisionalEffect": true
  },
  {
@@ -2285,6 +2347,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -2321,6 +2384,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -2349,7 +2413,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-045",
@@ -2373,7 +2438,8 @@
    "Lui"
   ],
   "purpose": "",
-  "wip": false
+  "wip": false,
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-046",
@@ -2401,7 +2467,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-047",
@@ -2429,7 +2496,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-048",
@@ -2457,7 +2525,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-049",
@@ -2491,6 +2560,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -2519,7 +2589,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-051",
@@ -2553,6 +2624,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -2581,7 +2653,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-053",
@@ -2609,7 +2682,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-054",
@@ -2637,7 +2711,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-055",
@@ -2665,7 +2740,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-056",
@@ -2699,6 +2775,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -2732,6 +2809,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -2760,7 +2838,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-059",
@@ -2788,7 +2867,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-060",
@@ -2823,6 +2903,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -2857,6 +2938,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -2891,6 +2973,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -2928,6 +3011,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -2954,7 +3038,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-065",
@@ -2980,7 +3065,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-066",
@@ -3006,7 +3092,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-067",
@@ -3019,7 +3106,7 @@
    "Chaos"
   ],
   "cost": 3,
-  "power": 0,
+  "power": 4,
   "recycle": 0,
   "keywords": [],
   "effects": [],
@@ -3032,8 +3119,10 @@
   "purpose": "",
   "wip": true,
   "provisional": [
-   "cost"
-  ]
+   "cost",
+   "might"
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-068",
@@ -3061,7 +3150,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-069",
@@ -3089,7 +3179,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-070",
@@ -3117,7 +3208,8 @@
    "Domi"
   ],
   "purpose": "",
-  "wip": false
+  "wip": false,
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-071",
@@ -3145,7 +3237,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-072",
@@ -3173,7 +3266,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-073",
@@ -3201,7 +3295,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-074",
@@ -3239,6 +3334,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "epic",
   "provisionalEffect": true,
   "legend": "OGN-L-laci"
  },
@@ -3268,7 +3364,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-076",
@@ -3296,7 +3393,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-077",
@@ -3324,7 +3422,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-078",
@@ -3352,7 +3451,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-079",
@@ -3388,6 +3488,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "epic",
   "provisionalEffect": true,
   "legend": "OGN-L-anna"
  },
@@ -3422,6 +3523,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -3450,7 +3552,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-082",
@@ -3478,7 +3581,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-083",
@@ -3513,6 +3617,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "epic",
   "afterCast": "deckTop",
   "legend": "OGN-L-domi"
  },
@@ -3542,7 +3647,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-085",
@@ -3570,7 +3676,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-086",
@@ -3604,6 +3711,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -3632,7 +3740,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-088",
@@ -3665,6 +3774,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -3699,6 +3809,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -3735,6 +3846,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -3771,6 +3883,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -3799,7 +3912,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-093",
@@ -3834,6 +3948,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "epic",
   "provisionalEffect": true,
   "legend": "OGN-L-varon"
  },
@@ -3869,6 +3984,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -3903,6 +4019,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "uses": 3,
   "provisionalEffect": true
  },
@@ -3940,6 +4057,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -3973,6 +4091,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -4006,6 +4125,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -4034,7 +4154,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-100",
@@ -4062,7 +4183,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-101",
@@ -4090,7 +4212,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-102",
@@ -4123,6 +4246,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -4153,7 +4277,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-104",
@@ -4187,6 +4312,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -4201,7 +4327,7 @@
    "Calm"
   ],
   "cost": 6,
-  "power": 0,
+  "power": 8,
   "recycle": 0,
   "keywords": [],
   "effects": [],
@@ -4215,8 +4341,10 @@
   "wip": true,
   "sigType": "unit",
   "provisional": [
-   "cost"
+   "cost",
+   "might"
   ],
+  "rarity": "epic",
   "legend": "OGN-L-bea"
  },
  {
@@ -4247,7 +4375,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-107",
@@ -4277,7 +4406,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-108",
@@ -4290,7 +4420,7 @@
    "Chaos"
   ],
   "cost": 2,
-  "power": 0,
+  "power": 3,
   "recycle": 0,
   "keywords": [],
   "effects": [],
@@ -4303,8 +4433,10 @@
   "purpose": "",
   "wip": true,
   "provisional": [
-   "cost"
-  ]
+   "cost",
+   "might"
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-109",
@@ -4332,7 +4464,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-110",
@@ -4368,6 +4501,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "epic",
   "provisionalEffect": true,
   "legend": "OGN-L-bea"
  },
@@ -4397,7 +4531,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-112",
@@ -4432,6 +4567,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "epic",
   "provisionalEffect": true,
   "legend": "OGN-L-kozi"
  },
@@ -4470,6 +4606,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -4498,7 +4635,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-115",
@@ -4526,7 +4664,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-116",
@@ -4554,7 +4693,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-117",
@@ -4582,7 +4722,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-118",
@@ -4612,6 +4753,7 @@
   ],
   "purpose": "Search spell",
   "wip": true,
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -4645,6 +4787,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -4679,6 +4822,7 @@
   "purpose": "",
   "wip": false,
   "sigType": "unit",
+  "rarity": "epic",
   "legend": "OGN-L-chris"
  },
  {
@@ -4707,7 +4851,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-122",
@@ -4743,6 +4888,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -4780,6 +4926,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -4807,7 +4954,8 @@
    "Chris"
   ],
   "purpose": "",
-  "wip": false
+  "wip": false,
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-125",
@@ -4820,7 +4968,7 @@
    "Order"
   ],
   "cost": 4,
-  "power": 0,
+  "power": 4,
   "recycle": 0,
   "keywords": [],
   "effects": [],
@@ -4833,8 +4981,10 @@
   "purpose": "",
   "wip": true,
   "provisional": [
-   "cost"
-  ]
+   "cost",
+   "might"
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-126",
@@ -4862,7 +5012,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-127",
@@ -4890,7 +5041,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-128",
@@ -4926,6 +5078,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -4954,7 +5107,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-130",
@@ -4982,7 +5136,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-131",
@@ -5017,6 +5172,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5052,6 +5208,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5080,7 +5237,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-134",
@@ -5115,6 +5273,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5150,6 +5309,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5186,6 +5346,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5220,6 +5381,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5256,6 +5418,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5293,6 +5456,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5321,7 +5485,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-141",
@@ -5357,6 +5522,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5385,7 +5551,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-143",
@@ -5423,6 +5590,7 @@
   "purpose": "Boss",
   "wip": false,
   "sigType": "unit",
+  "rarity": "epic",
   "legend": "OGN-L-vince"
  },
  {
@@ -5460,6 +5628,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5493,6 +5662,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5525,6 +5695,7 @@
   ],
   "purpose": "",
   "wip": true,
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5562,6 +5733,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5599,6 +5771,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5634,6 +5807,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5662,7 +5836,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-151",
@@ -5695,6 +5870,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5723,7 +5899,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-153",
@@ -5758,6 +5935,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5786,7 +5964,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-155",
@@ -5820,6 +5999,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5855,6 +6035,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5883,7 +6064,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-158",
@@ -5918,6 +6100,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "epic",
   "provisionalEffect": true,
   "legend": "OGN-L-vince"
  },
@@ -5952,6 +6135,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -5985,6 +6169,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -6013,7 +6198,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-162",
@@ -6046,6 +6232,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -6074,7 +6261,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-164",
@@ -6110,6 +6298,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -6143,6 +6332,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -6171,7 +6361,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-167",
@@ -6199,7 +6390,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-168",
@@ -6232,6 +6424,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -6265,7 +6458,8 @@
    "Vince"
   ],
   "purpose": "Party breaker",
-  "wip": false
+  "wip": false,
+  "rarity": "common"
  },
  {
   "id": "OGN-170",
@@ -6300,6 +6494,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -6335,6 +6530,7 @@
   ],
   "purpose": "Destroy Spell",
   "wip": true,
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -6370,6 +6566,7 @@
   "purpose": "Boss level",
   "wip": false,
   "sigType": "unit",
+  "rarity": "epic",
   "legend": "OGN-L-lui"
  },
  {
@@ -6401,6 +6598,7 @@
   ],
   "purpose": "Man recharge",
   "wip": true,
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -6425,7 +6623,8 @@
    "Lui"
   ],
   "purpose": "",
-  "wip": false
+  "wip": false,
+  "rarity": "common"
  },
  {
   "id": "OGN-175",
@@ -6449,7 +6648,8 @@
    "Lui"
   ],
   "purpose": "Defensive",
-  "wip": false
+  "wip": false,
+  "rarity": "common"
  },
  {
   "id": "OGN-176",
@@ -6481,6 +6681,7 @@
   ],
   "purpose": "Recycle",
   "wip": true,
+  "rarity": "common",
   "uses": 2,
   "provisionalEffect": true
  },
@@ -6516,6 +6717,7 @@
   ],
   "purpose": "",
   "wip": false,
+  "rarity": "uncommon",
   "provisionalEffect": true
  },
  {
@@ -6540,7 +6742,8 @@
    "Lui"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "rare"
  },
  {
   "id": "OGN-179",
@@ -6575,6 +6778,7 @@
   ],
   "purpose": "Shield Trigger",
   "wip": false,
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -6599,7 +6803,8 @@
    "Lui"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "rare"
  },
  {
   "id": "OGN-181",
@@ -6623,7 +6828,8 @@
    "Lui"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-182",
@@ -6647,7 +6853,8 @@
    "Lui"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "common"
  },
  {
   "id": "OGN-183",
@@ -6671,7 +6878,8 @@
    "Lui"
   ],
   "purpose": "Boss level",
-  "wip": true
+  "wip": true,
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-184",
@@ -6695,7 +6903,8 @@
    "Lui"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-185",
@@ -6728,6 +6937,7 @@
   ],
   "purpose": "",
   "wip": true,
+  "rarity": "uncommon",
   "provisionalEffect": true
  },
  {
@@ -6764,6 +6974,7 @@
   "purpose": "Shield Trigger",
   "wip": true,
   "sigType": "spell",
+  "rarity": "epic",
   "provisionalEffect": true,
   "legend": "OGN-L-lui"
  },
@@ -6800,6 +7011,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "epic",
   "legend": "OGN-L-chris"
  },
  {
@@ -6824,7 +7036,8 @@
    "Lui"
   ],
   "purpose": "",
-  "wip": false
+  "wip": false,
+  "rarity": "rare"
  },
  {
   "id": "OGN-189",
@@ -6859,6 +7072,7 @@
   ],
   "purpose": "Shieldify",
   "wip": true,
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -6887,7 +7101,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-191",
@@ -6915,7 +7130,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-192",
@@ -6941,7 +7157,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "rare"
  },
  {
   "id": "OGN-193",
@@ -6973,7 +7190,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-194",
@@ -7000,7 +7218,8 @@
   "wip": true,
   "provisional": [
    "cost"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-195",
@@ -7032,7 +7251,8 @@
   "wip": true,
   "provisional": [
    "cost"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-196",
@@ -7058,7 +7278,8 @@
    "Laci"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-197",
@@ -7071,7 +7292,7 @@
    "Fury"
   ],
   "cost": 4,
-  "power": 0,
+  "power": 4,
   "recycle": 0,
   "keywords": [],
   "effects": [],
@@ -7082,7 +7303,11 @@
    "Laci"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "provisional": [
+   "might"
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-198",
@@ -7113,7 +7338,8 @@
    "Laci"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "common"
  },
  {
   "id": "OGN-199",
@@ -7139,7 +7365,8 @@
    "Laci"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-200",
@@ -7167,7 +7394,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-201",
@@ -7195,7 +7423,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-202",
@@ -7223,7 +7452,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-203",
@@ -7251,7 +7481,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-204",
@@ -7287,6 +7518,7 @@
   "provisional": [
    "cost"
   ],
+  "rarity": "common",
   "provisionalEffect": true
  },
  {
@@ -7313,7 +7545,8 @@
   "provisional": [
    "cost",
    "might"
-  ]
+  ],
+  "rarity": "common"
  },
  {
   "id": "OGN-206",
@@ -7335,7 +7568,8 @@
    "Kozi"
   ],
   "purpose": "",
-  "wip": true
+  "wip": true,
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-L-anna",
