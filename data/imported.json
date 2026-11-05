@@ -1,5 +1,110 @@
 [
   {
+    "id": "DND-002",
+    "set": "DND",
+    "number": "002",
+    "name": "Lutheria",
+    "type": "champion",
+    "subname": "Godess of Dreams",
+    "colors": [
+      "Mind"
+    ],
+    "cost": 10,
+    "power": 9,
+    "keywords": [
+      "Deflect 2"
+    ],
+    "effects": [],
+    "tribes": [
+      "Odyssey"
+    ],
+    "text": "{Deflect 2#94B131#000000}__(Opponents must pay [R][R] to choose me with a spell or ability.)__\nWhen I attack, deal 5 damage split among any number of enemy Units.",
+    "flavor": "",
+    "rarity": "epic",
+    "illustrator": "Lui",
+    "setInfo": "DND - 002",
+    "source": "riftcardmaker",
+    "recycle": 2,
+    "image": "data/img/DND-002.jpg",
+    "imageCrop": {
+      "x": 1.2978502551268325,
+      "y": 11.567127156275404,
+      "width": 98.27188871493153,
+      "height": 76.5683265904383
+    }
+  },
+  {
+    "id": "DND-003",
+    "set": "DND",
+    "number": "003",
+    "name": "Lutheria",
+    "type": "champion",
+    "subname": "Godess of Death",
+    "colors": [
+      "Chaos"
+    ],
+    "cost": 12,
+    "power": 10,
+    "keywords": [
+      "Shield 3",
+      "Tank"
+    ],
+    "effects": [],
+    "tribes": [
+      "Odyssey"
+    ],
+    "text": "{Shield 3#CE356B}__(+3 [M]while I'm being attacked.)__\n{Tank#CE356B}__(I must be assigned combat damage first.)__\nWhen an enemy Unit attacks, you may draw a card.\n",
+    "flavor": "",
+    "rarity": "epic",
+    "illustrator": "Lui",
+    "setInfo": "DND - 003",
+    "source": "riftcardmaker",
+    "recycle": 2,
+    "image": "data/img/DND-003.jpg",
+    "imageCrop": {
+      "x": 1.3450937839855048,
+      "y": 10.13662844040594,
+      "width": 94.57854580818024,
+      "height": 73.6906665638264
+    }
+  },
+  {
+    "id": "DND-017",
+    "set": "DND",
+    "number": "017",
+    "name": "Lutheria",
+    "type": "legend",
+    "subname": "Odyssey",
+    "owners": [
+      "Lutheria"
+    ],
+    "colors": [
+      "Mind",
+      "Chaos"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Mighty"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "When you play a {Mighty#6D6E6B} Unit, you may exhaust me to channel 1 rune exhausted. __(A unit is Mighty while it has 5+ [M].)__",
+    "flavor": "",
+    "rarity": "epic",
+    "illustrator": "Lui",
+    "setInfo": "DND - 001",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/DND-L-lutheria.jpg",
+    "imageCrop": {
+      "x": 11.412182569819862,
+      "y": 22.66313892310614,
+      "width": 77.17563840150368,
+      "height": 60.13122942099365
+    }
+  },
+  {
     "id": "OGN-001",
     "set": "OGN",
     "number": "001",
@@ -30,6 +135,7 @@
     "illustrator": "Lui",
     "setInfo": "OGN 001/300",
     "source": "riftcardmaker",
+    "recycle": 0,
     "image": "data/img/OGN-001.jpg",
     "imageCrop": {
       "x": 10.177852417930065,
@@ -63,7 +169,7 @@
     "illustrator": "Lui",
     "setInfo": "OGN 002/300",
     "source": "riftcardmaker",
-    "powerCost": 1,
+    "recycle": 1,
     "image": "data/img/OGN-002.jpg",
     "imageCrop": {
       "x": 4.91861778948369,
@@ -92,7 +198,7 @@
     "illustrator": "Lui",
     "setInfo": "OGN 003/300",
     "source": "riftcardmaker",
-    "powerCost": 1,
+    "recycle": 1,
     "image": "data/img/OGN-003.jpg",
     "imageCrop": {
       "x": 10.057160683671556,
@@ -123,13 +229,1274 @@
     "illustrator": "HLT",
     "setInfo": "OGN 004/300",
     "source": "riftcardmaker",
-    "powerCost": 1,
+    "recycle": 1,
     "image": "data/img/OGN-004.jpg",
     "imageCrop": {
       "x": 19.140219685856383,
       "y": -8.971628912937678,
       "width": 67.98096532970767,
       "height": 170.0284546725127
+    }
+  },
+  {
+    "id": "OGN-005",
+    "set": "OGN",
+    "number": "005",
+    "name": "Aranyzsófi",
+    "type": "champion",
+    "subname": "Party breaker disruptor",
+    "colors": [
+      "Body"
+    ],
+    "cost": 2,
+    "power": 5,
+    "keywords": [
+      "Party Breaker",
+      "Disruptor",
+      "Breaker"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Party Breaker#CE356B}__(Can attack untapped Units.)__\n{Disruptor#CE356B}__(You may break one of your Shields to give this Unit {Double Breaker#6D6E6B} until the end of your turn. Shield Triggers won't trigger this way.)__",
+    "flavor": "Valamilyen party breaker disruptor lap kéne h legyen a Zsófi kártya xd ~ Matyi",
+    "rarity": "rare",
+    "illustrator": "Matyi",
+    "setInfo": "OGN 005/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-005.jpg",
+    "imageCrop": {
+      "x": 6.926306013902039,
+      "y": 25.598594092171208,
+      "width": 89.68769158749164,
+      "height": 69.87996822299957
+    }
+  },
+  {
+    "id": "OGN-006",
+    "set": "OGN",
+    "number": "006",
+    "name": "Zsófi",
+    "type": "champion",
+    "subname": "Aspect of Vet dreams",
+    "colors": [
+      "Body"
+    ],
+    "cost": 2,
+    "power": 3,
+    "keywords": [
+      "Defensive",
+      "Pay in Nature"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Defensive#CE356B}__(When an enemy Unit attacks, you may [T] this to redirect the attack to this Unit.)__\n{Pay in Nature#94B131#000000}— When I die, Channel [1P] tapped.",
+    "flavor": "I definitely know how to write wet don't worry...",
+    "rarity": "rare",
+    "illustrator": "Lui",
+    "setInfo": "OGN 006/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-006.jpg",
+    "imageCrop": {
+      "x": 6.906257164364277,
+      "y": 25.902492635452944,
+      "width": 88.8187450946025,
+      "height": 69.20293046858993
+    }
+  },
+  {
+    "id": "OGN-007",
+    "set": "OGN",
+    "number": "007",
+    "name": "Make the first move",
+    "type": "spell",
+    "colors": [
+      "Mind"
+    ],
+    "cost": 1,
+    "power": 0,
+    "keywords": [
+      "Defensive",
+      "Deathtouch"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "Choose One: \n- Summon a [M]1 White Pawn Token with {Defensive#CE356B}. - Summon a [M]1 Black Pawn Token with {Deathtouch#94B131#000000}.",
+    "flavor": "\"I am always 3 steps ahead of you. Or at least I hope so.\"",
+    "rarity": "common",
+    "illustrator": "Chris",
+    "setInfo": "OGN 007/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-007.jpg",
+    "imageCrop": {
+      "x": 14.124726504259419,
+      "y": -8.286812502905278,
+      "width": 76.56967840735071,
+      "height": 191.7595313179653
+    }
+  },
+  {
+    "id": "OGN-008",
+    "set": "OGN",
+    "number": "008",
+    "name": "Kocsi MSE - Delivery Truck",
+    "type": "gear",
+    "colors": [
+      "Calm"
+    ],
+    "cost": 1,
+    "power": 0,
+    "keywords": [
+      "Sacrifice"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "When you play this, Draw [1] card.\n[T]: {Sacrifice#CE356B} this to Channel [P][P]. ",
+    "flavor": "I had to take a picture of that car. ~ Lui",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 008/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-008.jpg",
+    "imageCrop": {
+      "x": -6.711514043945834,
+      "y": 19.747310925085504,
+      "width": 113.47753020486343,
+      "height": 88.41576881265463
+    }
+  },
+  {
+    "id": "OGN-009",
+    "set": "OGN",
+    "number": "009",
+    "name": "Zselmó",
+    "type": "champion",
+    "subname": "Returning Nightmare",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 2,
+    "power": 2,
+    "keywords": [
+      "Furious",
+      "Escape From Hell"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Furious#CE356B}__(Must attack each turn if able.)__\n{Escape From Hell#6D6E6B} (The first time this Unit would die after being summoned, it gains +1[M] instead.)",
+    "flavor": "\"Ólmot a csóró gecikbe, ezaz!\"",
+    "rarity": "rare",
+    "illustrator": "Lui",
+    "setInfo": "OGN 009/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-009.jpg",
+    "imageCrop": {
+      "x": -0.029875521064973036,
+      "y": 6.280472177063729,
+      "width": 106.59724805789084,
+      "height": 83.05501206570798
+    }
+  },
+  {
+    "id": "OGN-010",
+    "set": "OGN",
+    "number": "010",
+    "name": "Zsiráfluci",
+    "type": "unit",
+    "colors": [
+      "Body"
+    ],
+    "cost": 4,
+    "power": 1,
+    "keywords": [
+      "Shield Trigger",
+      "Shield"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Shield Trigger#CE356B}__(If you got this from your Shield Zone, you may play it immediately for [0] mana.)__\nThis Unit has +[1][M] Might for each {Shield#CE356B} you have.",
+    "flavor": "Longest neck I've ever seen.",
+    "rarity": "common",
+    "illustrator": "Matyi",
+    "setInfo": "OGN 010/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-010.jpg",
+    "imageCrop": {
+      "x": 11.170261331777324,
+      "y": -9.489903528397397,
+      "width": 76.56967840735071,
+      "height": 191.5098444282284
+    }
+  },
+  {
+    "id": "OGN-011",
+    "set": "OGN",
+    "number": "011",
+    "name": "Birthday at the Airport",
+    "type": "gear",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 3,
+    "power": 0,
+    "keywords": [],
+    "effects": [],
+    "tribes": [],
+    "text": "[T] Tap: You aren't invited to a birthday party at the airport, only Dani is. Fuck you. Draw [1] card. \nOnce you drew [3] cards this way, destroy this Gear.",
+    "flavor": "\" I was invited to friend's birthday at the Airport\" ~ Edino",
+    "rarity": "common",
+    "illustrator": "Matyi",
+    "setInfo": "OGN 011/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-011.jpg",
+    "imageCrop": {
+      "x": 16.4659489027448,
+      "y": -9.776360036303528,
+      "width": 79.68127490039842,
+      "height": 199.29231619383768
+    }
+  },
+  {
+    "id": "OGN-012",
+    "set": "OGN",
+    "number": "012",
+    "name": "Welcome to the Strawberry Club!",
+    "type": "spell",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 5,
+    "power": 0,
+    "keywords": [
+      "Shield Trigger"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Shield Trigger#CE356B}__(If you got this from your Shield Zone, you may play it immediately for [0] mana.)__\nTap [T] all enemy Units.",
+    "flavor": "\" I was invited to friend's birthday at the Airport\" ~ Edino",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 012/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-012.jpg",
+    "imageCrop": {
+      "x": 9.657714598563647,
+      "y": -3.044945428094797,
+      "width": 73.69196757553429,
+      "height": 184.3123484327681
+    }
+  },
+  {
+    "id": "OGN-013",
+    "set": "OGN",
+    "number": "013",
+    "name": "Girl with a Spinner",
+    "type": "unit",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 5,
+    "power": 5,
+    "keywords": [
+      "Mighty"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "When you play me, destroy all non-{Mighty#6D6E6B} Units. \n__(A unit is Mighty while it has 5+ [M].)__",
+    "flavor": "\"Ilyen egy igazi pörgettyűs lány\" - Matyi",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 013/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-013.jpg",
+    "imageCrop": {
+      "x": 14.811000761675508,
+      "y": -8.143489467948623,
+      "width": 76.56967840735071,
+      "height": 191.5098444282284
+    }
+  },
+  {
+    "id": "OGN-014",
+    "set": "OGN",
+    "number": "014",
+    "name": "Twin Emperors",
+    "type": "unit",
+    "subname": "Lui & MAtyi",
+    "colors": [
+      "Fury",
+      "Body"
+    ],
+    "cost": 6,
+    "power": 7,
+    "keywords": [
+      "Mighty",
+      "Mighty"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "When you play me, choose one:\n- Destroy all non-{Mighty#6D6E6B} Units in play. \n- Your {Mighty#6D6E6B} Units enter Ready. \n__(A unit is Mighty while it has 5+ [M].)__",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 014/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-014.jpg",
+    "imageCrop": {
+      "x": 0.7617407857523572,
+      "y": 5.006465164702918,
+      "width": 98.27188871493153,
+      "height": 76.5683265904383
+    }
+  },
+  {
+    "id": "OGN-015",
+    "set": "OGN",
+    "number": "015",
+    "name": "Faint Memories",
+    "type": "spell",
+    "colors": [
+      "Chaos"
+    ],
+    "cost": 1,
+    "power": 0,
+    "keywords": [
+      "Reaction"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Reaction#21705B}__(Play any time, even before spells and abilities resolve.)__\nWhen you play this, return target Unit with [3][M] or less to its owner's hand.\n",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Kozi",
+    "setInfo": "OGN 015/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-015.jpg",
+    "imageCrop": {
+      "x": 15.94485699141797,
+      "y": 22.749009632346567,
+      "width": 66.22516556291393,
+      "height": 91.08039286124723
+    }
+  },
+  {
+    "id": "OGN-016",
+    "set": "OGN",
+    "number": "016",
+    "name": "1 m³ of humans",
+    "type": "unit",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 1,
+    "power": 3,
+    "keywords": [
+      "Defensive",
+      "Immobile"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Defensive#CE356B}__(When an enemy Unit attacks, you may [T] this to redirect the attack to this Unit.)__\n{Immobile#CE356B}__(This Unit can't attack.)__",
+    "flavor": "- Hány ember fér 1 m³-be? is a recommended pickup line if you want to get girls. ~ VaRon",
+    "rarity": "common",
+    "illustrator": "Chris",
+    "setInfo": "OGN 016/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-016.jpg",
+    "imageCrop": {
+      "x": 12.120174105839377,
+      "y": -7.331195378424665,
+      "width": 76.56967840735071,
+      "height": 191.5098444282284
+    }
+  },
+  {
+    "id": "OGN-017",
+    "set": "OGN",
+    "number": "017",
+    "name": "Swimming Assay",
+    "type": "unit",
+    "colors": [
+      "Order"
+    ],
+    "cost": 1,
+    "power": 1,
+    "keywords": [],
+    "effects": [],
+    "tribes": [],
+    "text": "This is the Description place",
+    "flavor": "Me watching videos of worms going ueein nyough",
+    "rarity": "common",
+    "illustrator": "Anna",
+    "setInfo": "OGN 017/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-017.jpg",
+    "imageCrop": {
+      "x": 6.767097203191734,
+      "y": -6.917118714095061,
+      "width": 76.56967840735071,
+      "height": 191.5098444282284
+    }
+  },
+  {
+    "id": "OGN-018",
+    "set": "OGN",
+    "number": "018",
+    "name": "Hellyeah",
+    "type": "spell",
+    "colors": [
+      "Order"
+    ],
+    "cost": 3,
+    "power": 0,
+    "keywords": [
+      "Action"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Action#21705B}__(Play on your turn or in Combat Phases.)__\nYour next [T] Ability or Spell triggers twice this turn. ",
+    "flavor": "Lowkey Hell yeah - Mollywood",
+    "rarity": "common",
+    "illustrator": "Chris",
+    "setInfo": "OGN 018/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-018.jpg",
+    "imageCrop": {
+      "x": -6.005121524489068,
+      "y": 47.22608531258988,
+      "width": 111.3123041298357,
+      "height": 86.72873766445134
+    }
+  },
+  {
+    "id": "OGN-019",
+    "set": "OGN",
+    "number": "019",
+    "name": "Hellnaw",
+    "type": "spell",
+    "colors": [
+      "Chaos"
+    ],
+    "cost": 1,
+    "power": 0,
+    "keywords": [
+      "Reaction"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Reaction#21705B}__(Play any time, even before spells and abilities resolve.)__\nCounter a Spell that costs no more then [4] and no more then [R].",
+    "flavor": "A Hellnaw - Mollywood",
+    "rarity": "common",
+    "illustrator": "Chris",
+    "setInfo": "OGN 019/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-019.jpg",
+    "imageCrop": {
+      "x": -6.5297262538559915,
+      "y": -3.7984665052099262,
+      "width": 111.3123041298357,
+      "height": 86.72873766445134
+    }
+  },
+  {
+    "id": "OGN-020",
+    "set": "OGN",
+    "number": "020",
+    "name": "Magyar Péter",
+    "type": "unit",
+    "subname": "VaRon",
+    "colors": [
+      "Fury",
+      "Calm"
+    ],
+    "cost": 7,
+    "power": 8,
+    "keywords": [
+      "Flood",
+      "Judgement Day",
+      "Accelerate"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Flood#CE356B}__(I cost [1] less for each [f#d70d1b][c#14ae69] pair in your Mana Zone.)__\n{Judgement Day#6D6E6B} When you play me, destroy all [p#e68111] cards on the Battlefield.\n{Accelerate#21705B}__(You may pay [f#d70d1b][c#14ae69] as an additional cost to have me enter Ready.)__",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 020/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-020.jpg",
+    "imageCrop": {
+      "x": 32.02999355158971,
+      "y": 3.5328237539879104,
+      "width": 38.744672607516456,
+      "height": 96.15381837271795
+    }
+  },
+  {
+    "id": "OGN-021",
+    "set": "OGN",
+    "number": "021",
+    "name": "Will you marry me?",
+    "type": "spell",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 5,
+    "power": 0,
+    "keywords": [
+      "Yes",
+      "Immune",
+      "No",
+      "Party Breaker"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "Your opponent chooses one for you:\n{Yes#21705B} You may summon an Emese [H] Champion Unit from your hand, deck or Grave for no cost and ready it. It's {Immune#6D6E6B} to damage this turn.\n{No#CE356B}: Your Units gain {Party Breaker#CE356B} this turn. __(They can target untapped Units.)__",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Chris",
+    "setInfo": "OGN 021/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-021.jpg",
+    "imageCrop": {
+      "x": 10.745108892552603,
+      "y": -9.33780570866804,
+      "width": 76.56967840735071,
+      "height": 191.5098444282284
+    }
+  },
+  {
+    "id": "OGN-022",
+    "set": "OGN",
+    "number": "022",
+    "name": "Did I ever tell you about Ahsoka Tano?",
+    "type": "spell",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 2,
+    "power": 0,
+    "keywords": [],
+    "effects": [],
+    "tribes": [],
+    "text": "Destroy a Unit with [2][M] Might or less.",
+    "flavor": "And she was a good friend. ",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 022/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-022.jpg",
+    "imageCrop": {
+      "x": -7.737106993189295,
+      "y": -2.9651844102564167,
+      "width": 114.8105625717566,
+      "height": 123.25046145699149
+    }
+  },
+  {
+    "id": "OGN-023",
+    "set": "OGN",
+    "number": "023",
+    "name": "Screaming Chinchillas",
+    "type": "unit",
+    "colors": [
+      "Mind"
+    ],
+    "cost": 2,
+    "power": 2,
+    "keywords": [],
+    "effects": [],
+    "tribes": [],
+    "text": "Whenever this Unit attacks, you may draw [1] card.",
+    "flavor": "Their cries in the night deals psychic damage to anyone nearby. ~ Balu",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "OGN 023/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-023.jpg",
+    "imageCrop": {
+      "x": 17.54933310745496,
+      "y": -6.9982634315380015,
+      "width": 76.56967840735071,
+      "height": 191.5098444282284
+    }
+  },
+  {
+    "id": "OGN-024",
+    "set": "OGN",
+    "number": "024",
+    "name": "Gothitelle",
+    "type": "champion",
+    "subname": "IRISistable",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 4,
+    "power": 4,
+    "keywords": [
+      "Recurring topic",
+      "Unstoppable"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "I cost [1] less for each Whiskey card in your Grave.\n{Recurring topic#6D6E6B}: I'm {Unstoppable#CE356B} while you have a Whiskey card in play. __(This Unit's attack can't be retargeted.)__",
+    "flavor": "Gotta catch em all.",
+    "rarity": "rare",
+    "illustrator": "Lui",
+    "setInfo": "OGN 024/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-024.jpg",
+    "imageCrop": {
+      "x": -3.020910145847234,
+      "y": 4.969208599362618,
+      "width": 106.59724805789084,
+      "height": 83.05501206570798
+    }
+  },
+  {
+    "id": "OGN-025",
+    "set": "OGN",
+    "number": "025",
+    "name": "Wee Bestie",
+    "type": "unit",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 1,
+    "power": 1,
+    "keywords": [
+      "Assault"
+    ],
+    "effects": [],
+    "tribes": [
+      "Whiskey"
+    ],
+    "text": "{Assault#CE356B}__(+1 [M]while I'm an attacker.)__\nMust attack each turn if able.",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Balu",
+    "setInfo": "OGN 025/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-025.jpg",
+    "imageCrop": {
+      "x": 17.105616585491813,
+      "y": -6.684734539314404,
+      "width": 71.0227272727273,
+      "height": 173.50518608907873
+    }
+  },
+  {
+    "id": "OGN-028",
+    "set": "OGN",
+    "number": "028",
+    "name": "Promoting Agent of Hades",
+    "type": "spell",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 3,
+    "power": 0,
+    "keywords": [
+      "Action",
+      "Boon of Athena",
+      "Boon of Poseidon",
+      "Boon of Ares"
+    ],
+    "effects": [],
+    "tribes": [
+      "Videogame"
+    ],
+    "text": "{Action#21705B} Choose a boon for target Unit:\n{Boon of Athena#6D6E6B} Can't be targeted by Spells, +[1][M]\n{Boon of Poseidon#6D6E6B} [T]: Tap an enemy Unit, +[2][M]\n{Boon of Ares#6D6E6B} Can attack untapped Units, +[3][M].",
+    "flavor": "In the name of Hades, Olympus I accept this message.",
+    "rarity": "common",
+    "illustrator": "Chris",
+    "setInfo": "OGN 028/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-028.jpg",
+    "imageCrop": {
+      "x": 23.72889407332983,
+      "y": 11.881685480773548,
+      "width": 58.34305717619606,
+      "height": 145.92290363084385
+    }
+  },
+  {
+    "id": "OGN-029",
+    "set": "OGN",
+    "number": "029",
+    "name": "Promoting Agent of Hades II.",
+    "type": "spell",
+    "colors": [
+      "Mind"
+    ],
+    "cost": 3,
+    "power": 0,
+    "keywords": [
+      "Shield Trigger",
+      "Crescent",
+      "Half",
+      "Full"
+    ],
+    "effects": [],
+    "tribes": [
+      "Videogame"
+    ],
+    "text": "{Shield Trigger#CE356B} Choose 1 Gift of the moon:\n{Crescent#6D6E6B} Morph [5] Units into [1M] Sheeps.\n{Half#6D6E6B} Give [3] enemy Units [-2][M].\n{Full#6D6E6B} Your Shields are unbreakable until your next turn. Banish this.",
+    "flavor": "Moonlight guide us.",
+    "rarity": "uncommon",
+    "illustrator": "Chris",
+    "setInfo": "OGN 029/300",
+    "source": "riftcardmaker",
+    "recycle": 2,
+    "image": "data/img/OGN-029.jpg",
+    "imageCrop": {
+      "x": 6.949061815360813,
+      "y": -8.610119060372671,
+      "width": 76.56967840735071,
+      "height": 191.5098444282284
+    }
+  },
+  {
+    "id": "OGN-045",
+    "set": "OGN",
+    "number": "045",
+    "name": "Darkest Dungeoneers",
+    "type": "unit",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 6,
+    "power": 6,
+    "keywords": [
+      "Defensive",
+      "Vigilance"
+    ],
+    "effects": [],
+    "tribes": [
+      "Videogame"
+    ],
+    "text": "{Defensive#CE356B}__(When an enemy Unit attacks, you may [T] this to redirect the attack to this Unit.)__\n{Vigilance#21705B}__(You may untap this at the end of your turn.)__",
+    "flavor": "Ruin has come to our family.",
+    "rarity": "rare",
+    "illustrator": "Lui",
+    "setInfo": "OGN 179/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-179.jpg",
+    "imageCrop": {
+      "x": 31.37111388421239,
+      "y": 5.294314408832341,
+      "width": 41.186161449752866,
+      "height": 82.5639263685037
+    }
+  },
+  {
+    "id": "OGN-070",
+    "set": "OGN",
+    "number": "070",
+    "name": "Kálmán Imre EuroNight",
+    "type": "unit",
+    "colors": [
+      "Calm"
+    ],
+    "cost": 5,
+    "power": 8,
+    "keywords": [
+      "Slow Start",
+      "Unstoppable",
+      "Deflect 2"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Slow Start#6D6E6B} Enters tapped.\n{Unstoppable#6D6E6B} {Deflect 2#94B131#000000}__(This Unit's attacks can't be retargeted. Opponents must pay [R][R] to choose me with a spell or ability.)__",
+    "flavor": "Three hours late, a kilometer long, and refusing to yield to the storm. Inside, a thousand tired souls find a silent sanctuary.",
+    "rarity": "common",
+    "illustrator": "Domi",
+    "setInfo": "OGN 070/300",
+    "source": "riftcardmaker",
+    "recycle": 3,
+    "image": "data/img/OGN-070.jpg",
+    "imageCrop": {
+      "x": 19.851116635609337,
+      "y": -6.845366124830939,
+      "width": 76.56967840735071,
+      "height": 191.5098444282284
+    }
+  },
+  {
+    "id": "OGN-074",
+    "set": "OGN",
+    "number": "074",
+    "name": "100 Forint",
+    "type": "gear",
+    "subname": "LAci",
+    "colors": [
+      "Fury",
+      "Chaos"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Reaction",
+      "Vigilance"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Reaction#21705B}__(Play any time, even before spells and abilities resolve.)__\n{Vigilance#CE356B}__(You may untap this at the end of your turn.)__\n[T]: You are allowed to say a terrible joke.",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 074/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-074.jpg",
+    "imageCrop": {
+      "x": 4.876544683553454,
+      "y": 14.48799400847297,
+      "width": 94.57854580818024,
+      "height": 73.6906665638264
+    }
+  },
+  {
+    "id": "OGN-120",
+    "set": "OGN",
+    "number": "120",
+    "name": "Captain Tingus",
+    "type": "unit",
+    "subname": "Chris",
+    "colors": [
+      "Mind",
+      "Order"
+    ],
+    "cost": 4,
+    "power": 6,
+    "keywords": [
+      "Press the Attack",
+      "Honour of Ultramar"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Press the Attack#CE356B} Your Units have [+1M].\n{Honour of Ultramar#1B2E6B} Whenever this Unit loses a fight, roll one D6: on a [4+] this Unit survives that fight. ",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 120/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-120.jpg",
+    "imageCrop": {
+      "x": 1.9907166250157002,
+      "y": 6.050466048717486,
+      "width": 98.27188871493153,
+      "height": 76.5683265904383
+    }
+  },
+  {
+    "id": "OGN-124",
+    "set": "OGN",
+    "number": "124",
+    "name": "The 5th Angel",
+    "type": "unit",
+    "colors": [
+      "Mind"
+    ],
+    "cost": 5,
+    "power": 5,
+    "keywords": [
+      "Breaker",
+      "Party Breaker"
+    ],
+    "effects": [],
+    "tribes": [
+      "evangelion"
+    ],
+    "text": "{Double Breaker#CE356B}__(This Unit breaks two Shields.)__\n[T]: I have {Party Breaker#CE356B} next turn.",
+    "flavor": "Patter: BLUE, It's an angel. IT'S AN ANGEL! ",
+    "rarity": "uncommon",
+    "illustrator": "Chris",
+    "setInfo": "OGN 124/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-124.jpg",
+    "imageCrop": {
+      "x": 10.832846377045206,
+      "y": -10.390251980357975,
+      "width": 76.56967840735071,
+      "height": 191.5098444282284
+    }
+  },
+  {
+    "id": "OGN-143",
+    "set": "OGN",
+    "number": "143",
+    "name": "Killer Butt",
+    "type": "unit",
+    "subname": "Vince",
+    "colors": [
+      "Calm",
+      "Body"
+    ],
+    "cost": 4,
+    "power": 6,
+    "keywords": [
+      "Defensive"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Defensive#CE356B}__(When an enemy Unit attacks, you may [T] this to redirect the attack to this Unit.)__\n[T]Tap: You may destroy a Non-Champion enemy Unit.\n",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Vince",
+    "setInfo": "OGN 143/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-143.jpg",
+    "imageCrop": {
+      "x": 4.232228340235227,
+      "y": 22.50066062617065,
+      "width": 94.57854580818024,
+      "height": 73.6906665638264
+    }
+  },
+  {
+    "id": "OGN-169",
+    "set": "OGN",
+    "number": "169",
+    "name": "Burning Carbon Hydra",
+    "type": "unit",
+    "colors": [
+      "Body"
+    ],
+    "cost": 1,
+    "power": 2,
+    "keywords": [
+      "Party Breaker",
+      "Regrowing heads"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Party Breaker#CE356B}__(Can attack untapped Units.)__\n{Regrowing heads#CE356B}__(Has [+1M] for each [p#e68111]Body Rune you have in your Mana Zone.)__",
+    "flavor": "A szénhidra megunta, hogy Vince égeti a szénhidrát.",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 169/300",
+    "source": "riftcardmaker",
+    "recycle": 3,
+    "image": "data/img/OGN-169.jpg",
+    "imageCrop": {
+      "x": 18.257017425593254,
+      "y": -7.786717997045935,
+      "width": 76.56967840735071,
+      "height": 191.5098444282284
+    }
+  },
+  {
+    "id": "OGN-172",
+    "set": "OGN",
+    "number": "172",
+    "name": "Cowtrix",
+    "type": "unit",
+    "subname": "Cow-Poop Demonhunters",
+    "colors": [
+      "Fury",
+      "Order"
+    ],
+    "cost": 3,
+    "power": 6,
+    "keywords": [
+      "Cow-Poop Demonhunters",
+      "Mighty",
+      "Rumi",
+      "Mira",
+      "Zoe"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Cow-Poop Demonhunters#CE356B} When you play me, destroy all non-{Mighty#6D6E6B} [C#930090] Chaos cards. Choose 2:\n{Rumi#930090}:  Draw \"Golden\" from the Deck or Graveyard.\n{Mira#CE356B}: Ready me.\n {Zoe#21705B}: Channel [P][P][P].",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 172/300",
+    "source": "riftcardmaker",
+    "recycle": 3,
+    "image": "data/img/OGN-172.jpg",
+    "imageCrop": {
+      "x": 6.777956920682701,
+      "y": 17.204646587781152,
+      "width": 84.99542163026533,
+      "height": 66.22399637557116
+    }
+  },
+  {
+    "id": "OGN-177",
+    "set": "OGN",
+    "number": "177",
+    "name": "GOLDEN",
+    "type": "spell",
+    "colors": [
+      "Order"
+    ],
+    "cost": 4,
+    "power": 0,
+    "keywords": [
+      "Seal the honmoon"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Seal the honmoon#CE356B} Your opponent's Shield Trigger abilities can't trigger until your next turn. \nIf you have \"Cowtrix\" played on the Battlefield when you play this, Draw [1].",
+    "flavor": "We're goin' up, up, up, it's our cowbell...",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 177/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-177.jpg",
+    "imageCrop": {
+      "x": 11.511477062652894,
+      "y": -7.557217829401389,
+      "width": 76.56967840735071,
+      "height": 191.5098444282284
+    }
+  },
+  {
+    "id": "OGN-178",
+    "set": "OGN",
+    "number": "178",
+    "name": "The Chronicler",
+    "type": "unit",
+    "colors": [
+      "Order"
+    ],
+    "cost": 3,
+    "power": 4,
+    "keywords": [],
+    "effects": [],
+    "tribes": [],
+    "text": "",
+    "flavor": "",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "OGN 178/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-178.jpg",
+    "imageCrop": {
+      "x": 9.695374386350379,
+      "y": 12.935662124387632,
+      "width": 79.68127490039842,
+      "height": 147.67129122943544
+    }
+  },
+  {
+    "id": "OGN-183",
+    "set": "OGN",
+    "number": "183",
+    "name": "The Dealmaker",
+    "type": "unit",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 7,
+    "power": 7,
+    "keywords": [],
+    "effects": [],
+    "tribes": [],
+    "text": "",
+    "flavor": "",
+    "rarity": "epic",
+    "illustrator": "Lui",
+    "setInfo": "OGN 183/300",
+    "source": "riftcardmaker",
+    "recycle": 2,
+    "image": "data/img/OGN-183.jpg",
+    "imageCrop": {
+      "x": 1.1055716498008545,
+      "y": 10.784172119169611,
+      "width": 98.27188871493153,
+      "height": 76.5683265904383
+    }
+  },
+  {
+    "id": "OGN-187",
+    "set": "OGN",
+    "number": "187",
+    "name": "Pot of Greed",
+    "type": "spell",
+    "subname": "Chris & Lui",
+    "colors": [
+      "Mind",
+      "Order"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [],
+    "effects": [],
+    "tribes": [],
+    "text": "\"I activate Pot of Greed, which allows me to draw 2 cards from my deck!\" \nDraw [2] cards. ",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 187/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-187.jpg",
+    "imageCrop": {
+      "x": 1.9644941626983288,
+      "y": 21.044901172613418,
+      "width": 94.57854580818024,
+      "height": 73.6906665638264
+    }
+  },
+  {
+    "id": "OGN-L-matyi",
+    "set": "OGN",
+    "number": "L-matyi",
+    "name": "Matyi | Always on time",
+    "type": "legend",
+    "owners": [
+      "Matyi"
+    ],
+    "colors": [
+      "Body",
+      "Chaos"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Obsessed"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Obsessed#CE356B}: Zsófi can be your [H] Champion Unit.",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Matyi",
+    "setInfo": "OGN 007/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-L-matyi.jpg",
+    "imageCrop": {
+      "x": 0.728126702390015,
+      "y": 21.06188202788927,
+      "width": 85.94172464640963,
+      "height": 68.53888589932312
+    }
+  },
+  {
+    "id": "RUN-Chaos-anna",
+    "set": "RUN",
+    "number": "Chaos-anna",
+    "name": "Chaos Rune",
+    "type": "rune",
+    "owners": [
+      "Anna"
+    ],
+    "colors": [
+      "Chaos"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [],
+    "effects": [],
+    "tribes": [],
+    "text": "",
+    "flavor": "",
+    "rarity": "uncommon",
+    "illustrator": "Anna",
+    "setInfo": "OGN-Anna",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/RUN-Chaos-anna.jpg",
+    "imageCrop": {
+      "x": -6.361813400204727,
+      "y": -0.6726312579798569,
+      "width": 112.7737072296068,
+      "height": 105.37221762604045
+    }
+  },
+  {
+    "id": "RUN-Mind-chris",
+    "set": "RUN",
+    "number": "Mind-chris",
+    "name": "Mind Rune",
+    "type": "rune",
+    "owners": [
+      "Chris"
+    ],
+    "colors": [
+      "Mind"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [],
+    "effects": [],
+    "tribes": [],
+    "text": "",
+    "flavor": "",
+    "rarity": "uncommon",
+    "illustrator": "Chris",
+    "setInfo": "OGN-Chris",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/RUN-Mind-chris.jpg",
+    "imageCrop": {
+      "x": -3.9571425547767323,
+      "y": 5.93758653704398,
+      "width": 106.59724805789084,
+      "height": 83.05501206570798
+    }
+  },
+  {
+    "id": "RUN-Order-anna",
+    "set": "RUN",
+    "number": "Order-anna",
+    "name": "Order Rune",
+    "type": "rune",
+    "owners": [
+      "Anna"
+    ],
+    "colors": [
+      "Order"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [],
+    "effects": [],
+    "tribes": [],
+    "text": "",
+    "flavor": "",
+    "rarity": "uncommon",
+    "illustrator": "Anna",
+    "setInfo": "OGN-Anna",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/RUN-Order-anna.jpg",
+    "imageCrop": {
+      "x": -7.651135276246232,
+      "y": 4.530548833850681,
+      "width": 113.47753020486343,
+      "height": 88.41576881265463
     }
   },
   {
@@ -153,6 +1520,7 @@
     "setInfo": "Token 001",
     "source": "riftcardmaker",
     "token": true,
+    "recycle": 0,
     "image": "data/img/TKN-001.jpg",
     "imageCrop": {
       "x": 20.50625266261928,
@@ -182,6 +1550,7 @@
     "setInfo": "Token 002",
     "source": "riftcardmaker",
     "token": true,
+    "recycle": 0,
     "image": "data/img/TKN-002.jpg",
     "imageCrop": {
       "x": 22.371997918926436,

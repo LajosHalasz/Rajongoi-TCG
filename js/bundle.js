@@ -42,7 +42,9 @@
     unit: { label: "Unit", hex: "#4f8f3a" },
     spell: { label: "Spell", hex: "#2f7fa8" },
     gear: { label: "Gear", hex: "#7a6a55" },
-    signature: { label: "Signature", hex: "#7b3fa6" }
+    signature: { label: "Signature", hex: "#7b3fa6" },
+    token: { label: "Token", hex: "#5d5d5d" },
+    rune: { label: "Rune", hex: "#8a7a63" }
   };
   var KEYWORDS = {
     "Shield Trigger": { hex: "#CE356B", reminder: "If you got this from your Shield Zone, you may play it immediately for [0] mana." },
@@ -53,6 +55,9 @@
     "Haste": { hex: "#D9822B", reminder: "Can attack the turn it is played." },
     "Being \xC1ron": { hex: "#6D6E6B", reminder: "Table rule - resolved in real life, not by the game." },
     "Breaker": { hex: "#B03A2E", reminder: "Breaks 2 shields instead of 1." },
+    "Party Breaker": { hex: "#CE356B", reminder: "Can attack untapped Units." },
+    "Slow Start": { hex: "#6D6E6B", reminder: "Enters tapped." },
+    "Unstoppable": { hex: "#6D6E6B", reminder: "This Unit's attacks can't be redirected." },
     "Action": { hex: "#6D5BD0", reminder: "Can also be played during combat." },
     "Reaction": { hex: "#2E8B9A", reminder: "Can be played during combat, even in response to another spell." }
   };
@@ -67,6 +72,26 @@
     }
     return DB;
   }
+  function mergeSources(dbCards, imported) {
+    const byId = new Map(dbCards.map((c) => [c.id, c]));
+    for (const c of imported) {
+      const db = byId.get(c.id);
+      const m = { ...db || {}, ...c };
+      if (db && ["signature", "champion"].includes(db.type) && ["unit", "spell", "gear"].includes(c.type)) {
+        m.type = db.type;
+        if (db.sigType) m.sigType = db.sigType;
+      }
+      if (db && !(c.effects || []).length) m.effects = db.provisionalEffect ? [] : db.effects || [];
+      if (db && db.provisionalEffect && c.uses == null) delete m.uses;
+      if (db) m.keywords = [.../* @__PURE__ */ new Set([...c.keywords || [], ...db.keywords || []])];
+      delete m.provisional;
+      delete m.provisionalEffect;
+      delete m.placeholder;
+      m.wip = false;
+      byId.set(c.id, m);
+    }
+    return [...byId.values()];
+  }
   function getDef(id) {
     const d = DB.get(id);
     if (!d) throw new Error(`Unknown card id: ${id}`);
@@ -77,6 +102,9 @@
   }
   function allCards() {
     return [...DB.values()];
+  }
+  function artPool() {
+    return allCards().filter((c) => c.image);
   }
   function normalize(c) {
     const def = {
@@ -95,7 +123,10 @@
     def.colors = (def.colors || []).map(cap);
     def.type = (def.type || "unit").toLowerCase();
     if (def.type === "signature" && !def.sigType) def.sigType = "spell";
+    def.recycle = def.recycle || 0;
     def.text = def.text && def.text.trim() ? def.text : describe(def);
+    if (def.provisionalEffect) def.text = `{Provisional#7A7A7A}__(placeholder effect until this card is designed)__
+${def.text}`;
     return def;
   }
   var cap = (s) => s ? s[0].toUpperCase() + s.slice(1).toLowerCase() : s;
@@ -111,6 +142,8 @@
         return "gear";
       case "legend":
         return "legend";
+      case "rune":
+        return "rune";
       case "signature":
         return def.sigType || "spell";
       default:
@@ -118,10 +151,12 @@
     }
   }
   function baseName(name) {
-    return String(name || "").split(",")[0].trim().toLowerCase();
+    return String(name || "").split(/[|,]/)[0].trim().toLowerCase();
   }
   function championMatchesLegend(champ, legend) {
-    return champ && legend && baseName(champ.name) === baseName(legend.name);
+    if (!champ || !legend) return false;
+    const names = [legend.name, ...legend.championNames || []].map(baseName);
+    return names.includes(baseName(champ.name));
   }
   function signatureMatchesLegend(sig, legend) {
     if (!sig || !legend) return false;
@@ -160,7 +195,8 @@
   function describeEffect(e, def) {
     const t = TARGET_TEXT[e.target] || "target Unit";
     const n = e.amount ?? 1;
-    const pw = e.maxPower != null ? ` with [M]${e.maxPower} or less` : "";
+    const f = e.filter || {};
+    const pw = (e.maxPower != null ? ` with [M]${e.maxPower} or less` : "") + (f.notType ? ` (not ${f.notType === "champion" ? "a Champion" : f.notType})` : "") + (f.color ? ` (${f.color} only)` : "") + (f.notColor ? ` (non-${f.notColor})` : "");
     const dur = e.duration === "permanent" ? "" : " this turn";
     switch (e.do) {
       case "draw":
@@ -169,7 +205,6 @@
         return `Destroy ${t}${pw}.`;
       case "buff": {
         if (e.on === "static") {
-          const f = e.filter || {};
           const who = `Your ${f.color ? f.color + " " : ""}Units${f.keyword ? " with " + f.keyword : ""}`;
           return `${who} have ${n >= 0 ? "+" : ""}${n} [M].`;
         }
@@ -195,6 +230,10 @@
         return `Return a Unit from your Graveyard to your hand.`;
       case "grantKeyword":
         return `Give ${t} ${e.keyword}${dur}.`;
+      case "tutor":
+        return `Search your deck for a ${e.kind === "spell" ? "Spell" : "Unit"}${e.name ? ` named ${e.name}` : ""}, put it into your hand, then shuffle.`;
+      case "mightPerRune":
+        return `Has [+${n}M] for each ${e.color} rune in your Mana Zone.`;
       case "token":
         return `Create ${n > 1 ? n + " " : "a "}${e.tokenName || "token"}${n > 1 ? "s" : ""}.`;
       default:
@@ -219,6 +258,7 @@
       groups.get(on).push(describeEffect(e, def));
     }
     for (const [on, parts] of groups) lines.push((TRIGGER_TEXT[on] || (() => ""))(def) + parts.join(" "));
+    if (def.afterCast === "deckTop") lines.push("Then put this card on top of your deck.");
     return lines.join("\n");
   }
 
@@ -257,7 +297,7 @@
     const ids = Object.keys(deck.cards || {}).filter(hasDef);
     const defs = ids.map(getDef);
     for (const d of defs) {
-      if (d.type === "legend" || d.type === "token") errors.push(`${d.name} can't be in the main deck.`);
+      if (d.type === "legend" || d.type === "token" || d.type === "rune") errors.push(`${d.name} can't be in the main deck.`);
       if (d.type === "signature") {
         if (!signatureMatchesLegend(d, legend)) errors.push(`${d.name} is a Signature card of another Legend.`);
       } else if (d.colors.some((c) => !legend.colors.includes(c))) {
@@ -305,9 +345,7 @@
       getJson("data/effects.json", {}),
       getJson("data/decks.json", [])
     ]);
-    const byId = new Map(placeholders.map((c) => [c.id, c]));
-    for (const c of imported) byId.set(c.id, c);
-    setCardDb([...byId.values()], overrides);
+    setCardDb(mergeSources(placeholders, imported), overrides);
     premade = decks;
     return allCards();
   }
@@ -348,9 +386,17 @@
       (_, label, bg, fg) => `<span class="kw" style="background:#${bg};color:#${fg || "fff"}">${label.trim()}</span>`
     );
     h = h.replace(/__(.+?)__/gs, "<i>$1</i>");
+    h = h.replace(/\[([A-Za-z])#([0-9a-fA-F]{6})\]/g, (_, k, c) => `<span class="ico" style="background:#${c}">${k.toUpperCase()}</span>`);
     h = h.replace(/\[([TMR])\]/g, (_, k) => ICONS[k]);
-    h = h.replace(/\[(\d+)\]/g, '<span class="ico ico-num">$1</span>');
+    h = h.replace(/\[P\]/g, '<span class="ico" title="Power rune">P</span>');
+    h = h.replace(/\[\+(\d+)M\]/g, "+$1 " + ICONS.M);
+    h = h.replace(/\[(\d+\+?)\]/g, '<span class="ico ico-num">$1</span>');
     return h.split("\n").map((l) => l.trim() ? `<p>${l}</p>` : "").join("");
+  }
+  function hash(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+    return h >>> 0;
   }
   var GLYPH = { unit: "\u2694", champion: "\u2605", spell: "\u2726", gear: "\u2699", legend: "\u265B", signature: "\u272A", token: "\u265F" };
   function colorHex(def) {
@@ -367,6 +413,18 @@
     }
     const c1 = colorHex(def);
     const c2 = def.colors[1] ? COLORS[def.colors[1]].hex : "#1d1a16";
+    const pool = artPool();
+    if (pool.length) {
+      const same = pool.filter((c) => c.colors.some((x) => def.colors.includes(x)));
+      const src = same.length ? same : pool;
+      const h = hash(def.id);
+      const pick2 = src[h % src.length];
+      const zoom = 1.25 + (h >> 4) % 50 / 100;
+      const px = (h >> 8) % 100, py = (h >> 12) % 100;
+      return `<div class="art-ph borrowed" style="--c1:${c1};--c2:${c2}">
+      <img class="art-img" src="${esc(pick2.image)}" alt="" loading="lazy" style="object-position:${px}% ${py}%;transform:scale(${zoom.toFixed(2)})${h & 1 ? " scaleX(-1)" : ""}">
+      <span class="ph-label">placeholder art</span></div>`;
+    }
     const initials = def.name.replace(/[^A-Za-zÀ-ž ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
     return `<div class="art-ph" style="--c1:${c1};--c2:${c2}">
     <span class="ph-glyph">${GLYPH[def.type] || "\u2726"}</span>
@@ -390,15 +448,18 @@
     const tribes = (def.tribes || []).slice(0, 2).map((t) => `<span class="tribe">${esc(t)}</span>`).join("");
     const domains = def.colors.map((c) => `<span class="domain" style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join("");
     const badges = opts.badges || "";
+    const prov = def.provisional || [];
     return `<div class="${cls}" ${data} style="--domain:${colorHex(def)};--type:${typeHex}">
     <div class="art">${artHtml(def)}</div>
     <div class="frame"></div>
-    ${def.type === "legend" ? "" : `<div class="cost"><span>${def.cost}</span></div>`}
-    ${showMight ? `<div class="might ${mightCls}"><span class="might-ico">\u26E8</span><span class="might-val">${might}</span></div>` : ""}
+    ${def.type === "legend" || def.type === "rune" ? "" : `<div class="cost ${prov.includes("cost") ? "prov" : ""}" title="${prov.includes("cost") ? "Provisional cost" : "Cost"}"><span>${opts.cost ?? def.cost}</span></div>`}
+    ${def.recycle ? `<div class="recycle" title="Recycle ${def.recycle} rune(s) of this color"><i>\u21BB</i>${def.recycle}</div>` : ""}
+    ${showMight ? `<div class="might ${mightCls} ${prov.includes("might") ? "prov" : ""}"><span class="might-ico">\u26E8</span><span class="might-val">${might}</span></div>` : ""}
+    ${def.wip || def.placeholder ? `<div class="wip-tag">${def.filler ? "FILLER" : def.placeholder ? "PLACEHOLDER" : "WIP"}</div>` : ""}
     <div class="typeline"><span class="domains">${domains}</span><span class="type-badge">${esc(typeLabel(def))}</span>${tribes}</div>
-    <div class="namebar"><span style="${nameSize(def.name, opts.mini)}">${esc(def.name)}</span></div>
-    <div class="textbox">${markup(def.text)}${def.flavor ? `<div class="flavor">${esc(def.flavor)}</div>` : ""}</div>
-    <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || (def.placeholder ? "placeholder" : ""))}</span></div>
+    <div class="namebar"><span style="${nameSize(def.name, opts.mini)}">${esc(def.name)}</span>${def.subname && !opts.mini ? `<small>${esc(def.subname)}</small>` : ""}</div>
+    <div class="textbox">${def.text ? markup(def.text) : `<p class="wip-text">Design in progress${def.purpose ? ` \u2014 ${esc(def.purpose)}` : ""}.</p>`}${def.flavor ? `<div class="flavor">${esc(def.flavor)}</div>` : ""}</div>
+    <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || (def.owners || []).join(" / "))}</span></div>
     ${badges}
   </div>`;
   }
@@ -412,8 +473,8 @@
   }
 
   // js/ui/collection.js
-  var SET_NAMES = { OGN: "OGN \u2014 Origins", DND: "DND", TKN: "Tokens" };
-  var TYPE_ORDER = ["legend", "champion", "unit", "spell", "gear", "signature", "token"];
+  var SET_NAMES = { OGN: "OGN 2026-01", DND: "DND \u2014 DLC", BAS: "Fillers", TKN: "Tokens", RUN: "Runes" };
+  var TYPE_ORDER = ["legend", "champion", "unit", "spell", "gear", "signature", "token", "rune"];
   var sortCards = (a, b) => a.set.localeCompare(b.set) || String(a.number).localeCompare(String(b.number));
   function showCardModal(def) {
     const m = document.createElement("div");
@@ -425,9 +486,12 @@
       <dt>Name</dt><dd><b>${esc(def.name)}</b></dd>
       <dt>Type</dt><dd>${esc(TYPE_INFO[def.type]?.label || def.type)}${def.sigType ? " (" + def.sigType + ")" : ""}</dd>
       <dt>Colors</dt><dd>${def.colors.join(" / ") || "Neutral"}</dd>
-      <dt>Cost / Might</dt><dd>${def.cost} / ${kindOf(def) === "unit" ? def.power : "\u2014"}</dd>
+      <dt>Cost / Might / Recycle</dt><dd>${def.cost} / ${kindOf(def) === "unit" ? def.power : "\u2014"} / ${def.recycle || 0}${def.provisional ? ` <span class="muted">(provisional: ${def.provisional.join(", ")})</span>` : ""}</dd>
+      ${def.owners?.length ? `<dt>Deck of</dt><dd>${esc(def.owners.join(" / "))}</dd>` : ""}
+      ${def.purpose ? `<dt>Purpose</dt><dd>${esc(def.purpose)}</dd>` : ""}
+      <dt>Status</dt><dd>${def.image ? "Finished (with artwork)" : def.filler ? "Filler card (completes short decks)" : def.placeholder ? "Placeholder" : def.wip ? "Work in progress (FLAG)" : "Designed"}${def.provisionalEffect ? " \xB7 provisional effect" : ""}</dd>
       <dt>Keywords</dt><dd>${esc(kws)}</dd>
-      <dt>Card id</dt><dd><code>${esc(def.id)}</code> ${def.placeholder ? '<span class="muted">(placeholder)</span>' : ""}</dd>
+      <dt>Card id</dt><dd><code>${esc(def.id)}</code></dd>
       <dt>Game logic</dt><dd><code style="font-size:12px;white-space:pre-wrap">${esc(JSON.stringify(def.effects || []))}</code></dd>
       <dd style="margin-top:14px"><button class="close">Close</button></dd>
     </dl></div></div>`;
@@ -436,26 +500,35 @@
     });
     document.body.appendChild(m);
   }
-  var filt = { types: /* @__PURE__ */ new Set(), colors: /* @__PURE__ */ new Set(), q: "" };
+  var filt = { types: /* @__PURE__ */ new Set(), colors: /* @__PURE__ */ new Set(), owner: "", status: "", q: "" };
   function renderCollection(app2, set) {
     const cards = allCards();
-    const ORDER = ["OGN", "DND", "TKN"];
+    const ORDER = ["OGN", "DND", "TKN", "RUN", "BAS"];
     const rank = (x) => ORDER.indexOf(x) + 1 || 50;
     const sets = [...new Set(cards.map((c) => c.set))].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
     if (!sets.includes(set)) set = sets[0];
     const inSet = cards.filter((c) => c.set === set).sort(sortCards);
     const types = TYPE_ORDER.filter((t) => inSet.some((c) => c.type === t));
+    const owners = [...new Set(inSet.flatMap((c) => c.owners || []))].sort((a, b) => a.localeCompare(b));
+    if (filt.owner && !owners.includes(filt.owner)) filt.owner = "";
+    const status = (c) => c.image ? "art" : c.wip || c.placeholder ? "wip" : "designed";
     const draw = () => {
-      const shown = inSet.filter((c) => (!filt.types.size || filt.types.has(c.type)) && (!filt.colors.size || c.colors.some((x) => filt.colors.has(x))) && (!filt.q || (c.name + " " + c.text).toLowerCase().includes(filt.q.toLowerCase())));
-      const real = inSet.filter((c) => !c.placeholder).length;
+      const shown = inSet.filter((c) => (!filt.types.size || filt.types.has(c.type)) && (!filt.colors.size || c.colors.some((x) => filt.colors.has(x))) && (!filt.owner || (c.owners || []).includes(filt.owner)) && (!filt.status || status(c) === filt.status) && (!filt.q || (c.name + " " + c.text).toLowerCase().includes(filt.q.toLowerCase())));
+      const nArt = inSet.filter((c) => status(c) === "art").length;
+      const nWip = inSet.filter((c) => status(c) === "wip").length;
       app2.innerHTML = `<div class="page">
       <div class="tabs">${sets.map((s) => `<button class="${s === set ? "active" : ""}" data-set="${s}">${esc(SET_NAMES[s] || s)} <span class="muted">(${cards.filter((c) => c.set === s).length})</span></button>`).join("")}</div>
       <div class="filters">
         ${types.map((t) => `<span class="chip ${filt.types.has(t) ? "on" : ""}" data-type="${t}"><span class="dot" style="background:${TYPE_INFO[t]?.hex || "#777"}"></span>${TYPE_INFO[t]?.label || "Token"}</span>`).join("")}
         <span style="width:10px"></span>
         ${Object.entries(COLORS).map(([k, v]) => `<span class="chip ${filt.colors.has(k) ? "on" : ""}" data-color="${k}"><span class="dot" style="background:${v.hex}"></span>${k}</span>`).join("")}
+        ${owners.length ? `<select id="owner"><option value="">Every deck</option>${owners.map((o) => `<option ${o === filt.owner ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>` : ""}
+        <select id="status"><option value="">Any status</option>
+          <option value="art" ${filt.status === "art" ? "selected" : ""}>With artwork</option>
+          <option value="designed" ${filt.status === "designed" ? "selected" : ""}>Designed (FLAG off)</option>
+          <option value="wip" ${filt.status === "wip" ? "selected" : ""}>Work in progress</option></select>
         <input type="search" placeholder="Search\u2026" value="${esc(filt.q)}" id="q">
-        <span class="muted">${shown.length} shown \xB7 ${real} finished, ${inSet.length - real} placeholder</span>
+        <span class="muted">${shown.length} shown \xB7 ${nArt} with art \xB7 ${nWip} WIP</span>
       </div>
       <div class="grid">${shown.map((c) => cardHtml(c, { size: "md" })).join("") || '<p class="muted">No cards match.</p>'}</div>
     </div>`;
@@ -468,6 +541,14 @@
         toggle(filt.colors, b.dataset.color);
         draw();
       });
+      if (app2.querySelector("#owner")) app2.querySelector("#owner").onchange = (e) => {
+        filt.owner = e.target.value;
+        draw();
+      };
+      app2.querySelector("#status").onchange = (e) => {
+        filt.status = e.target.value;
+        draw();
+      };
       const q = app2.querySelector("#q");
       q.oninput = () => {
         filt.q = q.value;
@@ -555,7 +636,7 @@
       if (!draft.legend) return [];
       const L = getDef(draft.legend);
       return allCards().filter((c) => {
-        if (c.type === "legend" || c.type === "token") return false;
+        if (c.type === "legend" || c.type === "token" || c.type === "rune") return false;
         if (c.type === "signature") return signatureMatchesLegend(c, L);
         return c.colors.every((x) => L.colors.includes(x));
       }).sort((a, b) => a.cost - b.cost || sortCards(a, b));
@@ -789,13 +870,22 @@
   function hasKeyword(s, inst, kw) {
     const d = getDef(inst.id);
     if ((d.keywords || []).includes(kw)) return true;
+    if (kw === "Unstoppable" && d.unstoppableIfTribe) {
+      const p = s.players[inst.owner];
+      if ([...p.battle, ...p.gear].some((c) => (getDef(c.id).tribes || []).includes(d.unstoppableIfTribe))) return true;
+    }
     return inst.mods.some((m) => m.keyword === kw);
   }
+  var isMighty = (s, u) => power(s, u) >= 5;
   function power(s, inst, opts = {}) {
     const d = getDef(inst.id);
-    let p = d.power || 0;
+    let p = inst.morph ?? (d.power || 0);
     for (const m of inst.mods) if (m.power && !(opts.ignoreTemp && m.until)) p += m.power;
     const owner = s.players[inst.owner];
+    if (inst.morph == null) for (const e of d.effects || []) {
+      if (e.on === "static" && e.do === "mightPerRune") p += owner.mana.filter((r) => r.color === e.color).length * (e.amount ?? 1);
+      if (e.on === "static" && e.do === "mightPerShield") p += owner.shields.length * (e.amount ?? 1);
+    }
     for (const src of staticSources(owner)) {
       for (const e of getDef(src.id).effects || []) {
         if (e.on !== "static" || e.do !== "buff") continue;
@@ -814,26 +904,50 @@
   function canAttackNow(s, inst) {
     return !inst.tapped && (!inst.sick || inst.fast || hasKeyword(s, inst, "Haste"));
   }
+  var canAttackWith = (s, u) => canAttackNow(s, u) && !hasKeyword(s, u, "Immobile");
+  function effectiveCost(s, pi, d) {
+    const r = d.costReduction;
+    if (!r) return d.cost;
+    const p = s.players[pi];
+    let n = 0;
+    if (r.perRunePair) n += Math.min(...r.perRunePair.map((c) => p.mana.filter((x) => x.color === c).length));
+    if (r.perGraveTribe) n += p.graveyard.filter((c) => (getDef(c.id).tribes || []).includes(r.perGraveTribe)).length;
+    return Math.max(0, d.cost - n);
+  }
   function untappedRunes(p) {
     return p.mana.filter((r) => !r.tapped);
   }
-  function canAfford(p, cost, colors) {
+  var matches = (colors) => (r) => !colors || !colors.length || colors.includes(r.color);
+  function canAfford(p, cost, colors, recycle = 0) {
+    if (recycle > 0 && p.mana.filter(matches(colors)).length < recycle) return false;
     if (!cost) return true;
     const free = untappedRunes(p);
     if (free.length < cost) return false;
     if (colors && colors.length) return free.some((r) => colors.includes(r.color));
     return true;
   }
-  function payCost(s, p, cost, colors) {
-    if (!cost) return true;
-    if (!canAfford(p, cost, colors)) return false;
+  var affordDef = (s, p, d) => canAfford(p, effectiveCost(s, p.idx, d), d.colors, d.recycle || 0);
+  function payCost(s, p, cost, colors, recycle = 0) {
+    if (!canAfford(p, cost, colors, recycle)) return false;
+    if (cost) tapRunes(p, cost, colors);
+    if (recycle > 0) {
+      const pool = p.mana.filter(matches(colors)).sort((a, b) => b.tapped - a.tapped).slice(0, recycle);
+      for (const r of pool) {
+        p.mana.splice(p.mana.indexOf(r), 1);
+        r.tapped = false;
+        p.manaDeck.push(r);
+      }
+      log(s, `${p.name} recycles ${recycle} rune${recycle > 1 ? "s" : ""}.`);
+    }
+    return true;
+  }
+  function tapRunes(p, cost, colors) {
     const free = untappedRunes(p);
     const chosen = [];
     if (colors && colors.length) chosen.push(free.find((r) => colors.includes(r.color)));
     const rest = free.filter((r) => !chosen.includes(r)).sort((a, b) => (colors?.includes(a.color) ? 1 : 0) - (colors?.includes(b.color) ? 1 : 0));
     while (chosen.length < cost) chosen.push(rest.shift());
     chosen.forEach((r) => r.tapped = true);
-    return true;
   }
   function channel(s, p, n, tapped = false) {
     let got = 0;
@@ -846,9 +960,6 @@
     if (got) log(s, `${p.name} channels ${got} rune${got > 1 ? "s" : ""}.`);
   }
   var SINGLE_TARGETS = /* @__PURE__ */ new Set(["enemyUnit", "friendlyUnit", "anyUnit", "enemyTappedUnit", "enemyGear"]);
-  function targetSpec(def, trigger = "play") {
-    return (def.effects || []).find((e) => (e.on || "play") === trigger && SINGLE_TARGETS.has(e.target)) || null;
-  }
   function listTargets(s, pi, spec) {
     if (!spec) return [];
     const me = s.players[pi], op = s.players[other(pi)];
@@ -872,7 +983,19 @@
         return [];
     }
     if (spec.maxPower != null) pool = pool.filter((u) => power(s, u) <= spec.maxPower);
+    if (spec.minPower != null) pool = pool.filter((u) => power(s, u) >= spec.minPower);
+    if (spec.filter) pool = pool.filter((u) => matchFilter(u, spec.filter));
+    pool = pool.filter((u) => u.owner === pi || !hasKeyword(s, u, "Elusive"));
     return pool.map((u) => u.uid);
+  }
+  function matchFilter(u, f) {
+    if (!f) return true;
+    const d = getDef(u.id);
+    if (f.color && !d.colors.includes(f.color)) return false;
+    if (f.notColor && d.colors.includes(f.notColor)) return false;
+    if (f.type && d.type !== f.type) return false;
+    if (f.notType && d.type === f.notType) return false;
+    return true;
   }
   function resolveTargets(s, pi, source, e, targetUid, subject) {
     const me = s.players[pi], op = s.players[other(pi)];
@@ -893,7 +1016,7 @@
         return [];
     }
     if (!targetUid) return [];
-    if (!listTargets(s, pi, { ...e, maxPower: null }).includes(targetUid)) return [];
+    if (!listTargets(s, pi, { ...e, maxPower: null, filter: null }).includes(targetUid)) return [];
     const f = findInst(s, targetUid);
     return f ? [f.inst] : [];
   }
@@ -902,6 +1025,26 @@
     if (p.championSlot) out.push({ inst: p.championSlot, from: "championSlot" });
     if (p.signatureSlot) out.push({ inst: p.signatureSlot, from: "signatureSlot" });
     return out;
+  }
+  function modeChoices(d) {
+    if (!d.modes || !d.modes.length || d.opponentChooses) return [null];
+    const k = Math.min(d.chooseModes || 1, d.modes.length);
+    const idx = d.modes.map((_, i) => i);
+    const out = [];
+    const rec = (start, acc) => {
+      if (acc.length === k) {
+        out.push(acc);
+        return;
+      }
+      for (let i = start; i < idx.length; i++) rec(i + 1, [...acc, i]);
+    };
+    rec(0, []);
+    return out;
+  }
+  function playEffects(d, modes) {
+    const base = effectsOn(d, "play");
+    if (!modes || !d.modes) return base;
+    return [...base, ...modes.flatMap((i) => (d.modes[i].effects || []).map((e) => ({ on: "play", ...e })))];
   }
   function playOptions(s, pi, mode) {
     const p = s.players[pi];
@@ -916,16 +1059,20 @@
         const kws = d.keywords || [];
         if (!(kws.includes("Reaction") || kws.includes("Action") && s.stack.length === 0)) continue;
       }
-      if (!canAfford(p, d.cost, d.colors)) continue;
+      if (d.requiresStack && !s.stack.some((it) => it.controller !== pi)) continue;
+      if (!affordDef(s, p, d)) continue;
       const dupKey = inst.id + (p.hand.includes(inst) ? "h" : "s");
       if (seen.has(dupKey)) continue;
       seen.add(dupKey);
-      acts.push(...withTargets(s, pi, d, { type: "play", uid: inst.uid }, k === "spell"));
+      for (const m of modeChoices(d)) {
+        acts.push(...withTargets(s, pi, d, { type: "play", uid: inst.uid, ...m ? { modes: m } : {} }, k === "spell", "play", m));
+      }
     }
     return acts;
   }
-  function withTargets(s, pi, d, base, required, trigger = "play") {
-    const spec = targetSpec(d, trigger);
+  function withTargets(s, pi, d, base, required, trigger = "play", modes = null) {
+    const effs = trigger === "play" ? playEffects(d, modes) : effectsOn(d, trigger);
+    const spec = effs.find((e) => SINGLE_TARGETS.has(e.target)) || null;
     if (!spec) return [base];
     const ts = listTargets(s, pi, spec);
     if (!ts.length) return required ? [] : [base];
@@ -934,9 +1081,12 @@
   function activateOptions(s, pi) {
     const p = s.players[pi];
     const acts = [];
-    for (const g of p.gear) {
+    for (const g of [...p.gear, ...p.battle]) {
       const d = getDef(g.id);
-      if (g.tapped || !(d.effects || []).some((e) => e.on === "activate")) continue;
+      if (!(d.effects || []).some((e) => e.on === "activate")) continue;
+      if (d.activateNoTap) {
+        if (g.activatedTurn === s.turn) continue;
+      } else if (g.tapped || p.battle.includes(g) && !canAttackNow(s, g)) continue;
       if (!canAfford(p, d.activateCost || 0, null)) continue;
       acts.push(...withTargets(s, pi, d, { type: "activate", uid: g.uid }, true, "activate"));
     }
@@ -946,9 +1096,10 @@
     const me = s.players[pi], op = s.players[other(pi)];
     const acts = [];
     for (const u of me.battle) {
-      if (!canAttackNow(s, u)) continue;
+      if (!canAttackWith(s, u)) continue;
       acts.push({ type: "attack", uid: u.uid, target: { kind: op.shields.length ? "shield" : "player" } });
-      for (const t of op.battle) if (t.tapped) acts.push({ type: "attack", uid: u.uid, target: { kind: "unit", uid: t.uid } });
+      const party = hasKeyword(s, u, "Party Breaker");
+      for (const t of op.battle) if (t.tapped || party) acts.push({ type: "attack", uid: u.uid, target: { kind: "unit", uid: t.uid } });
     }
     return acts;
   }
@@ -980,7 +1131,7 @@
           const f = findInst(s, pd.uid);
           if (f && f.zone === "hand") {
             const d = getDef(f.inst.id);
-            acts2.push(...withTargets(s, pi, d, { type: "shieldTrigger", use: true }, kindOf(d) === "spell"));
+            for (const m of modeChoices(d)) acts2.push(...withTargets(s, pi, d, { type: "shieldTrigger", use: true, ...m ? { modes: m } : {} }, kindOf(d) === "spell", "play", m));
           }
           return acts2;
         }
@@ -991,15 +1142,22 @@
     }
     const acts = [];
     if (s.phase === "play") acts.push(...playOptions(s, pi, "main"), ...activateOptions(s, pi));
-    if (s.phase === "combat" && !s.combat) acts.push(...attackOptions(s, pi), ...activateOptions(s, pi));
-    acts.push({ type: "endPhase" });
+    let mustAttack = false;
+    if (s.phase === "combat" && !s.combat) {
+      const atk = attackOptions(s, pi);
+      acts.push(...atk, ...activateOptions(s, pi));
+      mustAttack = atk.some((a) => hasKeyword(s, findInst(s, a.uid).inst, "Furious"));
+    }
+    if (!mustAttack) acts.push({ type: "endPhase" });
     return acts;
   }
   function blockers(s, defIdx) {
     const c = s.combat;
+    const att = findInst(s, c.attacker)?.inst;
+    if (att && hasKeyword(s, att, "Unstoppable")) return [];
     return s.players[defIdx].battle.filter((u) => !u.tapped && hasKeyword(s, u, "Defensive") && !(c.target.kind === "unit" && c.target.uid === u.uid));
   }
-  var keyOf = (a) => JSON.stringify(a, Object.keys(a).sort()) + JSON.stringify(a.target ?? null) + JSON.stringify(a.uids ?? null);
+  var keyOf = (a) => JSON.stringify(a, Object.keys(a).sort()) + JSON.stringify(a.target ?? null) + JSON.stringify(a.uids ?? null) + JSON.stringify(a.modes ?? null);
   function isLegal(s, pi, a) {
     const k = keyOf(normalizeAction(a));
     return legalActions(s, pi).some((x) => keyOf(normalizeAction(x)) === k);
@@ -1125,6 +1283,7 @@
     }
     for (const r of p.mana) r.tapped = false;
     for (const g of p.gear) g.tapped = false;
+    p.legend.tapped = false;
     for (const src of [p.legend, ...p.gear, ...p.battle]) fire(s, p.idx, src, "turnStart");
     if (s.winner != null) return;
     s.phase = "draw";
@@ -1141,7 +1300,15 @@
       return;
     }
     s.phase = "end";
-    for (const p of s.players) for (const u of p.battle) u.mods = u.mods.filter((m) => !m.until);
+    const ap = s.players[s.active];
+    for (const c of [...ap.battle, ...ap.gear]) if (hasKeyword(s, c, "Vigilance") && c.tapped) {
+      c.tapped = false;
+      log(s, `${nm(c)} untaps (Vigilance).`);
+    }
+    ap.doubleNext = false;
+    for (const p of s.players) for (const u of p.battle) {
+      u.mods = u.mods.filter((m) => !(m.until === "eot" || m.untilTurn != null && m.untilTurn <= s.turn));
+    }
     s.players[s.active].turnsTaken++;
     s.active = other(s.active);
     beginTurn(s);
@@ -1176,32 +1343,52 @@
     const p = s.players[pi];
     const inst = [...p.hand, p.championSlot, p.signatureSlot].find((c) => c && c.uid === a.uid);
     const d = getDef(inst.id);
-    payCost(s, p, d.cost, d.colors);
+    payCost(s, p, effectiveCost(s, pi, d), d.colors, d.recycle || 0);
     removeFromSource(p, a.uid);
     const k = kindOf(d);
     if (k === "spell" && s.pending && s.pending.kind === "priority") {
-      s.stack.push({ inst, controller: pi, target: a.target ?? null });
+      s.stack.push({ inst, controller: pi, target: a.target ?? null, modes: a.modes ?? null });
       log(s, `${p.name} casts ${d.name}${a.target ? " \u2192 " + nm(findInst(s, a.target).inst) : ""} (on the stack).`);
       fireAll(s, pi, "spellCast");
       s.pending.player = other(pi);
       s.pending.passes = 0;
       return;
     }
-    putIntoPlay(s, pi, inst, a.target);
+    putIntoPlay(s, pi, inst, a.target, a.modes);
   }
-  function putIntoPlay(s, pi, inst, target) {
+  function resolveModes(s, pi, d, modes) {
+    if (d.opponentChooses && d.modes?.length) {
+      const i = Math.floor(rand(s) * d.modes.length);
+      log(s, `${s.players[other(pi)].name} chooses "${d.modes[i].name}" for ${d.name}.`);
+      return [i];
+    }
+    if (modes && d.modes) log(s, `${d.name}: ${modes.map((i) => d.modes[i].name).join(" + ")}.`);
+    return modes;
+  }
+  function runTwiceIfDoubled(s, pi, src, effects, target) {
+    const p = s.players[pi];
+    const times = p.doubleNext ? 2 : 1;
+    if (p.doubleNext) {
+      p.doubleNext = false;
+      log(s, "Hellyeah! It triggers twice.");
+    }
+    for (let i = 0; i < times; i++) runEffects(s, pi, src, effects, target);
+  }
+  function putIntoPlay(s, pi, inst, target, modes = null) {
     const p = s.players[pi];
     const d = getDef(inst.id);
     const k = kindOf(d);
+    modes = resolveModes(s, pi, d, modes);
     inst.tapped = false;
     inst.mods = [];
     if (k === "unit") {
       inst.sick = true;
       const h = clockHour();
       inst.fast = (d.keywords || []).includes("Nostalgia Line") && h >= 16 && h < 22;
+      if ((d.keywords || []).includes("Slow Start")) inst.tapped = true;
       p.battle.push(inst);
       log(s, `${p.name} plays ${d.name}${inst.fast ? " (Nostalgia Line active!)" : ""}.`);
-      runEffects(s, pi, inst, effectsOn(d, "play"), target);
+      runEffects(s, pi, inst, playEffects(d, modes), target);
       for (const src of [p.legend, ...p.gear, ...p.battle]) if (src !== inst) fire(s, pi, src, "unitPlayed", inst);
     } else if (k === "gear") {
       if (p.gear.length >= RULES.GEAR_SLOTS) {
@@ -1211,20 +1398,32 @@
       }
       p.gear.push(inst);
       log(s, `${p.name} equips ${d.name}.`);
-      runEffects(s, pi, inst, effectsOn(d, "play"), target);
+      runEffects(s, pi, inst, playEffects(d, modes), target);
     } else {
       log(s, `${p.name} casts ${d.name}${target && findInst(s, target) ? " \u2192 " + nm(findInst(s, target).inst) : ""}.`);
       fireAll(s, pi, "spellCast");
-      runEffects(s, pi, inst, effectsOn(d, "play"), target);
-      p.graveyard.push(inst);
+      runTwiceIfDoubled(s, pi, inst, playEffects(d, modes), target);
+      finishSpell(p, inst, modes);
     }
+  }
+  function finishSpell(p, inst, modes) {
+    const d = getDef(inst.id);
+    const after = (modes || []).map((i) => d.modes?.[i]?.afterCast).find(Boolean) || d.afterCast;
+    if (after === "deckTop") p.deck.unshift(inst);
+    else if (after === "banish") {
+    } else p.graveyard.push(inst);
   }
   function effectsOn(d, trigger) {
     return (d.effects || []).filter((e) => (e.on || "play") === trigger);
   }
   function fire(s, pi, src, trigger, subject) {
     const d = getDef(src.id);
-    const effs = effectsOn(d, trigger).filter((e) => !SINGLE_TARGETS.has(e.target));
+    let effs = effectsOn(d, trigger).filter((e) => !SINGLE_TARGETS.has(e.target));
+    effs = effs.filter((e) => !(e.ifSubjectMighty && !(subject && isMighty(s, subject))));
+    if (effs.some((e) => e.tapSource)) {
+      if (src.tapped) return;
+      src.tapped = true;
+    }
     if (!effs.length) return;
     runEffects(s, pi, src, effs, null, subject);
     consumeUse(s, pi, src);
@@ -1246,12 +1445,13 @@
   }
   function doActivate(s, pi, a) {
     const p = s.players[pi];
-    const g = p.gear.find((x) => x.uid === a.uid);
+    const g = p.gear.find((x) => x.uid === a.uid) || p.battle.find((x) => x.uid === a.uid);
     const d = getDef(g.id);
     payCost(s, p, d.activateCost || 0, null);
-    g.tapped = true;
+    if (d.activateNoTap) g.activatedTurn = s.turn;
+    else g.tapped = true;
     log(s, `${p.name} activates ${d.name}.`);
-    runEffects(s, pi, g, effectsOn(d, "activate"), a.target);
+    runTwiceIfDoubled(s, pi, g, effectsOn(d, "activate"), a.target);
     consumeUse(s, pi, g);
   }
   function runEffects(s, pi, source, effects, targetUid, subject) {
@@ -1263,8 +1463,11 @@
   function applyEffect(s, pi, source, e, targetUid, subject) {
     const me = s.players[pi], op = s.players[other(pi)];
     const n = e.amount ?? 1;
-    const targets = resolveTargets(s, pi, source, e, targetUid, subject);
-    const okPower = (u) => e.maxPower == null || power(s, u) <= e.maxPower;
+    if (e.ifInPlay && !me.battle.some((u) => getDef(u.id).name.toLowerCase().includes(e.ifInPlay.toLowerCase()))) return;
+    let targets = resolveTargets(s, pi, source, e, targetUid, subject).filter((u) => matchFilter(u, e.filter));
+    const okPower = (u) => (e.maxPower == null || power(s, u) <= e.maxPower) && (e.minPower == null || power(s, u) >= e.minPower);
+    if (e.limit) targets = targets.filter(okPower).sort((a, b) => power(s, b) - power(s, a)).slice(0, e.limit);
+    const until = (u) => e.duration === "permanent" ? {} : e.duration === "nextTurn" ? { untilTurn: s.turn + 2 } : { until: "eot" };
     switch (e.do) {
       case "draw":
         for (let i = 0; i < n; i++) drawCard(s, e.who === "opponent" ? op.idx : pi);
@@ -1277,11 +1480,88 @@
         for (const u of targets) if (okPower(u)) destroyUnit(s, u);
         break;
       case "buff":
-        for (const u of targets) u.mods.push({ power: n, until: e.duration === "permanent" ? null : "eot" });
+        for (const u of targets) if (okPower(u)) u.mods.push({ power: n, ...until(u) });
         break;
       case "grantKeyword":
-        for (const u of targets) u.mods.push({ keyword: e.keyword, until: e.duration === "permanent" ? null : "eot" });
+        for (const u of targets) u.mods.push({ keyword: e.keyword, ...until(u) });
         break;
+      case "ready":
+        for (const u of targets) if (okPower(u)) {
+          u.tapped = false;
+          u.sick = false;
+        }
+        break;
+      case "morph":
+        for (const u of targets) {
+          u.morph = e.power ?? 1;
+          u.mods = u.mods.filter((m) => !m.power);
+          log(s, `${nm(u)} turns into a Sheep (${u.morph} Might).`);
+        }
+        break;
+      case "sacrificeSelf":
+        if (source && me.gear.includes(source)) destroyGear(s, source);
+        else if (source && me.battle.includes(source)) destroyUnit(s, source);
+        break;
+      case "breakOwnShield":
+        for (let i = 0; i < n && me.shields.length; i++) me.hand.push(me.shields.shift());
+        log(s, `${me.name} breaks their own shield.`);
+        break;
+      case "lockShields":
+        me.shieldLockUntil = s.turn + 2;
+        log(s, `${me.name}'s shields are unbreakable until their next turn.`);
+        break;
+      case "sealTriggers":
+        op.triggersSealedUntil = s.turn + 2;
+        log(s, `${op.name}'s Shield Triggers are sealed until ${me.name}'s next turn.`);
+        break;
+      case "doubleNext":
+        me.doubleNext = true;
+        break;
+      case "counter": {
+        for (let i = s.stack.length - 1; i >= 0; i--) {
+          const it = s.stack[i];
+          const cd = getDef(it.inst.id);
+          if (it.controller === pi || cd.cost > (e.maxCost ?? 99)) continue;
+          s.stack.splice(i, 1);
+          s.players[it.controller].graveyard.push(it.inst);
+          log(s, `${cd.name} is countered.`);
+          break;
+        }
+        break;
+      }
+      case "splitDestroy": {
+        let budget = n;
+        for (const u of [...op.battle].sort((a, b) => power(s, b) - power(s, a))) {
+          const pw = Math.max(0, power(s, u));
+          if (pw <= budget) {
+            budget -= pw;
+            destroyUnit(s, u);
+          }
+        }
+        break;
+      }
+      case "summonNamed": {
+        const zones = e.from || ["hand", "deck", "graveyard"];
+        let found = null, zone = null;
+        for (const z of zones) {
+          found = me[z].find((c) => getDef(c.id).name.toLowerCase().includes(e.name.toLowerCase()));
+          if (found) {
+            zone = z;
+            break;
+          }
+        }
+        if (!found) {
+          log(s, `No ${e.name} to summon.`);
+          break;
+        }
+        me[zone].splice(me[zone].indexOf(found), 1);
+        putIntoPlay(s, pi, found, null);
+        if (e.ready) {
+          found.sick = false;
+          found.tapped = false;
+        }
+        break;
+      }
       case "tap":
         for (const u of targets) if (okPower(u)) u.tapped = true;
         break;
@@ -1326,6 +1606,22 @@
         }
         break;
       }
+      case "tutor": {
+        const kind = e.kind || "unit";
+        const ok = (c2) => kindOf(getDef(c2.id)) === kind && (!e.name || getDef(c2.id).name.toLowerCase().includes(e.name.toLowerCase()));
+        const zone = (e.from || ["deck"]).find((z) => me[z].some(ok));
+        if (!zone) {
+          log(s, `${me.name} searches but finds nothing.`);
+          break;
+        }
+        const pool = me[zone].filter(ok).sort((a, b) => getDef(b.id).cost - getDef(a.id).cost);
+        const c = pool[0];
+        me[zone].splice(me[zone].indexOf(c), 1);
+        me.hand.push(c);
+        shuffle(s, me.deck);
+        log(s, `${me.name} searches their deck and takes ${nm(c)}.`);
+        break;
+      }
       case "token":
         for (let i = 0; i < n; i++) {
           const t = mk(s, e.tokenId, pi);
@@ -1341,11 +1637,19 @@
     u.sick = false;
     u.mods = [];
     u.fast = false;
+    delete u.morph;
+    delete u.escaped;
   }
   function destroyUnit(s, u) {
     const owner = s.players[u.owner];
     const i = owner.battle.indexOf(u);
     if (i < 0) return;
+    if (getDef(u.id).escapeOnce && !u.escaped) {
+      u.escaped = true;
+      u.mods.push({ power: 1 });
+      log(s, `${nm(u)} escapes from hell and gains +1 Might!`);
+      return;
+    }
     owner.battle.splice(i, 1);
     resetInst(u);
     const d = getDef(u.id);
@@ -1363,11 +1667,16 @@
   }
   function breakShields(s, defIdx, n) {
     const p = s.players[defIdx];
+    if (p.shieldLockUntil > s.turn) {
+      log(s, `${p.name}'s shields are unbreakable!`);
+      return;
+    }
     for (let i = 0; i < n && p.shields.length; i++) {
       const sh = p.shields.shift();
       p.hand.push(sh);
       const d = getDef(sh.id);
       log(s, `${p.name}'s shield breaks (${p.shields.length} left).`);
+      if (p.triggersSealedUntil > s.turn) continue;
       if ((d.keywords || []).includes("Shield Trigger")) s.queue.push({ kind: "shieldTrigger", player: defIdx, uid: sh.uid });
     }
   }
@@ -1379,7 +1688,7 @@
       if (inst) {
         p.hand.splice(p.hand.indexOf(inst), 1);
         log(s, `Shield Trigger! ${p.name} plays ${nm(inst)} for free.`);
-        putIntoPlay(s, pi, inst, a.target);
+        putIntoPlay(s, pi, inst, a.target, a.modes);
       }
     }
     nextFromQueue(s);
@@ -1404,6 +1713,7 @@
     log(s, `${nm(att)} attacks ${tName}!`);
     s.combat = { attacker: att.uid, attackerOwner: pi, target: { ...a.target }, blockedBy: null };
     fire(s, pi, att, "attack");
+    for (const u of [...op.battle]) fire(s, op.idx, u, "enemyAttack");
     if (s.winner != null) return;
     s.pending = blockers(s, op.idx).length ? { kind: "block", player: op.idx } : { kind: "priority", player: op.idx, passes: 0 };
   }
@@ -1427,8 +1737,9 @@
       const it = s.stack.pop();
       const d = getDef(it.inst.id);
       log(s, `${d.name} resolves.`);
-      runEffects(s, it.controller, it.inst, effectsOn(d, "play"), it.target);
-      s.players[it.controller].graveyard.push(it.inst);
+      const modes = resolveModes(s, it.controller, d, it.modes);
+      runTwiceIfDoubled(s, it.controller, it.inst, playEffects(d, modes), it.target);
+      finishSpell(s.players[it.controller], it.inst, modes);
       pd.passes = 0;
       pd.player = s.combat ? other(s.combat.attackerOwner) : other(s.active);
       return;
@@ -1452,14 +1763,23 @@
         log(s, "The attack fizzles (target gone).");
         return;
       }
-      const ap = power(s, att), dp = power(s, def);
+      const ap = power(s, att) + (getDef(att.id).attackBonus || 0);
+      const dp = power(s, def) + (getDef(def.id).defendBonus || 0);
       log(s, `Fight: ${nm(att)} (${ap}) vs ${nm(def)} (${dp}).`);
       const kill = /* @__PURE__ */ new Set();
       if (ap >= dp) kill.add(def);
       if (dp >= ap) kill.add(att);
       if (ap > dp && hasKeyword(s, def, "Deathtouch")) kill.add(att);
       if (dp > ap && hasKeyword(s, att, "Deathtouch")) kill.add(def);
-      for (const u of kill) destroyUnit(s, u);
+      for (const u of kill) {
+        const roll = getDef(u.id).surviveRoll;
+        if (roll) {
+          const d6 = 1 + Math.floor(rand(s) * 6);
+          log(s, `${nm(u)} rolls a D6: ${d6}${d6 >= roll ? " \u2014 survives!" : "."}`);
+          if (d6 >= roll) continue;
+        }
+        destroyUnit(s, u);
+      }
       return;
     }
     if (c.target.kind === "player" && D.shields.length === 0) {
@@ -1574,6 +1894,10 @@
     const baseState = baseline ? simulate(s, pi, baseline) : s;
     let bestA = baseline || { type: "endPhase" };
     let bestV = baseState ? score(baseState, pi) : -Infinity;
+    if (!pd && !acts.some((a) => a.type === "endPhase")) {
+      bestA = acts[0];
+      bestV = -Infinity;
+    }
     const margin = pd ? 0.2 : 0.35;
     for (const a of acts) {
       if (a === baseline || a.type === "endPhase" || a.type === "pass" || a.type === "noBlock") continue;
@@ -1619,7 +1943,7 @@
       const v = validateDeck(d);
       return `<div class="deck-pick ${pick[who] === d.id ? "on" : ""}" data-who="${who}" data-id="${d.id}">
       ${cardHtml(L, { size: "xs" })}
-      <div><b>${esc(d.name)}</b><div class="muted">${L.colors.join(" / ")} \xB7 avg cost ${v.stats.avgCost.toFixed(1)} \xB7 ${d.premade ? "premade" : "custom"}</div></div></div>`;
+      <div><b>${esc(d.name)}</b><div class="muted">${L.colors.join(" / ")} \xB7 avg cost ${v.stats.avgCost.toFixed(1)} \xB7 ${d.premade ? "premade" : "custom"}${d.fillers ? ` \xB7 ${d.fillers} filler` : ""}</div></div></div>`;
     };
     app2.innerHTML = `<div class="page">
     <h2>Play against AI</h2>
@@ -1727,13 +2051,16 @@
     if (hl.mull?.has(inst.uid)) cls.push("mull-sel");
     if (hl.attacking === inst.uid || hl.defending === inst.uid) cls.push("attacking");
     const pw = onBoard ? power(s, inst) : void 0;
+    const cost = opts.inHand && inst.owner === HUMAN ? effectiveCost(s, inst.owner, d) : void 0;
     const sick = onBoard && !canAttackNow(s, inst) && !inst.tapped && s.active === inst.owner ? '<div class="badge-sick">zZ</div>' : "";
     const uses = inst.uses != null && !opts.inHand ? `<div class="badge-sick" style="top:auto;bottom:30%">${inst.uses} left</div>` : "";
-    return cardHtml(d, { size: "sm", mini: true, uid: inst.uid, tapped: inst.tapped && !opts.inHand, power: pw, classes: cls.join(" "), badges: sick + uses });
+    return cardHtml(d, { size: "sm", mini: true, uid: inst.uid, tapped: inst.tapped && !opts.inHand, power: pw, cost, classes: cls.join(" "), badges: sick + uses });
   }
   function playerRow(s, p, mine, hl) {
     const zone = (label, inner, attrs = "", empty = "") => `<div class="zone ${!inner && empty ? "empty-slot" : ""}" ${attrs} data-empty="${empty}"><span class="lbl">${label}</span>${inner}</div>`;
-    const runes = p.mana.map((r) => `<span class="rune ${r.tapped ? "tapped" : ""}" style="background:${COLORS[r.color]?.hex}" title="${r.color}${r.tapped ? " (tapped)" : ""}"></span>`).join("");
+    const runeArt = G.decks[p.idx].runeArt || {};
+    const runeBg = (c) => runeArt[c] && hasDef(runeArt[c]) && getDef(runeArt[c]).image ? `url('${getDef(runeArt[c]).image}') ${COLORS[c]?.hex}` : COLORS[c]?.hex;
+    const runes = p.mana.map((r) => `<span class="rune ${r.tapped ? "tapped" : ""} ${runeArt[r.color] ? "art" : ""}" style="background:${runeBg(r.color)}" title="${r.color}${r.tapped ? " (tapped)" : ""}"></span>`).join("");
     const free = p.mana.filter((r) => !r.tapped).length;
     const shieldsTarget = !mine && hl.zoneTargets.has("shield");
     const directTarget = !mine && hl.zoneTargets.has("player");
@@ -1781,8 +2108,17 @@
         const pl = ui.sel.options.find((a) => a.target.kind === "player");
         if (sh) buttons += btn("atk-shield", "Attack shields", "primary");
         if (pl) buttons += btn("atk-player", "Direct attack!", "primary");
+      } else if (ui.sel.kind === "mode") {
+        prompt2 = `<b>${esc(d.name)}</b> \u2014 choose ${d.chooseModes > 1 ? d.chooseModes : "one"}:`;
+        const seen = /* @__PURE__ */ new Set();
+        for (const a of ui.sel.options) {
+          const key = (a.modes || []).join(",");
+          if (seen.has(key)) continue;
+          seen.add(key);
+          buttons += `<button class="primary" data-mode="${key}">${esc(a.modes.map((i) => d.modes[i].name).join(" + "))}</button>`;
+        }
       } else prompt2 = `Choose a target for <b>${esc(d.name)}</b>.`;
-      if (ui.sel.options.some((a) => !a.target && a.type !== "attack")) buttons += btn("no-target", "Play without target");
+      if (ui.sel.kind !== "mode" && ui.sel.options.some((a) => !a.target && a.type !== "attack")) buttons += btn("no-target", "Play without target");
       buttons += btn("cancel", "Cancel", "ghost");
     } else if (pd?.kind === "mulligan") {
       prompt2 = `Mulligan: click up to ${RULES.MULLIGAN_MAX} cards to put on the bottom of your deck.`;
@@ -1801,8 +2137,9 @@
       prompt2 = "Play phase \u2014 click a glowing card to play it (at least 1 rune must match its color).";
       buttons = btn("end", "To Combat \u2192", "primary");
     } else if (s.phase === "combat") {
-      prompt2 = "Combat \u2014 click a ready unit (orange) to attack.";
-      buttons = btn("end", "End turn", "primary");
+      const canEnd = legal.some((a) => a.type === "endPhase");
+      prompt2 = canEnd ? "Combat \u2014 click a ready unit (orange) to attack." : "A <b>Furious</b> unit must attack this turn \u2014 click it.";
+      if (canEnd) buttons = btn("end", "End turn", "primary");
     }
     return `<div class="midbar"><div class="phases">${phases}</div><span class="muted">Turn ${s.turn}</span>
     <div class="prompt">${prompt2}</div>${stack}<div class="row">${buttons}</div></div>`;
@@ -1862,6 +2199,13 @@
     const { s, ui } = G;
     const b = e.target.closest("[data-btn]");
     if (b) return onButton(b.dataset.btn);
+    const mb = e.target.closest("[data-mode]");
+    if (mb && ui.sel?.kind === "mode") {
+      const opts = ui.sel.options.filter((a) => (a.modes || []).join(",") === mb.dataset.mode);
+      if (opts.length === 1 && !opts[0].target) return act(opts[0]);
+      ui.sel = { ...ui.sel, kind: ui.sel.after || "play", options: opts };
+      return render();
+    }
     const gy = e.target.closest("[data-grave]");
     if (gy) return showGrave(+gy.dataset.grave);
     if (s.winner != null || whoActs(s) !== HUMAN) return;
@@ -1895,7 +2239,8 @@
     const plays = legal.filter((a) => (a.type === "play" || a.type === "activate") && a.uid === uid);
     if (plays.length) {
       if (plays.length === 1 && !plays[0].target) return act(plays[0]);
-      ui.sel = { kind: "play", uid, options: plays };
+      const modeKeys = new Set(plays.map((a) => (a.modes || []).join(",")));
+      ui.sel = { kind: modeKeys.size > 1 ? "mode" : "play", uid, options: plays };
       return render();
     }
     const attacks = legal.filter((a) => a.type === "attack" && a.uid === uid);
@@ -1933,7 +2278,8 @@
       case "trig-use": {
         const uses = legal.filter((a) => a.type === "shieldTrigger" && a.use);
         if (uses.length === 1 && !uses[0].target) return act(uses[0]);
-        ui.sel = { kind: "trigger", uid: s.pending.uid, options: uses };
+        const modeKeys = new Set(uses.map((a) => (a.modes || []).join(",")));
+        ui.sel = { kind: modeKeys.size > 1 ? "mode" : "trigger", after: "trigger", uid: s.pending.uid, options: uses };
         return render();
       }
       case "rematch":

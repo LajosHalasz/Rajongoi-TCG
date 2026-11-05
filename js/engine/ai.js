@@ -115,6 +115,7 @@ export function chooseAction(s, pi) {
   const baseState = baseline ? simulate(s, pi, baseline) : s;
   let bestA = baseline || { type: 'endPhase' };
   let bestV = baseState ? score(baseState, pi) : -Infinity;
+  if (!pd && !acts.some(a => a.type === 'endPhase')) { bestA = acts[0]; bestV = -Infinity; } // must act (Furious)
   const margin = pd ? 0.2 : 0.35;
 
   for (const a of acts) {

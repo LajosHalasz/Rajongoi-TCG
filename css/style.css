@@ -66,7 +66,7 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
   --w: 200px;
   container-type: inline-size;
   position: relative; width: var(--w); aspect-ratio: 5 / 7; flex: none;
-  background: #0b0a09; border-radius: 4.2cqw; overflow: hidden;
+  background: #0b0a09; border-radius: 3.2% / 2.3%; overflow: hidden;
   box-shadow: 0 4px 14px rgba(0,0,0,.55);
   user-select: none; font-family: 'Barlow Condensed', sans-serif; color: #111;
   transition: transform .15s, box-shadow .15s, filter .15s;
@@ -87,13 +87,24 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
 .card .ph-glyph { font-size: 34cqw; color: rgba(255,255,255,.28); line-height: 1; }
 .card .ph-initials { position: absolute; font-family: 'Lexend'; font-weight: 800; font-size: 13cqw; color: rgba(255,255,255,.9); text-shadow: 0 2px 8px rgba(0,0,0,.5); }
 .card .ph-label { position: absolute; bottom: 4%; font-size: 3.6cqw; color: rgba(255,255,255,.7); letter-spacing: .08em; text-transform: uppercase; }
-.card .frame { position: absolute; inset: 2.6% 2.6% 5.4% 2.6%; border: 0.9cqw solid var(--copper); border-radius: 2cqw; pointer-events: none; }
+.card .frame { position: absolute; inset: 2.6% 2.6% 5.4% 2.6%; border: 0.9cqw solid var(--copper); border-radius: 1.2cqw; pointer-events: none; }
 .card .cost {
   position: absolute; left: 3%; top: 2.4%; width: 18%; aspect-ratio: 1; border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #fff, #e6e1d8); border: 1.6cqw solid var(--copper);
   box-shadow: 0 0 0 0.8cqw #111; display: grid; place-items: center;
 }
 .card .cost span { font-family: 'Lexend'; font-weight: 800; font-size: 11cqw; line-height: 1; color: #111; }
+.card .recycle {
+  position: absolute; left: 15.5%; top: 15.5%; min-width: 9%; height: 6.4%; padding: 0 1.4cqw; border-radius: 99px;
+  background: var(--domain); border: .7cqw solid #111; color: #fff; display: flex; align-items: center; justify-content: center; gap: .6cqw;
+  font-family: 'Lexend'; font-weight: 800; font-size: 5cqw; z-index: 2;
+}
+.card .recycle i { font-style: normal; font-size: 4cqw; opacity: .9; }
+.card .cost.prov { border-style: dashed; background: radial-gradient(circle at 35% 30%, #fff, #d9d2c6); }
+.card .cost.prov span, .card .might.prov .might-val { opacity: .75; }
+.card .might.prov { border-style: dashed; }
+.card .wip-tag { position: absolute; right: 7%; top: 47%; background: rgba(0,0,0,.65); color: #ffd36b; font-size: 3.6cqw; font-weight: 700; padding: .4cqw 1.6cqw; border-radius: 1cqw; letter-spacing: .06em; z-index: 2; }
+.card.mini .wip-tag, .card.mini .recycle i { display: none; }
 .card .might {
   position: absolute; right: 6%; top: 4.5%; height: 9%; min-width: 26%; display: flex; align-items: stretch;
   border: 0.8cqw solid var(--copper); background: #111;
@@ -116,6 +127,13 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
   background: linear-gradient(90deg, var(--domain), color-mix(in srgb, var(--domain) 70%, #000));
   display: flex; align-items: center; padding: 0 5%;
 }
+.card .namebar { flex-direction: column; justify-content: center; align-items: flex-start; }
+.card .namebar small { color: rgba(255,255,255,.85); font-family: 'Barlow Condensed'; font-style: italic; font-weight: 700; font-size: 4cqw; line-height: 1; margin-top: .4cqw; }
+.card .art-ph.borrowed { overflow: hidden; }
+.card .art-ph.borrowed .art-img { position: absolute; inset: 0; filter: saturate(.55) brightness(.85); }
+.card .art-ph.borrowed::after { content: ''; position: absolute; inset: 0; background: linear-gradient(160deg, var(--c1), var(--c2)); mix-blend-mode: color; opacity: .75; }
+.card .art-ph.borrowed .ph-label { z-index: 2; background: rgba(0,0,0,.55); padding: .3cqw 2cqw; border-radius: 1cqw; }
+.rune.art { background-size: cover !important; background-position: center !important; }
 .card .namebar span { color: #fff; font-family: 'Lexend'; font-weight: 800; font-size: 6.2cqw; line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .textbox {
   position: absolute; left: 5.5%; right: 5.5%; top: 65%; bottom: 7%;
@@ -126,8 +144,9 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
 .card .textbox i { font-style: italic; }
 .card .kw { font-style: italic; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: .2cqw 2cqw; margin-right: 1cqw; display: inline-block; clip-path: polygon(4% 0, 100% 0, 96% 100%, 0 100%); }
 .card .ico { display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; border-radius: 50%; background: #111; color: #fff; font-style: normal; font-size: .8em; font-weight: 700; vertical-align: .05em; margin: 0 .1em; }
+.card .wip-text { color: #8a8378; }
 .card .flavor { margin-top: 1.5cqw; background: #e5d9c8; padding: 1.6cqw 3cqw; color: #333; font-size: 4.1cqw; border-left: 1.4cqw solid var(--domain); }
-.card .footer { position: absolute; left: 5%; right: 5%; bottom: 1.2%; display: flex; justify-content: space-between; font-family: ui-monospace, monospace; font-size: 3.3cqw; color: #ddd; }
+.card .footer { position: absolute; left: 7%; right: 7%; bottom: 1.2%; display: flex; justify-content: space-between; font-family: ui-monospace, monospace; font-size: 3.3cqw; color: #ddd; }
 
 /* mini (battlefield) */
 .card.mini .textbox, .card.mini .footer, .card.mini .typeline { display: none; }
@@ -143,7 +162,7 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
 
 .card.tapped { transform: rotate(14deg) scale(.92); filter: brightness(.62) saturate(.7); }
 .card-back { background: linear-gradient(145deg, #3a2a1a, #120d08); border: 1px solid var(--copper); }
-.card-back .back-inner { position: absolute; inset: 7%; border: 1.2cqw solid var(--copper); border-radius: 3cqw; display: grid; place-items: center; text-align: center;
+.card-back .back-inner { position: absolute; inset: 7%; border: 1.2cqw solid var(--copper); border-radius: 1.5cqw; display: grid; place-items: center; text-align: center;
   background: repeating-linear-gradient(45deg, rgba(176,115,53,.12) 0 4px, transparent 4px 9px); }
 .card-back .back-inner span { font-family: 'Lexend'; font-weight: 800; color: var(--copper-hi); font-size: 9.5cqw; line-height: 1.05; letter-spacing: .06em; }
 .card-back .back-label { position: absolute; inset: auto 0 6% 0; text-align: center; font-weight: 800; font-size: 18cqw; color: #fff; text-shadow: 0 2px 6px #000; }

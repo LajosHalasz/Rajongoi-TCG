@@ -97,15 +97,25 @@ export function findInst(s, uid) {
 export function hasKeyword(s, inst, kw) {
   const d = getDef(inst.id);
   if ((d.keywords || []).includes(kw)) return true;
+  if (kw === 'Unstoppable' && d.unstoppableIfTribe) {
+    const p = s.players[inst.owner];
+    if ([...p.battle, ...p.gear].some(c => (getDef(c.id).tribes || []).includes(d.unstoppableIfTribe))) return true;
+  }
   return inst.mods.some(m => m.keyword === kw);
 }
+
+const isMighty = (s, u) => power(s, u) >= 5;
 
 /** Current Might of a unit. opts.ignoreTemp drops "this turn" modifiers (AI eval). */
 export function power(s, inst, opts = {}) {
   const d = getDef(inst.id);
-  let p = d.power || 0;
+  let p = inst.morph ?? (d.power || 0);
   for (const m of inst.mods) if (m.power && !(opts.ignoreTemp && m.until)) p += m.power;
   const owner = s.players[inst.owner];
+  if (inst.morph == null) for (const e of d.effects || []) {
+    if (e.on === 'static' && e.do === 'mightPerRune') p += owner.mana.filter(r => r.color === e.color).length * (e.amount ?? 1);
+    if (e.on === 'static' && e.do === 'mightPerShield') p += owner.shields.length * (e.amount ?? 1);
+  }
   for (const src of staticSources(owner)) {
     for (const e of getDef(src.id).effects || []) {
       if (e.on !== 'static' || e.do !== 'buff') continue;
@@ -123,21 +133,48 @@ function staticSources(p) { return [p.legend, ...p.gear, ...p.battle]; }
 export function canAttackNow(s, inst) {
   return !inst.tapped && (!inst.sick || inst.fast || hasKeyword(s, inst, 'Haste'));
 }
+const canAttackWith = (s, u) => canAttackNow(s, u) && !hasKeyword(s, u, 'Immobile');
+
+// ---------------------------------------------------------- cost ----
+/** Printed cost minus reductions (Flood, Whiskey…). */
+export function effectiveCost(s, pi, d) {
+  const r = d.costReduction;
+  if (!r) return d.cost;
+  const p = s.players[pi];
+  let n = 0;
+  if (r.perRunePair) n += Math.min(...r.perRunePair.map(c => p.mana.filter(x => x.color === c).length));
+  if (r.perGraveTribe) n += p.graveyard.filter(c => (getDef(c.id).tribes || []).includes(r.perGraveTribe)).length;
+  return Math.max(0, d.cost - n);
+}
 
 // ----------------------------------------------------------------- mana ----
 function untappedRunes(p) { return p.mana.filter(r => !r.tapped); }
 
-export function canAfford(p, cost, colors) {
+const matches = (colors) => (r) => !colors || !colors.length || colors.includes(r.color);
+
+/** cost = runes to tap; recycle = runes of the card's color to put on the bottom of the Mana Deck. */
+export function canAfford(p, cost, colors, recycle = 0) {
+  if (recycle > 0 && p.mana.filter(matches(colors)).length < recycle) return false;
   if (!cost) return true;
   const free = untappedRunes(p);
   if (free.length < cost) return false;
   if (colors && colors.length) return free.some(r => colors.includes(r.color));
   return true;
 }
+const affordDef = (s, p, d) => canAfford(p, effectiveCost(s, p.idx, d), d.colors, d.recycle || 0);
 
-function payCost(s, p, cost, colors) {
-  if (!cost) return true;
-  if (!canAfford(p, cost, colors)) return false;
+function payCost(s, p, cost, colors, recycle = 0) {
+  if (!canAfford(p, cost, colors, recycle)) return false;
+  if (cost) tapRunes(p, cost, colors);
+  if (recycle > 0) {
+    // recycle matching runes, tapped ones first
+    const pool = p.mana.filter(matches(colors)).sort((a, b) => b.tapped - a.tapped).slice(0, recycle);
+    for (const r of pool) { p.mana.splice(p.mana.indexOf(r), 1); r.tapped = false; p.manaDeck.push(r); }
+    log(s, `${p.name} recycles ${recycle} rune${recycle > 1 ? 's' : ''}.`);
+  }
+  return true;
+}
+function tapRunes(p, cost, colors) {
   const free = untappedRunes(p);
   const chosen = [];
   if (colors && colors.length) chosen.push(free.find(r => colors.includes(r.color)));
@@ -146,7 +183,6 @@ function payCost(s, p, cost, colors) {
     .sort((a, b) => (colors?.includes(a.color) ? 1 : 0) - (colors?.includes(b.color) ? 1 : 0));
   while (chosen.length < cost) chosen.push(rest.shift());
   chosen.forEach(r => (r.tapped = true));
-  return true;
 }
 
 function channel(s, p, n, tapped = false) {
@@ -181,7 +217,21 @@ export function listTargets(s, pi, spec) {
     default: return [];
   }
   if (spec.maxPower != null) pool = pool.filter(u => power(s, u) <= spec.maxPower);
+  if (spec.minPower != null) pool = pool.filter(u => power(s, u) >= spec.minPower);
+  if (spec.filter) pool = pool.filter(u => matchFilter(u, spec.filter));
+  pool = pool.filter(u => u.owner === pi || !hasKeyword(s, u, 'Elusive'));
   return pool.map(u => u.uid);
+}
+
+/** filter: { color, notColor, type, notType } */
+export function matchFilter(u, f) {
+  if (!f) return true;
+  const d = getDef(u.id);
+  if (f.color && !d.colors.includes(f.color)) return false;
+  if (f.notColor && d.colors.includes(f.notColor)) return false;
+  if (f.type && d.type !== f.type) return false;
+  if (f.notType && d.type === f.notType) return false;
+  return true;
 }
 
 function resolveTargets(s, pi, source, e, targetUid, subject) {
@@ -196,7 +246,7 @@ function resolveTargets(s, pi, source, e, targetUid, subject) {
   }
   if (!targetUid) return [];
   // still a legal target at resolution?
-  if (!listTargets(s, pi, { ...e, maxPower: null }).includes(targetUid)) return [];
+  if (!listTargets(s, pi, { ...e, maxPower: null, filter: null }).includes(targetUid)) return [];
   const f = findInst(s, targetUid);
   return f ? [f.inst] : [];
 }
@@ -207,6 +257,26 @@ function sourcesFor(p) {
   if (p.championSlot) out.push({ inst: p.championSlot, from: 'championSlot' });
   if (p.signatureSlot) out.push({ inst: p.signatureSlot, from: 'signatureSlot' });
   return out;
+}
+
+/** All legal mode choices for a card: [null] when it has no modes. */
+function modeChoices(d) {
+  if (!d.modes || !d.modes.length || d.opponentChooses) return [null];
+  const k = Math.min(d.chooseModes || 1, d.modes.length);
+  const idx = d.modes.map((_, i) => i);
+  const out = [];
+  const rec = (start, acc) => {
+    if (acc.length === k) { out.push(acc); return; }
+    for (let i = start; i < idx.length; i++) rec(i + 1, [...acc, i]);
+  };
+  rec(0, []);
+  return out;
+}
+/** Effects a card runs when it is played, with the chosen modes. */
+export function playEffects(d, modes) {
+  const base = effectsOn(d, 'play');
+  if (!modes || !d.modes) return base;
+  return [...base, ...modes.flatMap(i => (d.modes[i].effects || []).map(e => ({ on: 'play', ...e })))];
 }
 
 function playOptions(s, pi, mode) {
@@ -222,17 +292,21 @@ function playOptions(s, pi, mode) {
       const kws = d.keywords || [];
       if (!(kws.includes('Reaction') || (kws.includes('Action') && s.stack.length === 0))) continue;
     }
-    if (!canAfford(p, d.cost, d.colors)) continue;
+    if (d.requiresStack && !s.stack.some(it => it.controller !== pi)) continue;
+    if (!affordDef(s, p, d)) continue;
     const dupKey = inst.id + (p.hand.includes(inst) ? 'h' : 's');
     if (seen.has(dupKey)) continue; // identical copies in hand -> one option
     seen.add(dupKey);
-    acts.push(...withTargets(s, pi, d, { type: 'play', uid: inst.uid }, k === 'spell'));
+    for (const m of modeChoices(d)) {
+      acts.push(...withTargets(s, pi, d, { type: 'play', uid: inst.uid, ...(m ? { modes: m } : {}) }, k === 'spell', 'play', m));
+    }
   }
   return acts;
 }
 
-function withTargets(s, pi, d, base, required, trigger = 'play') {
-  const spec = targetSpec(d, trigger);
+function withTargets(s, pi, d, base, required, trigger = 'play', modes = null) {
+  const effs = trigger === 'play' ? playEffects(d, modes) : effectsOn(d, trigger);
+  const spec = effs.find(e => SINGLE_TARGETS.has(e.target)) || null;
   if (!spec) return [base];
   const ts = listTargets(s, pi, spec);
   if (!ts.length) return required ? [] : [base];
@@ -242,9 +316,11 @@ function withTargets(s, pi, d, base, required, trigger = 'play') {
 function activateOptions(s, pi) {
   const p = s.players[pi];
   const acts = [];
-  for (const g of p.gear) {
+  for (const g of [...p.gear, ...p.battle]) {
     const d = getDef(g.id);
-    if (g.tapped || !(d.effects || []).some(e => e.on === 'activate')) continue;
+    if (!(d.effects || []).some(e => e.on === 'activate')) continue;
+    if (d.activateNoTap) { if (g.activatedTurn === s.turn) continue; }
+    else if (g.tapped || (p.battle.includes(g) && !canAttackNow(s, g))) continue;
     if (!canAfford(p, d.activateCost || 0, null)) continue;
     acts.push(...withTargets(s, pi, d, { type: 'activate', uid: g.uid }, true, 'activate'));
   }
@@ -255,9 +331,10 @@ function attackOptions(s, pi) {
   const me = s.players[pi], op = s.players[other(pi)];
   const acts = [];
   for (const u of me.battle) {
-    if (!canAttackNow(s, u)) continue;
+    if (!canAttackWith(s, u)) continue;
     acts.push({ type: 'attack', uid: u.uid, target: { kind: op.shields.length ? 'shield' : 'player' } });
-    for (const t of op.battle) if (t.tapped) acts.push({ type: 'attack', uid: u.uid, target: { kind: 'unit', uid: t.uid } });
+    const party = hasKeyword(s, u, 'Party Breaker');
+    for (const t of op.battle) if (t.tapped || party) acts.push({ type: 'attack', uid: u.uid, target: { kind: 'unit', uid: t.uid } });
   }
   return acts;
 }
@@ -291,7 +368,7 @@ export function legalActions(s, pi) {
         const f = findInst(s, pd.uid);
         if (f && f.zone === 'hand') {
           const d = getDef(f.inst.id);
-          acts.push(...withTargets(s, pi, d, { type: 'shieldTrigger', use: true }, kindOf(d) === 'spell'));
+          for (const m of modeChoices(d)) acts.push(...withTargets(s, pi, d, { type: 'shieldTrigger', use: true, ...(m ? { modes: m } : {}) }, kindOf(d) === 'spell', 'play', m));
         }
         return acts;
       }
@@ -302,18 +379,25 @@ export function legalActions(s, pi) {
   }
   const acts = [];
   if (s.phase === 'play') acts.push(...playOptions(s, pi, 'main'), ...activateOptions(s, pi));
-  if (s.phase === 'combat' && !s.combat) acts.push(...attackOptions(s, pi), ...activateOptions(s, pi));
-  acts.push({ type: 'endPhase' });
+  let mustAttack = false;
+  if (s.phase === 'combat' && !s.combat) {
+    const atk = attackOptions(s, pi);
+    acts.push(...atk, ...activateOptions(s, pi));
+    mustAttack = atk.some(a => hasKeyword(s, findInst(s, a.uid).inst, 'Furious'));
+  }
+  if (!mustAttack) acts.push({ type: 'endPhase' });
   return acts;
 }
 
 function blockers(s, defIdx) {
   const c = s.combat;
+  const att = findInst(s, c.attacker)?.inst;
+  if (att && hasKeyword(s, att, 'Unstoppable')) return [];
   return s.players[defIdx].battle.filter(u =>
     !u.tapped && hasKeyword(s, u, 'Defensive') && !(c.target.kind === 'unit' && c.target.uid === u.uid));
 }
 
-const keyOf = (a) => JSON.stringify(a, Object.keys(a).sort()) + JSON.stringify(a.target ?? null) + JSON.stringify(a.uids ?? null);
+const keyOf = (a) => JSON.stringify(a, Object.keys(a).sort()) + JSON.stringify(a.target ?? null) + JSON.stringify(a.uids ?? null) + JSON.stringify(a.modes ?? null);
 export function isLegal(s, pi, a) {
   const k = keyOf(normalizeAction(a));
   return legalActions(s, pi).some(x => keyOf(normalizeAction(x)) === k);
@@ -414,6 +498,7 @@ function beginTurn(s) {
   for (const u of p.battle) { u.tapped = false; u.sick = false; u.fast = false; }
   for (const r of p.mana) r.tapped = false;
   for (const g of p.gear) g.tapped = false;
+  p.legend.tapped = false;
   for (const src of [p.legend, ...p.gear, ...p.battle]) fire(s, p.idx, src, 'turnStart');
   if (s.winner != null) return;
   s.phase = 'draw';
@@ -429,7 +514,15 @@ function doEndPhase(s) {
   if (s.phase === 'play') { s.phase = 'combat'; return; }
   // end phase
   s.phase = 'end';
-  for (const p of s.players) for (const u of p.battle) u.mods = u.mods.filter(m => !m.until);
+  const ap = s.players[s.active];
+  for (const c of [...ap.battle, ...ap.gear]) if (hasKeyword(s, c, 'Vigilance') && c.tapped) {
+    c.tapped = false;
+    log(s, `${nm(c)} untaps (Vigilance).`);
+  }
+  ap.doubleNext = false;
+  for (const p of s.players) for (const u of p.battle) {
+    u.mods = u.mods.filter(m => !(m.until === 'eot' || (m.untilTurn != null && m.untilTurn <= s.turn)));
+  }
   s.players[s.active].turnsTaken++;
   s.active = other(s.active);
   beginTurn(s);
@@ -458,33 +551,53 @@ function doPlay(s, pi, a) {
   const p = s.players[pi];
   const inst = [...p.hand, p.championSlot, p.signatureSlot].find(c => c && c.uid === a.uid);
   const d = getDef(inst.id);
-  payCost(s, p, d.cost, d.colors);
+  payCost(s, p, effectiveCost(s, pi, d), d.colors, d.recycle || 0);
   removeFromSource(p, a.uid);
   const k = kindOf(d);
   if (k === 'spell' && s.pending && s.pending.kind === 'priority') {
-    s.stack.push({ inst, controller: pi, target: a.target ?? null });
+    s.stack.push({ inst, controller: pi, target: a.target ?? null, modes: a.modes ?? null });
     log(s, `${p.name} casts ${d.name}${a.target ? ' → ' + nm(findInst(s, a.target).inst) : ''} (on the stack).`);
     fireAll(s, pi, 'spellCast');
     s.pending.player = other(pi);
     s.pending.passes = 0;
     return;
   }
-  putIntoPlay(s, pi, inst, a.target);
+  putIntoPlay(s, pi, inst, a.target, a.modes);
+}
+
+function resolveModes(s, pi, d, modes) {
+  if (d.opponentChooses && d.modes?.length) {
+    const i = Math.floor(rand(s) * d.modes.length);
+    log(s, `${s.players[other(pi)].name} chooses "${d.modes[i].name}" for ${d.name}.`);
+    return [i];
+  }
+  if (modes && d.modes) log(s, `${d.name}: ${modes.map(i => d.modes[i].name).join(' + ')}.`);
+  return modes;
+}
+
+/** Run a spell's / ability's effects; Hellyeah makes the next one happen twice. */
+function runTwiceIfDoubled(s, pi, src, effects, target) {
+  const p = s.players[pi];
+  const times = p.doubleNext ? 2 : 1;
+  if (p.doubleNext) { p.doubleNext = false; log(s, 'Hellyeah! It triggers twice.'); }
+  for (let i = 0; i < times; i++) runEffects(s, pi, src, effects, target);
 }
 
 /** Resolve a card entering play (normal play, or a free Shield Trigger). */
-function putIntoPlay(s, pi, inst, target) {
+function putIntoPlay(s, pi, inst, target, modes = null) {
   const p = s.players[pi];
   const d = getDef(inst.id);
   const k = kindOf(d);
+  modes = resolveModes(s, pi, d, modes);
   inst.tapped = false; inst.mods = [];
   if (k === 'unit') {
     inst.sick = true;
     const h = clockHour();
     inst.fast = (d.keywords || []).includes('Nostalgia Line') && h >= 16 && h < 22;
+    if ((d.keywords || []).includes('Slow Start')) inst.tapped = true;
     p.battle.push(inst);
     log(s, `${p.name} plays ${d.name}${inst.fast ? ' (Nostalgia Line active!)' : ''}.`);
-    runEffects(s, pi, inst, effectsOn(d, 'play'), target);
+    runEffects(s, pi, inst, playEffects(d, modes), target);
     for (const src of [p.legend, ...p.gear, ...p.battle]) if (src !== inst) fire(s, pi, src, 'unitPlayed', inst);
   } else if (k === 'gear') {
     if (p.gear.length >= RULES.GEAR_SLOTS) {
@@ -494,20 +607,33 @@ function putIntoPlay(s, pi, inst, target) {
     }
     p.gear.push(inst);
     log(s, `${p.name} equips ${d.name}.`);
-    runEffects(s, pi, inst, effectsOn(d, 'play'), target);
+    runEffects(s, pi, inst, playEffects(d, modes), target);
   } else {
     log(s, `${p.name} casts ${d.name}${target && findInst(s, target) ? ' → ' + nm(findInst(s, target).inst) : ''}.`);
     fireAll(s, pi, 'spellCast');
-    runEffects(s, pi, inst, effectsOn(d, 'play'), target);
-    p.graveyard.push(inst);
+    runTwiceIfDoubled(s, pi, inst, playEffects(d, modes), target);
+    finishSpell(p, inst, modes);
   }
+}
+
+function finishSpell(p, inst, modes) {
+  const d = getDef(inst.id);
+  const after = (modes || []).map(i => d.modes?.[i]?.afterCast).find(Boolean) || d.afterCast;
+  if (after === 'deckTop') p.deck.unshift(inst);
+  else if (after === 'banish') { /* removed from the game */ }
+  else p.graveyard.push(inst);
 }
 
 function effectsOn(d, trigger) { return (d.effects || []).filter(e => (e.on || 'play') === trigger); }
 
 function fire(s, pi, src, trigger, subject) {
   const d = getDef(src.id);
-  const effs = effectsOn(d, trigger).filter(e => !SINGLE_TARGETS.has(e.target));
+  let effs = effectsOn(d, trigger).filter(e => !SINGLE_TARGETS.has(e.target));
+  effs = effs.filter(e => !(e.ifSubjectMighty && !(subject && isMighty(s, subject))));
+  if (effs.some(e => e.tapSource)) {
+    if (src.tapped) return;
+    src.tapped = true; // "you may exhaust me"
+  }
   if (!effs.length) return;
   runEffects(s, pi, src, effs, null, subject);
   consumeUse(s, pi, src);
@@ -531,12 +657,12 @@ function consumeUse(s, pi, src) {
 
 function doActivate(s, pi, a) {
   const p = s.players[pi];
-  const g = p.gear.find(x => x.uid === a.uid);
+  const g = p.gear.find(x => x.uid === a.uid) || p.battle.find(x => x.uid === a.uid);
   const d = getDef(g.id);
   payCost(s, p, d.activateCost || 0, null);
-  g.tapped = true;
+  if (d.activateNoTap) g.activatedTurn = s.turn; else g.tapped = true;
   log(s, `${p.name} activates ${d.name}.`);
-  runEffects(s, pi, g, effectsOn(d, 'activate'), a.target);
+  runTwiceIfDoubled(s, pi, g, effectsOn(d, 'activate'), a.target);
   consumeUse(s, pi, g);
 }
 
@@ -551,8 +677,11 @@ function runEffects(s, pi, source, effects, targetUid, subject) {
 function applyEffect(s, pi, source, e, targetUid, subject) {
   const me = s.players[pi], op = s.players[other(pi)];
   const n = e.amount ?? 1;
-  const targets = resolveTargets(s, pi, source, e, targetUid, subject);
-  const okPower = (u) => e.maxPower == null || power(s, u) <= e.maxPower;
+  if (e.ifInPlay && !me.battle.some(u => getDef(u.id).name.toLowerCase().includes(e.ifInPlay.toLowerCase()))) return;
+  let targets = resolveTargets(s, pi, source, e, targetUid, subject).filter(u => matchFilter(u, e.filter));
+  const okPower = (u) => (e.maxPower == null || power(s, u) <= e.maxPower) && (e.minPower == null || power(s, u) >= e.minPower);
+  if (e.limit) targets = targets.filter(okPower).sort((a, b) => power(s, b) - power(s, a)).slice(0, e.limit);
+  const until = (u) => (e.duration === 'permanent' ? {} : e.duration === 'nextTurn' ? { untilTurn: s.turn + 2 } : { until: 'eot' });
   switch (e.do) {
     case 'draw': for (let i = 0; i < n; i++) drawCard(s, e.who === 'opponent' ? op.idx : pi); break;
     case 'destroy':
@@ -560,11 +689,69 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       for (const u of targets) if (okPower(u)) destroyUnit(s, u);
       break;
     case 'buff':
-      for (const u of targets) u.mods.push({ power: n, until: e.duration === 'permanent' ? null : 'eot' });
+      for (const u of targets) if (okPower(u)) u.mods.push({ power: n, ...until(u) });
       break;
     case 'grantKeyword':
-      for (const u of targets) u.mods.push({ keyword: e.keyword, until: e.duration === 'permanent' ? null : 'eot' });
+      for (const u of targets) u.mods.push({ keyword: e.keyword, ...until(u) });
       break;
+    case 'ready':
+      for (const u of targets) if (okPower(u)) { u.tapped = false; u.sick = false; }
+      break;
+    case 'morph':
+      for (const u of targets) { u.morph = e.power ?? 1; u.mods = u.mods.filter(m => !m.power); log(s, `${nm(u)} turns into a Sheep (${u.morph} Might).`); }
+      break;
+    case 'sacrificeSelf':
+      if (source && me.gear.includes(source)) destroyGear(s, source);
+      else if (source && me.battle.includes(source)) destroyUnit(s, source);
+      break;
+    case 'breakOwnShield':
+      for (let i = 0; i < n && me.shields.length; i++) me.hand.push(me.shields.shift());
+      log(s, `${me.name} breaks their own shield.`);
+      break;
+    case 'lockShields':
+      me.shieldLockUntil = s.turn + 2;
+      log(s, `${me.name}'s shields are unbreakable until their next turn.`);
+      break;
+    case 'sealTriggers':
+      op.triggersSealedUntil = s.turn + 2;
+      log(s, `${op.name}'s Shield Triggers are sealed until ${me.name}'s next turn.`);
+      break;
+    case 'doubleNext':
+      me.doubleNext = true;
+      break;
+    case 'counter': {
+      for (let i = s.stack.length - 1; i >= 0; i--) {
+        const it = s.stack[i];
+        const cd = getDef(it.inst.id);
+        if (it.controller === pi || cd.cost > (e.maxCost ?? 99)) continue;
+        s.stack.splice(i, 1);
+        s.players[it.controller].graveyard.push(it.inst);
+        log(s, `${cd.name} is countered.`);
+        break;
+      }
+      break;
+    }
+    case 'splitDestroy': {
+      let budget = n;
+      for (const u of [...op.battle].sort((a, b) => power(s, b) - power(s, a))) {
+        const pw = Math.max(0, power(s, u));
+        if (pw <= budget) { budget -= pw; destroyUnit(s, u); }
+      }
+      break;
+    }
+    case 'summonNamed': {
+      const zones = e.from || ['hand', 'deck', 'graveyard'];
+      let found = null, zone = null;
+      for (const z of zones) {
+        found = me[z].find(c => getDef(c.id).name.toLowerCase().includes(e.name.toLowerCase()));
+        if (found) { zone = z; break; }
+      }
+      if (!found) { log(s, `No ${e.name} to summon.`); break; }
+      me[zone].splice(me[zone].indexOf(found), 1);
+      putIntoPlay(s, pi, found, null);
+      if (e.ready) { found.sick = false; found.tapped = false; }
+      break;
+    }
     case 'tap': for (const u of targets) if (okPower(u)) u.tapped = true; break;
     case 'untap': for (const u of targets) u.tapped = false; break;
     case 'bounce':
@@ -595,6 +782,19 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       if (i >= 0) { const c = me.graveyard.splice(i, 1)[0]; me.hand.push(c); log(s, `${me.name} recovers ${nm(c)}.`); }
       break;
     }
+    case 'tutor': {
+      const kind = e.kind || 'unit';
+      const ok = (c) => kindOf(getDef(c.id)) === kind && (!e.name || getDef(c.id).name.toLowerCase().includes(e.name.toLowerCase()));
+      const zone = (e.from || ['deck']).find(z => me[z].some(ok));
+      if (!zone) { log(s, `${me.name} searches but finds nothing.`); break; }
+      const pool = me[zone].filter(ok).sort((a, b) => getDef(b.id).cost - getDef(a.id).cost);
+      const c = pool[0];
+      me[zone].splice(me[zone].indexOf(c), 1);
+      me.hand.push(c);
+      shuffle(s, me.deck);
+      log(s, `${me.name} searches their deck and takes ${nm(c)}.`);
+      break;
+    }
     case 'token':
       for (let i = 0; i < n; i++) {
         const t = mk(s, e.tokenId, pi);
@@ -606,12 +806,18 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
   }
 }
 
-function resetInst(u) { u.tapped = false; u.sick = false; u.mods = []; u.fast = false; }
+function resetInst(u) { u.tapped = false; u.sick = false; u.mods = []; u.fast = false; delete u.morph; delete u.escaped; }
 
 function destroyUnit(s, u) {
   const owner = s.players[u.owner];
   const i = owner.battle.indexOf(u);
   if (i < 0) return;
+  if (getDef(u.id).escapeOnce && !u.escaped) {
+    u.escaped = true;
+    u.mods.push({ power: 1 });
+    log(s, `${nm(u)} escapes from hell and gains +1 Might!`);
+    return;
+  }
   owner.battle.splice(i, 1);
   resetInst(u);
   const d = getDef(u.id);
@@ -631,11 +837,13 @@ function destroyGear(s, g) {
 
 function breakShields(s, defIdx, n) {
   const p = s.players[defIdx];
+  if (p.shieldLockUntil > s.turn) { log(s, `${p.name}'s shields are unbreakable!`); return; }
   for (let i = 0; i < n && p.shields.length; i++) {
     const sh = p.shields.shift();
     p.hand.push(sh);
     const d = getDef(sh.id);
     log(s, `${p.name}'s shield breaks (${p.shields.length} left).`);
+    if (p.triggersSealedUntil > s.turn) continue;
     if ((d.keywords || []).includes('Shield Trigger')) s.queue.push({ kind: 'shieldTrigger', player: defIdx, uid: sh.uid });
   }
 }
@@ -648,7 +856,7 @@ function doShieldTrigger(s, pi, a) {
     if (inst) {
       p.hand.splice(p.hand.indexOf(inst), 1);
       log(s, `Shield Trigger! ${p.name} plays ${nm(inst)} for free.`);
-      putIntoPlay(s, pi, inst, a.target);
+      putIntoPlay(s, pi, inst, a.target, a.modes);
     }
   }
   nextFromQueue(s);
@@ -674,6 +882,7 @@ function doAttack(s, pi, a) {
   log(s, `${nm(att)} attacks ${tName}!`);
   s.combat = { attacker: att.uid, attackerOwner: pi, target: { ...a.target }, blockedBy: null };
   fire(s, pi, att, 'attack');
+  for (const u of [...op.battle]) fire(s, op.idx, u, 'enemyAttack');
   if (s.winner != null) return;
   s.pending = blockers(s, op.idx).length ? { kind: 'block', player: op.idx } : { kind: 'priority', player: op.idx, passes: 0 };
 }
@@ -696,8 +905,9 @@ function doPass(s, pd) {
     const it = s.stack.pop();
     const d = getDef(it.inst.id);
     log(s, `${d.name} resolves.`);
-    runEffects(s, it.controller, it.inst, effectsOn(d, 'play'), it.target);
-    s.players[it.controller].graveyard.push(it.inst);
+    const modes = resolveModes(s, it.controller, d, it.modes);
+    runTwiceIfDoubled(s, it.controller, it.inst, playEffects(d, modes), it.target);
+    finishSpell(s.players[it.controller], it.inst, modes);
     pd.passes = 0;
     pd.player = s.combat ? other(s.combat.attackerOwner) : other(s.active);
     return;
@@ -716,7 +926,8 @@ function resolveCombat(s) {
   if (c.target.kind === 'unit') {
     const def = D.battle.find(u => u.uid === c.target.uid);
     if (!def) { log(s, 'The attack fizzles (target gone).'); return; }
-    const ap = power(s, att), dp = power(s, def);
+    const ap = power(s, att) + (getDef(att.id).attackBonus || 0);
+    const dp = power(s, def) + (getDef(def.id).defendBonus || 0);
     log(s, `Fight: ${nm(att)} (${ap}) vs ${nm(def)} (${dp}).`);
     const kill = new Set();
     if (ap >= dp) kill.add(def);
@@ -724,7 +935,15 @@ function resolveCombat(s) {
     // Deathtouch: losing unit takes the winner with it
     if (ap > dp && hasKeyword(s, def, 'Deathtouch')) kill.add(att);
     if (dp > ap && hasKeyword(s, att, 'Deathtouch')) kill.add(def);
-    for (const u of kill) destroyUnit(s, u);
+    for (const u of kill) {
+      const roll = getDef(u.id).surviveRoll;
+      if (roll) {
+        const d6 = 1 + Math.floor(rand(s) * 6);
+        log(s, `${nm(u)} rolls a D6: ${d6}${d6 >= roll ? ' — survives!' : '.'}`);
+        if (d6 >= roll) continue;
+      }
+      destroyUnit(s, u);
+    }
     return;
   }
   if (c.target.kind === 'player' && D.shields.length === 0) {

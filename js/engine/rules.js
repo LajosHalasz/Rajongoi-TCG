@@ -43,6 +43,8 @@ export const TYPE_INFO = {
   spell:     { label: 'Spell',     hex: '#2f7fa8' },
   gear:      { label: 'Gear',      hex: '#7a6a55' },
   signature: { label: 'Signature', hex: '#7b3fa6' },
+  token:     { label: 'Token',     hex: '#5d5d5d' },
+  rune:      { label: 'Rune',      hex: '#8a7a63' },
 };
 
 export const KEYWORDS = {
@@ -54,6 +56,9 @@ export const KEYWORDS = {
   'Haste':          { hex: '#D9822B', reminder: 'Can attack the turn it is played.' },
   'Being Áron':     { hex: '#6D6E6B', reminder: 'Table rule - resolved in real life, not by the game.' },
   'Breaker':        { hex: '#B03A2E', reminder: 'Breaks 2 shields instead of 1.' },
+  'Party Breaker':  { hex: '#CE356B', reminder: 'Can attack untapped Units.' },
+  'Slow Start':     { hex: '#6D6E6B', reminder: 'Enters tapped.' },
+  'Unstoppable':    { hex: '#6D6E6B', reminder: "This Unit's attacks can't be redirected." },
   'Action':         { hex: '#6D5BD0', reminder: 'Can also be played during combat.' },
   'Reaction':       { hex: '#2E8B9A', reminder: 'Can be played during combat, even in response to another spell.' },
 };

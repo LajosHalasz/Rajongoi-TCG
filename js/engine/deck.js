@@ -36,7 +36,7 @@ export function validateDeck(deck) {
   const ids = Object.keys(deck.cards || {}).filter(hasDef);
   const defs = ids.map(getDef);
   for (const d of defs) {
-    if (d.type === 'legend' || d.type === 'token') errors.push(`${d.name} can't be in the main deck.`);
+    if (d.type === 'legend' || d.type === 'token' || d.type === 'rune') errors.push(`${d.name} can't be in the main deck.`);
     if (d.type === 'signature') {
       if (!signatureMatchesLegend(d, legend)) errors.push(`${d.name} is a Signature card of another Legend.`);
     } else if (d.colors.some(c => !legend.colors.includes(c))) {

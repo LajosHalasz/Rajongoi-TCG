@@ -17,40 +17,94 @@ const outFile = path.join(root, 'data', 'imported.json');
 const imgDir = path.join(root, 'data', 'img');
 fs.mkdirSync(imgDir, { recursive: true });
 
-const files = process.argv.slice(2);
+const fresh = process.argv.includes('--fresh'); // rebuild imported.json from the given files only
+const files = process.argv.slice(2).filter(a => a !== '--fresh');
 if (!files.length) {
   console.error('usage: node tools/import-riftcardmaker.mjs card1.json [card2.json ...]');
   process.exit(1);
 }
 
-const existing = fs.existsSync(outFile) ? JSON.parse(fs.readFileSync(outFile, 'utf8')) : [];
+const existing = !fresh && fs.existsSync(outFile) ? JSON.parse(fs.readFileSync(outFile, 'utf8')) : [];
 const byId = new Map(existing.map(c => [c.id, c]));
+
+// ---- reconcile with the Access database (data/cards.json) by name -------------
+const dbFile = path.join(root, 'data', 'cards.json');
+const dbCards = fs.existsSync(dbFile) ? JSON.parse(fs.readFileSync(dbFile, 'utf8')).filter(c => !c.placeholder && !c.filler) : [];
+const norm = (n) => String(n || '').split(/[|,(]/)[0].normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+function lev(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+const similar = (a, b) => { a = norm(a); b = norm(b); return !!a && !!b && (a === b || 1 - lev(a, b) / Math.max(a.length, b.length) >= 0.75); };
+const family = (t) => (['unit', 'champion', 'token'].includes(t) ? 'unit' : t);
+const sameFamily = (a, b) => family(a.type) === family(b.type) || a.type === 'signature' || b.type === 'signature';
+function reconcile(card) {
+  if (card.set === 'TKN' || card.set === 'RUN') return card;
+  const atId = dbCards.find(c => c.id === card.id);
+  if (atId && similar(atId.name, card.name) && (sameFamily(atId, card) || norm(atId.name) === norm(card.name))) return card;
+  const byName = dbCards.find(c => c.set === card.set && similar(c.name, card.name) && sameFamily(c, card));
+  if (byName) {
+    console.log(`  note: ${card.id} "${card.name}" matches database card ${byName.id} "${byName.name}" -> using ${byName.id}`);
+    if (card.image) {
+      const to = `data/img/${byName.id}.jpg`;
+      fs.renameSync(path.join(root, card.image), path.join(root, to));
+      card.image = to;
+    }
+    card.id = byName.id; card.number = byName.number;
+  } else if (atId) {
+    console.log(`  note: ${card.id} "${card.name}" is new; database row ${atId.id} "${atId.name}" gets renumbered by the next database import`);
+  }
+  return card;
+}
 
 const KNOWN = new Set(['Shield Trigger', 'Defensive', 'Deathtouch', 'Nostalgia Line', 'Haste', 'Breaker', 'Action', 'Reaction', 'Being Áron']);
 
 function parseSetInfo(info = '') {
-  const m = info.trim().match(/^(\S+)\s+(\d+)/);
+  const m = info.trim().match(/^([A-Za-z]+)[\s-]*(\d+)/);
   if (!m) return { set: 'MISC', number: '000' };
   let set = m[1].toUpperCase();
   if (set === 'TOKEN') set = 'TKN';
   return { set, number: m[2] };
 }
 
+const slug = (x) => String(x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const baseName = (n) => String(n || '').split(/[|,]/)[0].trim();
+
 function convert(j) {
-  const { set, number } = parseSetInfo(j.setInfo);
-  const id = `${set}-${number}`;
+  let { set, number } = parseSetInfo(j.setInfo);
   let type = String(j.type || 'unit').toLowerCase();
   if (set === 'TKN') type = 'token';
   if (type.includes('champion')) type = 'champion';
-  const colors = String(j.color || '').split(/[^a-zA-Z]+/).filter(c => c && c.toLowerCase() !== 'neutral')
+  const colors = [j.color, j.secondColor].flatMap(c => String(c || '').split(/[^a-zA-Z]+/))
+    .filter(c => c && c.toLowerCase() !== 'neutral')
     .map(c => c[0].toUpperCase() + c.slice(1).toLowerCase());
+  let owners = [];
+  let id = `${set}-${number}`;
+  if (type === 'legend') {
+    // Legends are keyed by their owner so they replace that deck's placeholder Legend
+    const owner = baseName(j.name) || j.illustrator;
+    owners = [owner];
+    set = (j.setInfo || 'OGN').trim().slice(0, 3).toUpperCase();
+    number = 'L-' + slug(owner);
+    id = `${set}-${number}`;
+  } else if (type === 'rune') {
+    const owner = (String(j.setInfo || '').split('-')[1] || j.illustrator || 'basic').trim();
+    owners = [owner];
+    set = 'RUN';
+    number = `${colors[0] || 'Rune'}-${slug(owner)}`;
+    id = `${set}-${number}`;
+  }
 
   const keywords = [];
   const effects = [];
   for (const m of String(j.description || '').matchAll(/\{([^#}]+)#[^}]*\}/g)) {
     const raw = m[1].trim();
     const num = raw.match(/^(.*?)\s+(\d+)$/);
-    if (num && num[1] === 'Shieldify') {
+    if (raw === 'Double Breaker') keywords.push('Breaker');
+    else if (num && num[1] === 'Shieldify') {
       keywords.push('Shieldify');
       effects.push({ on: 'play', do: 'shieldify', amount: +num[2] });
     } else if (KNOWN.has(raw)) keywords.push(raw);
@@ -58,7 +112,8 @@ function convert(j) {
   }
 
   const card = {
-    id, set, number, name: j.name.trim(), type,
+    id, set, number, name: (j.name || '').trim() || `${colors[0] || ''} Rune`.trim(), type, ...(j.subname ? { subname: j.subname.trim() } : {}),
+    ...(owners.length ? { owners } : {}),
     colors, cost: j.energy ?? 0, power: j.might ?? 0,
     keywords, effects,
     tribes: (j.tribes || []).map(t => t.text).filter(Boolean),
@@ -70,7 +125,7 @@ function convert(j) {
     source: 'riftcardmaker',
   };
   if (type === 'token') card.token = true;
-  if (j.power != null && j.power > 0) card.powerCost = j.power;
+  card.recycle = j.power != null && j.power > 0 ? j.power : 0; // riftcardmaker 'power' = runes to recycle
 
   const img = (j.images || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))[0];
   if (img && /^data:image\//.test(img.src || '')) {
@@ -94,7 +149,7 @@ function convert(j) {
 
 for (const f of files) {
   const j = JSON.parse(fs.readFileSync(f, 'utf8'));
-  const card = convert(j);
+  const card = reconcile(convert(j));
   byId.set(card.id, card);
   console.log(`imported ${card.id}  ${card.name}  [${card.type}${card.colors.length ? ' ' + card.colors.join('/') : ''}]  kw: ${card.keywords.join(', ') || '-'}`);
 }

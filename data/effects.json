@@ -1,5 +1,512 @@
 {
-  "_readme": "Game logic for cards whose text is free-form (riftcardmaker imports). Keys are card ids; values are merged over the card definition. See README.md > Effect reference.",
-  "OGN-003": { "effects": [ { "do": "buff", "target": "allEnemyUnits", "amount": -1, "duration": "turn" } ] },
-  "OGN-004": { "effects": [ { "do": "tap", "target": "anyUnit" } ] }
+ "_readme": "Game logic for finished cards (riftcardmaker text is free-form). Keys are card ids; values are merged over the card. See README > Effect reference.",
+ "OGN-003": {
+  "effects": [
+   {
+    "do": "buff",
+    "target": "allEnemyUnits",
+    "amount": -1,
+    "duration": "turn"
+   }
+  ]
+ },
+ "OGN-004": {
+  "effects": [
+   {
+    "do": "tap",
+    "target": "anyUnit"
+   }
+  ]
+ },
+ "OGN-005": {
+  "keywords": [
+   "Party Breaker",
+   "Disruptor"
+  ],
+  "activateNoTap": true,
+  "effects": [
+   {
+    "on": "activate",
+    "do": "breakOwnShield",
+    "amount": 1
+   },
+   {
+    "on": "activate",
+    "do": "grantKeyword",
+    "target": "self",
+    "keyword": "Breaker",
+    "duration": "turn"
+   }
+  ]
+ },
+ "OGN-006": {
+  "keywords": [
+   "Defensive"
+  ],
+  "effects": [
+   {
+    "on": "destroyed",
+    "do": "channel",
+    "amount": 1,
+    "tapped": true
+   }
+  ]
+ },
+ "OGN-007": {
+  "keywords": [],
+  "modes": [
+   {
+    "name": "White Pawn",
+    "effects": [
+     {
+      "do": "token",
+      "tokenId": "TKN-002",
+      "tokenName": "White Pawn"
+     }
+    ]
+   },
+   {
+    "name": "Black Pawn",
+    "effects": [
+     {
+      "do": "token",
+      "tokenId": "TKN-001",
+      "tokenName": "Black Pawn"
+     }
+    ]
+   }
+  ],
+  "effects": []
+ },
+ "OGN-008": {
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 1
+   },
+   {
+    "on": "activate",
+    "do": "sacrificeSelf"
+   },
+   {
+    "on": "activate",
+    "do": "channel",
+    "amount": 2
+   }
+  ]
+ },
+ "OGN-009": {
+  "keywords": [
+   "Furious"
+  ],
+  "escapeOnce": true
+ },
+ "OGN-010": {
+  "effects": [
+   {
+    "on": "static",
+    "do": "mightPerShield",
+    "amount": 1
+   }
+  ]
+ },
+ "OGN-011": {
+  "uses": 3,
+  "effects": [
+   {
+    "on": "activate",
+    "do": "draw",
+    "amount": 1
+   }
+  ]
+ },
+ "OGN-012": {
+  "effects": [
+   {
+    "do": "tap",
+    "target": "allEnemyUnits"
+   }
+  ]
+ },
+ "OGN-013": {
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "allUnits",
+    "maxPower": 4
+   }
+  ]
+ },
+ "OGN-014": {
+  "modes": [
+   {
+    "name": "Destroy all non-Mighty Units",
+    "effects": [
+     {
+      "do": "destroy",
+      "target": "allUnits",
+      "maxPower": 4
+     }
+    ]
+   },
+   {
+    "name": "Your Mighty Units enter Ready",
+    "effects": [
+     {
+      "do": "ready",
+      "target": "allFriendlyUnits",
+      "minPower": 5
+     }
+    ]
+   }
+  ],
+  "effects": []
+ },
+ "OGN-015": {
+  "effects": [
+   {
+    "do": "bounce",
+    "target": "anyUnit",
+    "maxPower": 3
+   }
+  ]
+ },
+ "OGN-016": {
+  "keywords": [
+   "Defensive",
+   "Immobile"
+  ]
+ },
+ "OGN-018": {
+  "effects": [
+   {
+    "do": "doubleNext"
+   }
+  ]
+ },
+ "OGN-019": {
+  "requiresStack": true,
+  "effects": [
+   {
+    "do": "counter",
+    "maxCost": 4
+   }
+  ]
+ },
+ "OGN-020": {
+  "costReduction": {
+   "perRunePair": [
+    "Fury",
+    "Calm"
+   ]
+  },
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "allUnits",
+    "filter": {
+     "color": "Body"
+    }
+   }
+  ]
+ },
+ "OGN-021": {
+  "keywords": [],
+  "opponentChooses": true,
+  "modes": [
+   {
+    "name": "Yes",
+    "effects": [
+     {
+      "do": "summonNamed",
+      "name": "Emese",
+      "from": [
+       "hand",
+       "deck",
+       "graveyard"
+      ],
+      "ready": true
+     }
+    ]
+   },
+   {
+    "name": "No",
+    "effects": [
+     {
+      "do": "grantKeyword",
+      "target": "allFriendlyUnits",
+      "keyword": "Party Breaker",
+      "duration": "turn"
+     }
+    ]
+   }
+  ],
+  "effects": []
+ },
+ "OGN-022": {
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "anyUnit",
+    "maxPower": 2
+   }
+  ]
+ },
+ "OGN-023": {
+  "effects": [
+   {
+    "on": "attack",
+    "do": "draw",
+    "amount": 1
+   }
+  ]
+ },
+ "OGN-024": {
+  "costReduction": {
+   "perGraveTribe": "Whiskey"
+  },
+  "unstoppableIfTribe": "Whiskey",
+  "keywords": []
+ },
+ "OGN-025": {
+  "keywords": [
+   "Furious",
+   "Assault"
+  ],
+  "attackBonus": 1
+ },
+ "OGN-028": {
+  "keywords": [
+   "Action"
+  ],
+  "modes": [
+   {
+    "name": "Boon of Athena",
+    "effects": [
+     {
+      "do": "buff",
+      "target": "friendlyUnit",
+      "amount": 1,
+      "duration": "permanent"
+     },
+     {
+      "do": "grantKeyword",
+      "target": "friendlyUnit",
+      "keyword": "Elusive",
+      "duration": "permanent"
+     }
+    ]
+   },
+   {
+    "name": "Boon of Poseidon",
+    "effects": [
+     {
+      "do": "buff",
+      "target": "friendlyUnit",
+      "amount": 2,
+      "duration": "permanent"
+     }
+    ]
+   },
+   {
+    "name": "Boon of Ares",
+    "effects": [
+     {
+      "do": "buff",
+      "target": "friendlyUnit",
+      "amount": 3,
+      "duration": "permanent"
+     },
+     {
+      "do": "grantKeyword",
+      "target": "friendlyUnit",
+      "keyword": "Party Breaker",
+      "duration": "permanent"
+     }
+    ]
+   }
+  ],
+  "effects": []
+ },
+ "OGN-029": {
+  "keywords": [
+   "Shield Trigger"
+  ],
+  "modes": [
+   {
+    "name": "Crescent",
+    "effects": [
+     {
+      "do": "morph",
+      "target": "allEnemyUnits",
+      "power": 1,
+      "limit": 5
+     }
+    ]
+   },
+   {
+    "name": "Half",
+    "effects": [
+     {
+      "do": "buff",
+      "target": "allEnemyUnits",
+      "amount": -2,
+      "duration": "permanent",
+      "limit": 3
+     }
+    ]
+   },
+   {
+    "name": "Full",
+    "afterCast": "banish",
+    "effects": [
+     {
+      "do": "lockShields"
+     }
+    ]
+   }
+  ],
+  "effects": []
+ },
+ "OGN-045": {
+  "keywords": [
+   "Defensive",
+   "Vigilance"
+  ]
+ },
+ "OGN-074": {
+  "keywords": [
+   "Vigilance"
+  ]
+ },
+ "OGN-120": {
+  "surviveRoll": 4,
+  "effects": [
+   {
+    "on": "static",
+    "do": "buff",
+    "target": "allFriendlyUnits",
+    "amount": 1
+   }
+  ]
+ },
+ "OGN-124": {
+  "keywords": [
+   "Breaker"
+  ],
+  "effects": [
+   {
+    "on": "activate",
+    "do": "grantKeyword",
+    "target": "self",
+    "keyword": "Party Breaker",
+    "duration": "nextTurn"
+   }
+  ]
+ },
+ "OGN-172": {
+  "keywords": [],
+  "chooseModes": 2,
+  "effects": [
+   {
+    "do": "destroy",
+    "target": "allUnits",
+    "maxPower": 4,
+    "filter": {
+     "color": "Chaos"
+    }
+   }
+  ],
+  "modes": [
+   {
+    "name": "Rumi",
+    "effects": [
+     {
+      "do": "tutor",
+      "kind": "spell",
+      "name": "Golden",
+      "from": [
+       "deck",
+       "graveyard"
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Mira",
+    "effects": [
+     {
+      "do": "ready",
+      "target": "self"
+     }
+    ]
+   },
+   {
+    "name": "Zoe",
+    "effects": [
+     {
+      "do": "channel",
+      "amount": 3
+     }
+    ]
+   }
+  ]
+ },
+ "OGN-177": {
+  "keywords": [],
+  "effects": [
+   {
+    "do": "sealTriggers"
+   },
+   {
+    "do": "draw",
+    "amount": 1,
+    "ifInPlay": "Cowtrix"
+   }
+  ]
+ },
+ "OGN-L-matyi": {
+  "keywords": [],
+  "championNames": [
+   "Zsófi"
+  ]
+ },
+ "DND-017": {
+  "keywords": [],
+  "effects": [
+   {
+    "on": "unitPlayed",
+    "do": "channel",
+    "amount": 1,
+    "tapped": true,
+    "ifSubjectMighty": true,
+    "tapSource": true
+   }
+  ]
+ },
+ "DND-002": {
+  "keywords": [
+   "Deflect 2"
+  ],
+  "effects": [
+   {
+    "on": "attack",
+    "do": "splitDestroy",
+    "amount": 5
+   }
+  ]
+ },
+ "DND-003": {
+  "keywords": [
+   "Tank"
+  ],
+  "defendBonus": 3,
+  "effects": [
+   {
+    "on": "enemyAttack",
+    "do": "draw",
+    "amount": 1
+   }
+  ]
+ }
 }

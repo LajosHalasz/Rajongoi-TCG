@@ -4,8 +4,8 @@ import { validateDeck } from '../engine/deck.js';
 import { cardHtml, esc } from './card.js';
 import { allDecks, customDecks, saveCustomDecks, findDeck } from '../data.js';
 
-const SET_NAMES = { OGN: 'OGN — Origins', DND: 'DND', TKN: 'Tokens' };
-const TYPE_ORDER = ['legend', 'champion', 'unit', 'spell', 'gear', 'signature', 'token'];
+const SET_NAMES = { OGN: 'OGN 2026-01', DND: 'DND — DLC', BAS: 'Fillers', TKN: 'Tokens', RUN: 'Runes' };
+const TYPE_ORDER = ['legend', 'champion', 'unit', 'spell', 'gear', 'signature', 'token', 'rune'];
 const sortCards = (a, b) => a.set.localeCompare(b.set) || String(a.number).localeCompare(String(b.number));
 
 // ------------------------------------------------------------ card modal --
@@ -19,9 +19,12 @@ export function showCardModal(def) {
       <dt>Name</dt><dd><b>${esc(def.name)}</b></dd>
       <dt>Type</dt><dd>${esc(TYPE_INFO[def.type]?.label || def.type)}${def.sigType ? ' (' + def.sigType + ')' : ''}</dd>
       <dt>Colors</dt><dd>${def.colors.join(' / ') || 'Neutral'}</dd>
-      <dt>Cost / Might</dt><dd>${def.cost} / ${kindOf(def) === 'unit' ? def.power : '—'}</dd>
+      <dt>Cost / Might / Recycle</dt><dd>${def.cost} / ${kindOf(def) === 'unit' ? def.power : '—'} / ${def.recycle || 0}${def.provisional ? ` <span class="muted">(provisional: ${def.provisional.join(', ')})</span>` : ''}</dd>
+      ${def.owners?.length ? `<dt>Deck of</dt><dd>${esc(def.owners.join(' / '))}</dd>` : ''}
+      ${def.purpose ? `<dt>Purpose</dt><dd>${esc(def.purpose)}</dd>` : ''}
+      <dt>Status</dt><dd>${def.image ? 'Finished (with artwork)' : def.filler ? 'Filler card (completes short decks)' : def.placeholder ? 'Placeholder' : def.wip ? 'Work in progress (FLAG)' : 'Designed'}${def.provisionalEffect ? ' · provisional effect' : ''}</dd>
       <dt>Keywords</dt><dd>${esc(kws)}</dd>
-      <dt>Card id</dt><dd><code>${esc(def.id)}</code> ${def.placeholder ? '<span class="muted">(placeholder)</span>' : ''}</dd>
+      <dt>Card id</dt><dd><code>${esc(def.id)}</code></dd>
       <dt>Game logic</dt><dd><code style="font-size:12px;white-space:pre-wrap">${esc(JSON.stringify(def.effects || []))}</code></dd>
       <dd style="margin-top:14px"><button class="close">Close</button></dd>
     </dl></div></div>`;
@@ -30,37 +33,50 @@ export function showCardModal(def) {
 }
 
 // ------------------------------------------------------------ collection --
-const filt = { types: new Set(), colors: new Set(), q: '' };
+const filt = { types: new Set(), colors: new Set(), owner: '', status: '', q: '' };
 
 export function renderCollection(app, set) {
   const cards = allCards();
-  const ORDER = ['OGN', 'DND', 'TKN'];
+  const ORDER = ['OGN', 'DND', 'TKN', 'RUN', 'BAS'];
   const rank = (x) => (ORDER.indexOf(x) + 1 || 50);
   const sets = [...new Set(cards.map(c => c.set))].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   if (!sets.includes(set)) set = sets[0];
   const inSet = cards.filter(c => c.set === set).sort(sortCards);
   const types = TYPE_ORDER.filter(t => inSet.some(c => c.type === t));
+  const owners = [...new Set(inSet.flatMap(c => c.owners || []))].sort((a, b) => a.localeCompare(b));
+  if (filt.owner && !owners.includes(filt.owner)) filt.owner = '';
+  const status = (c) => (c.image ? 'art' : c.wip || c.placeholder ? 'wip' : 'designed');
 
   const draw = () => {
     const shown = inSet.filter(c =>
       (!filt.types.size || filt.types.has(c.type)) &&
       (!filt.colors.size || c.colors.some(x => filt.colors.has(x))) &&
+      (!filt.owner || (c.owners || []).includes(filt.owner)) &&
+      (!filt.status || status(c) === filt.status) &&
       (!filt.q || (c.name + ' ' + c.text).toLowerCase().includes(filt.q.toLowerCase())));
-    const real = inSet.filter(c => !c.placeholder).length;
+    const nArt = inSet.filter(c => status(c) === 'art').length;
+    const nWip = inSet.filter(c => status(c) === 'wip').length;
     app.innerHTML = `<div class="page">
       <div class="tabs">${sets.map(s => `<button class="${s === set ? 'active' : ''}" data-set="${s}">${esc(SET_NAMES[s] || s)} <span class="muted">(${cards.filter(c => c.set === s).length})</span></button>`).join('')}</div>
       <div class="filters">
         ${types.map(t => `<span class="chip ${filt.types.has(t) ? 'on' : ''}" data-type="${t}"><span class="dot" style="background:${TYPE_INFO[t]?.hex || '#777'}"></span>${TYPE_INFO[t]?.label || 'Token'}</span>`).join('')}
         <span style="width:10px"></span>
         ${Object.entries(COLORS).map(([k, v]) => `<span class="chip ${filt.colors.has(k) ? 'on' : ''}" data-color="${k}"><span class="dot" style="background:${v.hex}"></span>${k}</span>`).join('')}
+        ${owners.length ? `<select id="owner"><option value="">Every deck</option>${owners.map(o => `<option ${o === filt.owner ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>` : ''}
+        <select id="status"><option value="">Any status</option>
+          <option value="art" ${filt.status === 'art' ? 'selected' : ''}>With artwork</option>
+          <option value="designed" ${filt.status === 'designed' ? 'selected' : ''}>Designed (FLAG off)</option>
+          <option value="wip" ${filt.status === 'wip' ? 'selected' : ''}>Work in progress</option></select>
         <input type="search" placeholder="Search…" value="${esc(filt.q)}" id="q">
-        <span class="muted">${shown.length} shown · ${real} finished, ${inSet.length - real} placeholder</span>
+        <span class="muted">${shown.length} shown · ${nArt} with art · ${nWip} WIP</span>
       </div>
       <div class="grid">${shown.map(c => cardHtml(c, { size: 'md' })).join('') || '<p class="muted">No cards match.</p>'}</div>
     </div>`;
     app.querySelectorAll('[data-set]').forEach(b => b.onclick = () => (location.hash = '#/collection/' + b.dataset.set));
     app.querySelectorAll('[data-type]').forEach(b => b.onclick = () => { toggle(filt.types, b.dataset.type); draw(); });
     app.querySelectorAll('[data-color]').forEach(b => b.onclick = () => { toggle(filt.colors, b.dataset.color); draw(); });
+    if (app.querySelector('#owner')) app.querySelector('#owner').onchange = (e) => { filt.owner = e.target.value; draw(); };
+    app.querySelector('#status').onchange = (e) => { filt.status = e.target.value; draw(); };
     const q = app.querySelector('#q');
     q.oninput = () => { filt.q = q.value; draw(); const nq = app.querySelector('#q'); nq.focus(); nq.setSelectionRange(nq.value.length, nq.value.length); };
     app.querySelectorAll('.grid .card').forEach(el => el.onclick = () => showCardModal(getDef(el.dataset.cid)));
@@ -134,7 +150,7 @@ export function renderBuilder(app, arg) {
     if (!draft.legend) return [];
     const L = getDef(draft.legend);
     return allCards().filter(c => {
-      if (c.type === 'legend' || c.type === 'token') return false;
+      if (c.type === 'legend' || c.type === 'token' || c.type === 'rune') return false;
       if (c.type === 'signature') return signatureMatchesLegend(c, L);
       return c.colors.every(x => L.colors.includes(x));
     }).sort((a, b) => a.cost - b.cost || sortCards(a, b));

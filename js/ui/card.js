@@ -2,7 +2,7 @@
 // cost (top-left), might (top-right), art (top), type badge + tribe,
 // name bar in the card's color, rules text box, flavor box, set footer.
 import { COLORS, TYPE_INFO } from '../engine/rules.js';
-import { kindOf } from '../engine/cards.js';
+import { kindOf, artPool } from '../engine/cards.js';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -18,9 +18,18 @@ export function markup(text) {
   h = h.replace(/\{([^#}]+)#([0-9a-fA-F]{6})(?:#([0-9a-fA-F]{6}))?\}/g,
     (_, label, bg, fg) => `<span class="kw" style="background:#${bg};color:#${fg || 'fff'}">${label.trim()}</span>`);
   h = h.replace(/__(.+?)__/gs, '<i>$1</i>');
+  h = h.replace(/\[([A-Za-z])#([0-9a-fA-F]{6})\]/g, (_, k, c) => `<span class="ico" style="background:#${c}">${k.toUpperCase()}</span>`);
   h = h.replace(/\[([TMR])\]/g, (_, k) => ICONS[k]);
-  h = h.replace(/\[(\d+)\]/g, '<span class="ico ico-num">$1</span>');
+  h = h.replace(/\[P\]/g, '<span class="ico" title="Power rune">P</span>');
+  h = h.replace(/\[\+(\d+)M\]/g, '+$1 ' + ICONS.M);
+  h = h.replace(/\[(\d+\+?)\]/g, '<span class="ico ico-num">$1</span>');
   return h.split('\n').map(l => l.trim() ? `<p>${l}</p>` : '').join('');
+}
+
+function hash(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+  return h >>> 0;
 }
 
 const GLYPH = { unit: '⚔', champion: '★', spell: '✦', gear: '⚙', legend: '♛', signature: '✪', token: '♟' };
@@ -40,6 +49,19 @@ function artHtml(def) {
   }
   const c1 = colorHex(def);
   const c2 = def.colors[1] ? COLORS[def.colors[1]].hex : '#1d1a16';
+  const pool = artPool();
+  if (pool.length) {
+    // borrow finished artwork: same colour if possible, varied crop, tinted to this card's colour
+    const same = pool.filter(c => c.colors.some(x => def.colors.includes(x)));
+    const src = same.length ? same : pool;
+    const h = hash(def.id);
+    const pick = src[h % src.length];
+    const zoom = 1.25 + ((h >> 4) % 50) / 100;
+    const px = (h >> 8) % 100, py = (h >> 12) % 100;
+    return `<div class="art-ph borrowed" style="--c1:${c1};--c2:${c2}">
+      <img class="art-img" src="${esc(pick.image)}" alt="" loading="lazy" style="object-position:${px}% ${py}%;transform:scale(${zoom.toFixed(2)})${h & 1 ? ' scaleX(-1)' : ''}">
+      <span class="ph-label">placeholder art</span></div>`;
+  }
   const initials = def.name.replace(/[^A-Za-zÀ-ž ]/g, '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
   return `<div class="art-ph" style="--c1:${c1};--c2:${c2}">
     <span class="ph-glyph">${GLYPH[def.type] || '✦'}</span>
@@ -70,15 +92,18 @@ export function cardHtml(def, opts = {}) {
   const tribes = (def.tribes || []).slice(0, 2).map(t => `<span class="tribe">${esc(t)}</span>`).join('');
   const domains = def.colors.map(c => `<span class="domain" style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join('');
   const badges = opts.badges || '';
+  const prov = def.provisional || [];
   return `<div class="${cls}" ${data} style="--domain:${colorHex(def)};--type:${typeHex}">
     <div class="art">${artHtml(def)}</div>
     <div class="frame"></div>
-    ${def.type === 'legend' ? '' : `<div class="cost"><span>${def.cost}</span></div>`}
-    ${showMight ? `<div class="might ${mightCls}"><span class="might-ico">⛨</span><span class="might-val">${might}</span></div>` : ''}
+    ${def.type === 'legend' || def.type === 'rune' ? '' : `<div class="cost ${prov.includes('cost') ? 'prov' : ''}" title="${prov.includes('cost') ? 'Provisional cost' : 'Cost'}"><span>${opts.cost ?? def.cost}</span></div>`}
+    ${def.recycle ? `<div class="recycle" title="Recycle ${def.recycle} rune(s) of this color"><i>↻</i>${def.recycle}</div>` : ''}
+    ${showMight ? `<div class="might ${mightCls} ${prov.includes('might') ? 'prov' : ''}"><span class="might-ico">⛨</span><span class="might-val">${might}</span></div>` : ''}
+    ${def.wip || def.placeholder ? `<div class="wip-tag">${def.filler ? 'FILLER' : def.placeholder ? 'PLACEHOLDER' : 'WIP'}</div>` : ''}
     <div class="typeline"><span class="domains">${domains}</span><span class="type-badge">${esc(typeLabel(def))}</span>${tribes}</div>
-    <div class="namebar"><span style="${nameSize(def.name, opts.mini)}">${esc(def.name)}</span></div>
-    <div class="textbox">${markup(def.text)}${def.flavor ? `<div class="flavor">${esc(def.flavor)}</div>` : ''}</div>
-    <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || (def.placeholder ? 'placeholder' : ''))}</span></div>
+    <div class="namebar"><span style="${nameSize(def.name, opts.mini)}">${esc(def.name)}</span>${def.subname && !opts.mini ? `<small>${esc(def.subname)}</small>` : ''}</div>
+    <div class="textbox">${def.text ? markup(def.text) : `<p class="wip-text">Design in progress${def.purpose ? ` — ${esc(def.purpose)}` : ''}.</p>`}${def.flavor ? `<div class="flavor">${esc(def.flavor)}</div>` : ''}</div>
+    <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || (def.owners || []).join(' / '))}</span></div>
     ${badges}
   </div>`;
 }

@@ -1,5 +1,5 @@
 // Browser data loading: placeholders + imported (real) cards + logic overrides.
-import { setCardDb, allCards } from './engine/cards.js';
+import { setCardDb, allCards, mergeSources } from './engine/cards.js';
 import { validateDeck } from './engine/deck.js';
 
 const LS_KEY = 'riftmasters.decks.v1';
@@ -22,9 +22,7 @@ export async function loadData() {
       getJson('data/cards.json', []), getJson('data/imported.json', []),
       getJson('data/effects.json', {}), getJson('data/decks.json', []),
     ]);
-  const byId = new Map(placeholders.map(c => [c.id, c]));
-  for (const c of imported) byId.set(c.id, c); // real cards replace placeholders
-  setCardDb([...byId.values()], overrides);
+  setCardDb(mergeSources(placeholders, imported), overrides);
   premade = decks;
   return allCards();
 }

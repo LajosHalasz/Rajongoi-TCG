@@ -13,6 +13,31 @@ export function setCardDb(list, overrides = {}) {
   return DB;
 }
 
+/**
+ * Database cards + finished (riftcardmaker) cards. A finished card overrides the
+ * database row with the same id, but keeps the database's Champion/Signature type
+ * (riftcardmaker exports those as plain units/spells) and its owner/purpose info.
+ */
+export function mergeSources(dbCards, imported) {
+  const byId = new Map(dbCards.map(c => [c.id, c]));
+  for (const c of imported) {
+    const db = byId.get(c.id);
+    const m = { ...(db || {}), ...c };
+    if (db && ['signature', 'champion'].includes(db.type) && ['unit', 'spell', 'gear'].includes(c.type)) {
+      m.type = db.type;
+      if (db.sigType) m.sigType = db.sigType;
+    }
+    // a finished card without parsed logic keeps the database's real (non-provisional) logic
+    if (db && !(c.effects || []).length) m.effects = db.provisionalEffect ? [] : (db.effects || []);
+    if (db && db.provisionalEffect && c.uses == null) delete m.uses;
+    if (db) m.keywords = [...new Set([...(c.keywords || []), ...(db.keywords || [])])];
+    delete m.provisional; delete m.provisionalEffect; delete m.placeholder;
+    m.wip = false;
+    byId.set(c.id, m);
+  }
+  return [...byId.values()];
+}
+
 export function getDef(id) {
   const d = DB.get(id);
   if (!d) throw new Error(`Unknown card id: ${id}`);
@@ -20,6 +45,9 @@ export function getDef(id) {
 }
 export function hasDef(id) { return DB.has(id); }
 export function allCards() { return [...DB.values()]; }
+
+/** Finished artwork, used as tinted placeholder art for cards that have none yet. */
+export function artPool() { return allCards().filter(c => c.image); }
 
 export function normalize(c) {
   const def = {
@@ -30,7 +58,9 @@ export function normalize(c) {
   def.colors = (def.colors || []).map(cap);
   def.type = (def.type || 'unit').toLowerCase();
   if (def.type === 'signature' && !def.sigType) def.sigType = 'spell';
+  def.recycle = def.recycle || 0;
   def.text = def.text && def.text.trim() ? def.text : describe(def);
+  if (def.provisionalEffect) def.text = `{Provisional#7A7A7A}__(placeholder effect until this card is designed)__\n${def.text}`;
   return def;
 }
 
@@ -43,16 +73,19 @@ export function kindOf(def) {
     case 'spell': return 'spell';
     case 'gear': return 'gear';
     case 'legend': return 'legend';
+    case 'rune': return 'rune';
     case 'signature': return def.sigType || 'spell';
     default: return 'unit';
   }
 }
 
 /** "Varok, Ashen Warlord" -> "Varok" — used to link Legend / Champion / Signature. */
-export function baseName(name) { return String(name || '').split(',')[0].trim().toLowerCase(); }
+export function baseName(name) { return String(name || '').split(/[|,]/)[0].trim().toLowerCase(); }
 
 export function championMatchesLegend(champ, legend) {
-  return champ && legend && baseName(champ.name) === baseName(legend.name);
+  if (!champ || !legend) return false;
+  const names = [legend.name, ...(legend.championNames || [])].map(baseName);
+  return names.includes(baseName(champ.name));
 }
 export function signatureMatchesLegend(sig, legend) {
   if (!sig || !legend) return false;
@@ -102,14 +135,16 @@ const TRIGGER_TEXT = {
 export function describeEffect(e, def) {
   const t = TARGET_TEXT[e.target] || 'target Unit';
   const n = e.amount ?? 1;
-  const pw = e.maxPower != null ? ` with [M]${e.maxPower} or less` : '';
+  const f = e.filter || {};
+  const pw = (e.maxPower != null ? ` with [M]${e.maxPower} or less` : '')
+    + (f.notType ? ` (not ${f.notType === 'champion' ? 'a Champion' : f.notType})` : '')
+    + (f.color ? ` (${f.color} only)` : '') + (f.notColor ? ` (non-${f.notColor})` : '');
   const dur = e.duration === 'permanent' ? '' : ' this turn';
   switch (e.do) {
     case 'draw': return e.who === 'opponent' ? `Your opponent draws ${n}.` : `Draw ${n}.`;
     case 'destroy': return `Destroy ${t}${pw}.`;
     case 'buff': {
       if (e.on === 'static') {
-        const f = e.filter || {};
         const who = `Your ${f.color ? f.color + ' ' : ''}Units${f.keyword ? ' with ' + f.keyword : ''}`;
         return `${who} have ${n >= 0 ? '+' : ''}${n} [M].`;
       }
@@ -125,6 +160,8 @@ export function describeEffect(e, def) {
     case 'discard': return `Your opponent discards ${n} random card${n > 1 ? 's' : ''}.`;
     case 'recover': return `Return a Unit from your Graveyard to your hand.`;
     case 'grantKeyword': return `Give ${t} ${e.keyword}${dur}.`;
+    case 'tutor': return `Search your deck for a ${e.kind === 'spell' ? 'Spell' : 'Unit'}${e.name ? ` named ${e.name}` : ''}, put it into your hand, then shuffle.`;
+    case 'mightPerRune': return `Has [+${n}M] for each ${e.color} rune in your Mana Zone.`;
     case 'token': return `Create ${n > 1 ? n + ' ' : 'a '}${e.tokenName || 'token'}${n > 1 ? 's' : ''}.`;
     default: return e.text || '';
   }
@@ -146,5 +183,6 @@ export function describe(def) {
     groups.get(on).push(describeEffect(e, def));
   }
   for (const [on, parts] of groups) lines.push((TRIGGER_TEXT[on] || (() => ''))(def) + parts.join(' '));
+  if (def.afterCast === 'deckTop') lines.push('Then put this card on top of your deck.');
   return lines.join('\n');
 }

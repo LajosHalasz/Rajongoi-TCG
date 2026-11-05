@@ -1,6 +1,6 @@
-import { createGame, step, legalActions, whoActs, power, canAttackNow, findInst } from '../engine/game.js';
+import { createGame, step, legalActions, whoActs, power, canAttackNow, findInst, effectiveCost } from '../engine/game.js';
 import { chooseAction } from '../engine/ai.js';
-import { getDef, kindOf } from '../engine/cards.js';
+import { getDef, hasDef, kindOf } from '../engine/cards.js';
 import { COLORS, RULES } from '../engine/rules.js';
 import { validateDeck } from '../engine/deck.js';
 import { playableDecks, findDeck } from '../data.js';
@@ -32,7 +32,7 @@ export function renderSetup(app) {
     const v = validateDeck(d);
     return `<div class="deck-pick ${pick[who] === d.id ? 'on' : ''}" data-who="${who}" data-id="${d.id}">
       ${cardHtml(L, { size: 'xs' })}
-      <div><b>${esc(d.name)}</b><div class="muted">${L.colors.join(' / ')} · avg cost ${v.stats.avgCost.toFixed(1)} · ${d.premade ? 'premade' : 'custom'}</div></div></div>`;
+      <div><b>${esc(d.name)}</b><div class="muted">${L.colors.join(' / ')} · avg cost ${v.stats.avgCost.toFixed(1)} · ${d.premade ? 'premade' : 'custom'}${d.fillers ? ` · ${d.fillers} filler` : ''}</div></div></div>`;
   };
   app.innerHTML = `<div class="page">
     <h2>Play against AI</h2>
@@ -139,14 +139,17 @@ function unitCard(s, inst, hl, opts = {}) {
   if (hl.mull?.has(inst.uid)) cls.push('mull-sel');
   if (hl.attacking === inst.uid || hl.defending === inst.uid) cls.push('attacking');
   const pw = onBoard ? power(s, inst) : undefined;
+  const cost = opts.inHand && inst.owner === HUMAN ? effectiveCost(s, inst.owner, d) : undefined;
   const sick = onBoard && !canAttackNow(s, inst) && !inst.tapped && s.active === inst.owner ? '<div class="badge-sick">zZ</div>' : '';
   const uses = inst.uses != null && !opts.inHand ? `<div class="badge-sick" style="top:auto;bottom:30%">${inst.uses} left</div>` : '';
-  return cardHtml(d, { size: 'sm', mini: true, uid: inst.uid, tapped: inst.tapped && !opts.inHand, power: pw, classes: cls.join(' '), badges: sick + uses });
+  return cardHtml(d, { size: 'sm', mini: true, uid: inst.uid, tapped: inst.tapped && !opts.inHand, power: pw, cost, classes: cls.join(' '), badges: sick + uses });
 }
 
 function playerRow(s, p, mine, hl) {
   const zone = (label, inner, attrs = '', empty = '') => `<div class="zone ${!inner && empty ? 'empty-slot' : ''}" ${attrs} data-empty="${empty}"><span class="lbl">${label}</span>${inner}</div>`;
-  const runes = p.mana.map(r => `<span class="rune ${r.tapped ? 'tapped' : ''}" style="background:${COLORS[r.color]?.hex}" title="${r.color}${r.tapped ? ' (tapped)' : ''}"></span>`).join('');
+  const runeArt = G.decks[p.idx].runeArt || {};
+  const runeBg = (c) => (runeArt[c] && hasDef(runeArt[c]) && getDef(runeArt[c]).image ? `url('${getDef(runeArt[c]).image}') ${COLORS[c]?.hex}` : COLORS[c]?.hex);
+  const runes = p.mana.map(r => `<span class="rune ${r.tapped ? 'tapped' : ''} ${runeArt[r.color] ? 'art' : ''}" style="background:${runeBg(r.color)}" title="${r.color}${r.tapped ? ' (tapped)' : ''}"></span>`).join('');
   const free = p.mana.filter(r => !r.tapped).length;
   const shieldsTarget = !mine && hl.zoneTargets.has('shield');
   const directTarget = !mine && hl.zoneTargets.has('player');
@@ -199,8 +202,17 @@ function midbar(s, legal, ui) {
       const pl = ui.sel.options.find(a => a.target.kind === 'player');
       if (sh) buttons += btn('atk-shield', 'Attack shields', 'primary');
       if (pl) buttons += btn('atk-player', 'Direct attack!', 'primary');
+    } else if (ui.sel.kind === 'mode') {
+      prompt = `<b>${esc(d.name)}</b> — choose ${d.chooseModes > 1 ? d.chooseModes : 'one'}:`;
+      const seen = new Set();
+      for (const a of ui.sel.options) {
+        const key = (a.modes || []).join(',');
+        if (seen.has(key)) continue;
+        seen.add(key);
+        buttons += `<button class="primary" data-mode="${key}">${esc(a.modes.map(i => d.modes[i].name).join(' + '))}</button>`;
+      }
     } else prompt = `Choose a target for <b>${esc(d.name)}</b>.`;
-    if (ui.sel.options.some(a => !a.target && a.type !== 'attack')) buttons += btn('no-target', 'Play without target');
+    if (ui.sel.kind !== 'mode' && ui.sel.options.some(a => !a.target && a.type !== 'attack')) buttons += btn('no-target', 'Play without target');
     buttons += btn('cancel', 'Cancel', 'ghost');
   } else if (pd?.kind === 'mulligan') {
     prompt = `Mulligan: click up to ${RULES.MULLIGAN_MAX} cards to put on the bottom of your deck.`;
@@ -219,8 +231,9 @@ function midbar(s, legal, ui) {
     prompt = 'Play phase — click a glowing card to play it (at least 1 rune must match its color).';
     buttons = btn('end', 'To Combat →', 'primary');
   } else if (s.phase === 'combat') {
-    prompt = 'Combat — click a ready unit (orange) to attack.';
-    buttons = btn('end', 'End turn', 'primary');
+    const canEnd = legal.some(a => a.type === 'endPhase');
+    prompt = canEnd ? 'Combat — click a ready unit (orange) to attack.' : 'A <b>Furious</b> unit must attack this turn — click it.';
+    if (canEnd) buttons = btn('end', 'End turn', 'primary');
   }
   return `<div class="midbar"><div class="phases">${phases}</div><span class="muted">Turn ${s.turn}</span>
     <div class="prompt">${prompt}</div>${stack}<div class="row">${buttons}</div></div>`;
@@ -287,6 +300,13 @@ function onClick(e) {
   const { s, ui } = G;
   const b = e.target.closest('[data-btn]');
   if (b) return onButton(b.dataset.btn);
+  const mb = e.target.closest('[data-mode]');
+  if (mb && ui.sel?.kind === 'mode') {
+    const opts = ui.sel.options.filter(a => (a.modes || []).join(',') === mb.dataset.mode);
+    if (opts.length === 1 && !opts[0].target) return act(opts[0]);
+    ui.sel = { ...ui.sel, kind: ui.sel.after || 'play', options: opts };
+    return render();
+  }
   const gy = e.target.closest('[data-grave]');
   if (gy) return showGrave(+gy.dataset.grave);
   if (s.winner != null || whoActs(s) !== HUMAN) return;
@@ -317,7 +337,8 @@ function onClick(e) {
   const plays = legal.filter(a => (a.type === 'play' || a.type === 'activate') && a.uid === uid);
   if (plays.length) {
     if (plays.length === 1 && !plays[0].target) return act(plays[0]);
-    ui.sel = { kind: 'play', uid, options: plays };
+    const modeKeys = new Set(plays.map(a => (a.modes || []).join(',')));
+    ui.sel = { kind: modeKeys.size > 1 ? 'mode' : 'play', uid, options: plays };
     return render();
   }
   const attacks = legal.filter(a => a.type === 'attack' && a.uid === uid);
@@ -340,7 +361,8 @@ function onButton(id) {
     case 'trig-use': {
       const uses = legal.filter(a => a.type === 'shieldTrigger' && a.use);
       if (uses.length === 1 && !uses[0].target) return act(uses[0]);
-      ui.sel = { kind: 'trigger', uid: s.pending.uid, options: uses };
+      const modeKeys = new Set(uses.map(a => (a.modes || []).join(',')));
+      ui.sel = { kind: modeKeys.size > 1 ? 'mode' : 'trigger', after: 'trigger', uid: s.pending.uid, options: uses };
       return render();
     }
     case 'rematch': return startGame(G.app, G.decks[0], G.decks[1]);
