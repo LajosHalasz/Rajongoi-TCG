@@ -10,6 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { buildDataJs } from './build-data.mjs';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const outFile = path.join(root, 'data', 'imported.json');
@@ -101,3 +102,4 @@ for (const f of files) {
 const list = [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
 fs.writeFileSync(outFile, JSON.stringify(list, null, 2) + '\n');
 console.log(`\n${list.length} cards in ${path.relative(root, outFile)}`);
+buildDataJs();

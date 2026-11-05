@@ -8,19 +8,27 @@ A browser card game: **Duel Masters** basics (shields, Shield Triggers, attackin
 
 It's a static site with no build step and no dependencies, so it works on GitHub Pages as-is.
 
-## Run locally
+## Run
+
+Double-click `index.html`; no server is needed. A local server also works:
 
 ```bash
 python3 -m http.server 8080
 ```
 
-Then open http://localhost:8080. Opening `index.html` directly as a file won't work, because the browser needs to fetch the JSON data over HTTP.
+After changing code in `js/` or JSON in `data/`, rebuild the bundles:
+
+```bash
+npm run build
+```
+
+The browser loads the generated `js/bundle.js` and `data/data.js`. The importer and placeholder generator rebuild `data/data.js` automatically.
 
 ```bash
 npm test
 ```
 
-`npm test` runs headless AI-vs-AI games for every pairing of premade decks.
+`npm test` runs headless AI-vs-AI games for every premade deck pairing.
 
 ## Publishing on GitHub Pages
 

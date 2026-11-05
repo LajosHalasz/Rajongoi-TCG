@@ -17,6 +17,14 @@
     </nav>
   </header>
   <main id="app"><div class="page muted">Loading cards…</div></main>
-  <script type="module" src="js/app.js"></script>
+  <script>
+    window.addEventListener('error', function (e) {
+      var app = document.getElementById('app');
+      if (app && /Loading/.test(app.textContent)) app.innerHTML = '<div class="page"><h2>Something went wrong</h2><p class="muted">' + (e.message || e) + '</p></div>';
+    });
+  </script>
+  <!-- Generated bundles (npm run build). Classic scripts so it also runs from file:// -->
+  <script src="data/data.js"></script>
+  <script src="js/bundle.js"></script>
 </body>
 </html>

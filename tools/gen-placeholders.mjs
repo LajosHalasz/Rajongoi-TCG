@@ -6,6 +6,7 @@
 //   node tools/gen-placeholders.mjs
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildDataJs } from './build-data.mjs';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 
@@ -199,3 +200,4 @@ const decks = [
 fs.writeFileSync(path.join(root, 'data', 'cards.json'), JSON.stringify(cards, null, 1) + '\n');
 fs.writeFileSync(path.join(root, 'data', 'decks.json'), JSON.stringify(decks, null, 2) + '\n');
 console.log(`${cards.length} placeholder cards, ${decks.length} decks`);
+buildDataJs();

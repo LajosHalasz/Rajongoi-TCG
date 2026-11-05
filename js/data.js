@@ -14,10 +14,14 @@ async function getJson(url, fallback) {
 }
 
 export async function loadData() {
-  const [placeholders, imported, overrides, decks] = await Promise.all([
-    getJson('data/cards.json', []), getJson('data/imported.json', []),
-    getJson('data/effects.json', {}), getJson('data/decks.json', []),
-  ]);
+  // data/data.js (classic script) works everywhere, including file://
+  const pre = typeof window !== 'undefined' && window.RM_DATA;
+  const [placeholders, imported, overrides, decks] = pre
+    ? [pre.cards, pre.imported, pre.effects, pre.decks]
+    : await Promise.all([
+      getJson('data/cards.json', []), getJson('data/imported.json', []),
+      getJson('data/effects.json', {}), getJson('data/decks.json', []),
+    ]);
   const byId = new Map(placeholders.map(c => [c.id, c]));
   for (const c of imported) byId.set(c.id, c); // real cards replace placeholders
   setCardDb([...byId.values()], overrides);
