@@ -369,7 +369,10 @@ ${def.text}`;
     return [...premade, ...customDecks()];
   }
   function playableDecks() {
-    return allDecks().filter((d) => !validateDeck(d).errors.length);
+    return allDecks().filter((d) => !d.comingSoon && !validateDeck(d).errors.length);
+  }
+  function comingSoonDecks() {
+    return allDecks().filter((d) => d.comingSoon);
   }
   function findDeck(id) {
     return allDecks().find((d) => d.id === id);
@@ -379,7 +382,7 @@ ${def.text}`;
   var esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   var ICONS = {
     T: '<span class="ico ico-tap" title="Tap">\u21B7</span>',
-    M: '<span class="ico ico-might" title="Might">\u26E8</span>',
+    M: '<span class="ico ico-might" title="Might"><i class="mi"></i></span>',
     R: `<span class="ico ico-rune" title="Rune of this card's color">\u25C6</span>`
   };
   function markup(text) {
@@ -406,6 +409,7 @@ ${def.text}`;
   function isFullArt(def) {
     return !!def.image && def.type !== "rune" && (rarityOf(def) === "epic" || def.type === "signature" || def.type === "legend");
   }
+  var isFoil = (def) => ["champion", "legend"].includes(def.type) || rarityOf(def) === "epic" || !!def.fullArtRune;
   var isRareArt = (def) => !!def.image && rarityOf(def) === "rare";
   function cardImg(def) {
     const c = def.imageCrop;
@@ -438,6 +442,7 @@ ${def.text}`;
       "card",
       "rune-card",
       def.name && !/^\s*$/.test(def.name) && !def.fullArtRune ? "" : "rune-bare",
+      isFoil(def) ? "foil" : "",
       `size-${opts.size || "md"}`,
       opts.mini ? "mini" : "",
       opts.classes || ""
@@ -448,6 +453,7 @@ ${def.text}`;
     <div class="typeline"><span class="domains"><span class="domain" style="background:${colorHex(def)}"></span></span><span class="type-badge">Rune</span></div>
     <div class="rune-name">${esc(def.name)}</div>
     <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || "")}</span></div>
+    ${isFoil(def) ? '<div class="foil-layer"></div>' : ""}
   </div>`;
   }
   function cardHtml(def, opts = {}) {
@@ -466,6 +472,7 @@ ${def.text}`;
       full ? "fullart" : rare ? "rareart" : "standard",
       legend ? "is-legend" : "",
       k === "gear" ? "is-gear" : "",
+      isFoil(def) ? "foil" : "",
       `size-${opts.size || "md"}`,
       opts.mini ? "mini" : "",
       opts.tapped ? "tapped" : "",
@@ -477,9 +484,9 @@ ${def.text}`;
     const art = def.image ? `<div class="art ${full || rare ? "art-full" : "art-window"}">${cardImg(def)}</div>` : `<div class="art art-window">${placeholderArt(def)}</div>`;
     const cost = legend || def.type === "rune" ? "" : `<div class="cost ${prov.includes("cost") ? "prov" : ""}" title="${prov.includes("cost") ? "Provisional cost" : "Cost"}"><span>${opts.cost ?? def.cost}</span></div>`;
     const domainsTopLeft = full && legend ? `<div class="fa-domains">${def.colors.map((c) => `<span style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join("")}</div>` : "";
-    const mightHtml = showMight ? `<div class="might ${mightCls} ${prov.includes("might") ? "prov" : ""}"><span class="might-ico">\u26E8</span><span class="might-val">${might}</span></div>` : "";
+    const mightHtml = showMight ? `<div class="might ${mightCls} ${prov.includes("might") ? "prov" : ""}"><span class="might-ico"><i></i></span><span class="might-val">${might}</span></div>` : "";
     const typeline = full ? `<div class="typeline gold"><span>${[typeLabel(def), ...tribes].map(esc).join(" <i>\u25C6</i> ")}</span></div>` : `<div class="typeline"><span class="domains">${def.colors.map((c) => `<span class="domain" style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join("")}</span><span class="type-badge">${esc(typeLabel(def))}</span>${tribes.map((t) => `<span class="tribe">${esc(t)}</span>`).join("")}</div>`;
-    return `<div class="${cls}" ${data} style="${style}">
+    return `<div class="${cls}" ${data} style="${style};${opts.style || ""}">
     ${art}
     ${full || rare ? '<div class="art-shade"></div>' : ""}
     <div class="frame"></div>
@@ -489,6 +496,7 @@ ${def.text}`;
     <div class="namebar"><span class="name">${esc(def.name)}</span>${def.subname && !opts.mini ? `<small>${esc(def.subname)}</small>` : ""}</div>
     ${rulesHtml(def)}
     <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || (def.owners || []).join(" / "))}</span></div>
+    ${isFoil(def) ? '<div class="foil-layer"></div>' : ""}
     ${opts.badges || ""}
   </div>`;
   }
@@ -556,6 +564,18 @@ ${def.text}`;
     window.addEventListener("resize", schedule);
     document.addEventListener("load", schedule, true);
     if (document.fonts?.ready) document.fonts.ready.then(() => fitCards(document, true));
+    document.addEventListener("pointermove", (e) => {
+      const card = e.target.closest?.(".card.foil");
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      card.style.setProperty("--mx", ((e.clientX - r.left) / r.width * 100).toFixed(1) + "%");
+      card.style.setProperty("--my", ((e.clientY - r.top) / r.height * 100).toFixed(1) + "%");
+      card.classList.add("foil-hover");
+    });
+    document.addEventListener("pointerout", (e) => {
+      const card = e.target.closest?.(".card.foil");
+      if (card && !card.contains(e.relatedTarget)) card.classList.remove("foil-hover");
+    });
     schedule();
   }
 
@@ -659,9 +679,9 @@ ${def.text}`;
       <div style="flex:1;min-width:0">
         <h3>${esc(d.name)}</h3>
         <div class="meta">${legend ? esc(legend.colors.join(" / ")) : "No legend"} \xB7 ${v.stats.total} cards \xB7 avg ${v.stats.avgCost.toFixed(1)}</div>
-        <div class="meta">${d.premade ? "Premade" : "Custom"} \xB7 ${v.errors.length ? `<span class="msg err">${v.errors.length} problem(s)</span>` : '<span class="msg ok">Legal</span>'}</div>
+        <div class="meta">${d.comingSoon ? '<span class="soon-tag">COMING SOON</span> ' : ""}${d.premade ? "Premade" : "Custom"} \xB7 ${v.errors.length ? `<span class="msg err">${v.errors.length} problem(s)</span>` : '<span class="msg ok">Legal</span>'}</div>
         <div class="row" style="margin-top:8px">
-          ${d.premade ? `<button data-copy="${d.id}">Copy &amp; edit</button>` : `<button data-edit="${d.id}">Edit</button><button class="danger" data-del="${d.id}">Delete</button>`}
+          ${d.comingSoon ? "" : d.premade ? `<button data-copy="${d.id}">Copy &amp; edit</button>` : `<button data-edit="${d.id}">Edit</button><button class="danger" data-del="${d.id}">Delete</button>`}
           <button class="ghost" data-export="${d.id}" title="Copy deck JSON">Export</button>
         </div>
       </div></div>`;
@@ -935,6 +955,7 @@ ${def.text}`;
     return p;
   }
   function log(s, msg) {
+    s.logTotal = (s.logTotal || 0) + 1;
     s.log.push(msg);
     if (s.log.length > 150) s.log.splice(0, s.log.length - 150);
   }
@@ -2007,6 +2028,284 @@ ${def.text}`;
     return bestA;
   }
 
+  // js/ui/sfx.js
+  var LS = "rajongoi.sound.v1";
+  var ctx = null;
+  var master;
+  var verbIn;
+  var noiseBuf;
+  var muted = false;
+  var volume = 0.7;
+  try {
+    const s = JSON.parse(localStorage.getItem(LS));
+    if (s) {
+      muted = !!s.muted;
+      volume = s.volume ?? volume;
+    }
+  } catch {
+  }
+  function save() {
+    try {
+      localStorage.setItem(LS, JSON.stringify({ muted, volume }));
+    } catch {
+    }
+  }
+  function ac() {
+    if (!ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      ctx = new C();
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -16;
+      comp.knee.value = 12;
+      comp.ratio.value = 4;
+      comp.attack.value = 3e-3;
+      comp.release.value = 0.2;
+      master = ctx.createGain();
+      master.gain.value = muted ? 0 : volume;
+      master.connect(comp);
+      comp.connect(ctx.destination);
+      const verb = ctx.createConvolver();
+      verb.buffer = impulse(2.2, 3);
+      verbIn = ctx.createGain();
+      verbIn.gain.value = 1;
+      const wet = ctx.createGain();
+      wet.gain.value = 0.32;
+      verbIn.connect(verb);
+      verb.connect(wet);
+      wet.connect(master);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+  function impulse(seconds, decay) {
+    const len = ctx.sampleRate * seconds;
+    const b = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) {
+      const d = b.getChannelData(c);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+    return b;
+  }
+  function env(t, { attack = 4e-3, dur = 0.2, gain = 0.3, rev = 0.15, curve = "exp" }) {
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(1e-4, t);
+    g.gain.linearRampToValueAtTime(gain, t + attack);
+    if (curve === "exp") g.gain.exponentialRampToValueAtTime(1e-4, t + attack + dur);
+    else g.gain.linearRampToValueAtTime(1e-4, t + attack + dur);
+    g.connect(master);
+    if (rev > 0) {
+      const s = ctx.createGain();
+      s.gain.value = rev;
+      g.connect(s);
+      s.connect(verbIn);
+    }
+    return g;
+  }
+  function tone({ freq = 440, to, type = "sine", dur = 0.2, gain = 0.2, attack = 4e-3, rev = 0.15, delay = 0, detune = 0, glide }) {
+    const t = ctx.currentTime + delay;
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    o.detune.value = detune;
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + (glide ?? dur));
+    o.connect(env(t, { attack, dur, gain, rev }));
+    o.start(t);
+    o.stop(t + attack + dur + 0.05);
+  }
+  function noise({ filter = "bandpass", freq = 1e3, to, q = 1, dur = 0.2, gain = 0.2, attack = 4e-3, rev = 0.15, delay = 0, curve }) {
+    const t = ctx.currentTime + delay;
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuf;
+    src.loop = true;
+    const f = ctx.createBiquadFilter();
+    f.type = filter;
+    f.Q.value = q;
+    f.frequency.setValueAtTime(freq, t);
+    if (to) f.frequency.exponentialRampToValueAtTime(to, t + dur);
+    src.connect(f);
+    f.connect(env(t, { attack, dur, gain, rev, curve }));
+    src.start(t, Math.random());
+    src.stop(t + attack + dur + 0.05);
+  }
+  function bell(freq, { gain = 0.12, dur = 1.2, delay = 0, rev = 0.5 } = {}) {
+    [[1, 1], [2.01, 0.45], [3.02, 0.22], [4.17, 0.12]].forEach(([m, g]) => tone({ freq: freq * m, type: "sine", dur: dur / (m * 0.7), gain: gain * g, rev, delay }));
+  }
+  var play = (fn) => (...a) => {
+    if (muted) return;
+    if (!ac()) return;
+    try {
+      fn(...a);
+    } catch {
+    }
+  };
+  var lastHover = 0;
+  var sfx = {
+    // ---------------------------------------------------------------- UI
+    click: play(() => {
+      tone({ freq: 1500, to: 900, type: "triangle", dur: 0.05, gain: 0.12, rev: 0.05 });
+      noise({ filter: "highpass", freq: 3500, dur: 0.025, gain: 0.08, rev: 0 });
+    }),
+    hover: play(() => {
+      const now = performance.now();
+      if (now - lastHover < 45) return;
+      lastHover = now;
+      tone({ freq: 2400, type: "sine", dur: 0.035, gain: 0.025, rev: 0.05 });
+    }),
+    nav: play(() => {
+      noise({ filter: "bandpass", freq: 500, to: 2800, q: 1.4, dur: 0.22, gain: 0.08, attack: 0.05, rev: 0.25 });
+      tone({ freq: 660, type: "sine", dur: 0.18, gain: 0.03, delay: 0.08, rev: 0.4 });
+    }),
+    toggle: play(() => {
+      tone({ freq: 880, type: "triangle", dur: 0.08, gain: 0.1 });
+      tone({ freq: 1320, type: "triangle", dur: 0.1, gain: 0.08, delay: 0.06 });
+    }),
+    // ------------------------------------------------------------- cards
+    swish: play((vol = 1) => {
+      noise({ filter: "bandpass", freq: 3e3, to: 900, q: 0.9, dur: 0.13, gain: 0.12 * vol, attack: 0.02, rev: 0.08 });
+    }),
+    draw: play(() => {
+      noise({ filter: "bandpass", freq: 2600, to: 1200, q: 1, dur: 0.16, gain: 0.14, attack: 0.03, rev: 0.1 });
+      tone({ freq: 900, type: "triangle", dur: 0.03, gain: 0.05, delay: 0.12, rev: 0 });
+    }),
+    play: play(() => {
+      noise({ filter: "bandpass", freq: 2200, to: 700, q: 0.8, dur: 0.12, gain: 0.12, attack: 0.02 });
+      tone({ freq: 170, to: 60, type: "sine", dur: 0.2, gain: 0.45, delay: 0.1, rev: 0.12 });
+      noise({ filter: "lowpass", freq: 900, dur: 0.09, gain: 0.25, delay: 0.1, rev: 0.1 });
+    }),
+    spell: play(() => {
+      noise({ filter: "highpass", freq: 1500, to: 7e3, dur: 0.5, gain: 0.08, attack: 0.15, rev: 0.6 });
+      [659, 880, 1175, 1568].forEach((f, i) => tone({ freq: f, type: "triangle", dur: 0.5, gain: 0.07, delay: i * 0.06, rev: 0.6, detune: 4 }));
+    }),
+    gear: play(() => {
+      noise({ filter: "bandpass", freq: 1800, q: 6, dur: 0.05, gain: 0.25, rev: 0.1 });
+      noise({ filter: "bandpass", freq: 1200, q: 6, dur: 0.06, gain: 0.2, delay: 0.09, rev: 0.1 });
+      tone({ freq: 220, to: 330, type: "square", dur: 0.12, gain: 0.04, delay: 0.05, rev: 0.2 });
+    }),
+    rune: play(() => {
+      bell(1046, { gain: 0.07, dur: 0.9 });
+      bell(1568, { gain: 0.05, dur: 0.8, delay: 0.07 });
+    }),
+    turn: play((mine) => {
+      const base = mine ? 196 : 147;
+      [1, 1.5, 2].forEach((m, i) => tone({ freq: base * m, type: "sine", dur: 1.4, gain: 0.08 / (i + 1), attack: 0.02, rev: 0.7 }));
+      noise({ filter: "lowpass", freq: 400, dur: 0.3, gain: 0.08, rev: 0.4 });
+    }),
+    attack: play(() => {
+      noise({ filter: "bandpass", freq: 300, to: 3500, q: 1.2, dur: 0.24, gain: 0.22, attack: 0.08, rev: 0.2 });
+      tone({ freq: 110, to: 55, type: "sawtooth", dur: 0.25, gain: 0.06, attack: 0.05, rev: 0.2 });
+    }),
+    block: play(() => {
+      noise({ filter: "bandpass", freq: 2500, q: 3, dur: 0.18, gain: 0.25, rev: 0.3 });
+      tone({ freq: 523, type: "triangle", dur: 0.4, gain: 0.08, rev: 0.5 });
+      tone({ freq: 784, type: "triangle", dur: 0.4, gain: 0.06, rev: 0.5, delay: 0.02 });
+    }),
+    impact: play(() => {
+      tone({ freq: 95, to: 38, type: "sine", dur: 0.35, gain: 0.6, rev: 0.2 });
+      noise({ filter: "lowpass", freq: 1400, to: 300, dur: 0.3, gain: 0.35, rev: 0.25 });
+    }),
+    destroy: play(() => {
+      noise({ filter: "lowpass", freq: 3e3, to: 200, dur: 0.6, gain: 0.3, rev: 0.4 });
+      tone({ freq: 220, to: 70, type: "sawtooth", dur: 0.4, gain: 0.05, rev: 0.4 });
+      for (let i = 0; i < 6; i++) noise({ filter: "bandpass", freq: 800 + Math.random() * 2500, q: 8, dur: 0.04, gain: 0.12, delay: 0.05 + i * 0.05, rev: 0.2 });
+    }),
+    shield: play(() => {
+      noise({ filter: "highpass", freq: 3e3, dur: 0.35, gain: 0.25, rev: 0.4 });
+      for (let i = 0; i < 9; i++) tone({ freq: 2200 + Math.random() * 3800, type: "sine", dur: 0.15 + Math.random() * 0.25, gain: 0.05, delay: Math.random() * 0.12, rev: 0.5 });
+      tone({ freq: 140, to: 60, type: "sine", dur: 0.25, gain: 0.3, rev: 0.2 });
+    }),
+    trigger: play(() => {
+      noise({ filter: "bandpass", freq: 400, to: 4e3, q: 2, dur: 0.4, gain: 0.12, attack: 0.2, rev: 0.5 });
+      [523, 659, 784, 1046].forEach((f, i) => tone({ freq: f, type: "sawtooth", dur: 0.35, gain: 0.04, delay: 0.25 + i * 0.05, rev: 0.6 }));
+      bell(1046, { gain: 0.08, delay: 0.45 });
+    }),
+    foilLand: play((delay = 0.55) => {
+      noise({ filter: "bandpass", freq: 5e3, to: 500, q: 1, dur: delay, gain: 0.14, attack: 0.15, rev: 0.4 });
+      tone({ freq: 1200, to: 200, type: "sine", dur: delay, gain: 0.03, attack: 0.1, rev: 0.4 });
+      tone({ freq: 75, to: 32, type: "sine", dur: 0.7, gain: 0.8, delay, rev: 0.4 });
+      noise({ filter: "lowpass", freq: 700, to: 120, dur: 0.6, gain: 0.45, delay, rev: 0.5 });
+      [1568, 2093, 2637, 3136].forEach((f, i) => tone({ freq: f, type: "sine", dur: 0.6, gain: 0.035, delay: delay + 0.05 + i * 0.04, rev: 0.7 }));
+    }),
+    crack: play(() => {
+      for (let i = 0; i < 12; i++) noise({ filter: "bandpass", freq: 600 + Math.random() * 2200, q: 4, dur: 0.03 + Math.random() * 0.05, gain: 0.25, delay: i * 0.025 + Math.random() * 0.02, rev: 0.2 });
+      tone({ freq: 48, to: 30, type: "sine", dur: 1.1, gain: 0.55, rev: 0.4 });
+      noise({ filter: "lowpass", freq: 250, dur: 1.1, gain: 0.35, attack: 0.02, rev: 0.4 });
+      for (let i = 0; i < 8; i++) noise({ filter: "bandpass", freq: 3e3 + Math.random() * 3e3, q: 6, dur: 0.03, gain: 0.08, delay: 0.3 + Math.random() * 0.6, rev: 0.2 });
+    }),
+    win: play(() => {
+      [[523, 0], [659, 0.14], [784, 0.28], [1046, 0.42]].forEach(([f, d]) => {
+        tone({ freq: f, type: "sawtooth", dur: 0.5, gain: 0.05, delay: d, rev: 0.6 });
+        tone({ freq: f, type: "triangle", dur: 0.6, gain: 0.08, delay: d, rev: 0.6, detune: 6 });
+      });
+      [1046, 1318, 1568].forEach((f) => tone({ freq: f, type: "triangle", dur: 1.6, gain: 0.06, delay: 0.6, rev: 0.8 }));
+      bell(2093, { gain: 0.08, delay: 0.6, dur: 1.8 });
+    }),
+    lose: play(() => {
+      [[392, 0], [349, 0.25], [311, 0.5], [262, 0.8]].forEach(([f, d]) => tone({ freq: f, type: "triangle", dur: 0.7, gain: 0.09, delay: d, rev: 0.7 }));
+      tone({ freq: 65, to: 40, type: "sine", dur: 1.5, gain: 0.3, delay: 0.8, rev: 0.6 });
+    }),
+    // ------------------------------------------------------------ boosters
+    packShake: play(() => {
+      for (let i = 0; i < 6; i++) noise({ filter: "bandpass", freq: 1200 + Math.random() * 1500, q: 2, dur: 0.06, gain: 0.1, delay: i * 0.08, rev: 0.05 });
+      tone({ freq: 60, type: "sine", dur: 0.5, gain: 0.15, attack: 0.1, rev: 0.1 });
+    }),
+    packTear: play(() => {
+      for (let i = 0; i < 14; i++) noise({ filter: "bandpass", freq: 2500 + Math.random() * 4e3, q: 1.5, dur: 0.03 + Math.random() * 0.03, gain: 0.22, delay: i * 0.022, rev: 0.1 });
+      noise({ filter: "highpass", freq: 6e3, to: 1500, dur: 0.35, gain: 0.12, rev: 0.2 });
+      tone({ freq: 90, to: 45, type: "sine", dur: 0.4, gain: 0.35, delay: 0.3, rev: 0.4 });
+      noise({ filter: "highpass", freq: 2e3, to: 9e3, dur: 0.8, gain: 0.06, attack: 0.3, delay: 0.3, rev: 0.8 });
+    }),
+    deal: play((i = 0) => {
+      noise({ filter: "bandpass", freq: 3200, to: 1100, q: 1, dur: 0.09, gain: 0.08, attack: 0.015, rev: 0.05 });
+      tone({ freq: 1500 + i * 20, type: "triangle", dur: 0.02, gain: 0.025, delay: 0.07, rev: 0 });
+    }),
+    flip: play(() => {
+      noise({ filter: "bandpass", freq: 1800, to: 3500, q: 1.2, dur: 0.08, gain: 0.14, rev: 0.05 });
+      tone({ freq: 700, type: "triangle", dur: 0.04, gain: 0.06, delay: 0.06 });
+    }),
+    reveal: play((tier2) => {
+      if (tier2 === "uncommon") {
+        bell(1318, { gain: 0.05, dur: 0.6 });
+        return;
+      }
+      if (tier2 === "rare" || tier2 === "legend") {
+        [1046, 1318, 1568].forEach((f, i) => bell(f, { gain: 0.07, dur: 1.1, delay: i * 0.07 }));
+        noise({ filter: "highpass", freq: 4e3, dur: 0.6, gain: 0.05, attack: 0.1, rev: 0.8 });
+        return;
+      }
+      noise({ filter: "bandpass", freq: 300, to: 6e3, q: 1.5, dur: 0.5, gain: 0.15, attack: 0.3, rev: 0.6 });
+      tone({ freq: 60, to: 35, type: "sine", dur: 0.9, gain: 0.6, delay: 0.45, rev: 0.5 });
+      [523, 659, 784, 1046, 1318, 1568, 2093].forEach((f, i) => tone({ freq: f, type: "triangle", dur: 1.4, gain: 0.05, delay: 0.45 + i * 0.045, rev: 0.8, detune: 5 }));
+      bell(2093, { gain: 0.1, delay: 0.5, dur: 2 });
+    })
+  };
+  function isMuted() {
+    return muted;
+  }
+  function setMuted(m) {
+    muted = m;
+    save();
+    if (ctx) master.gain.setTargetAtTime(muted ? 0 : volume, ctx.currentTime, 0.02);
+  }
+  function soundForLog(line, humanName) {
+    if (/ wins!/.test(line)) return line.startsWith(humanName) ? sfx.win() : sfx.lose();
+    if (/^— Turn/.test(line)) return sfx.turn(line.includes(humanName));
+    if (/Shield Trigger!/.test(line)) return sfx.trigger();
+    if (/shield breaks/.test(line)) return sfx.shield();
+    if (/defends!/.test(line)) return sfx.block();
+    if (/ attacks /.test(line)) return sfx.attack();
+    if (/^Fight:/.test(line)) return sfx.impact();
+    if (/is destroyed|has 0 Might/.test(line)) return sfx.destroy();
+    if (/ casts /.test(line)) return sfx.spell();
+    if (/ equips | activates /.test(line)) return sfx.gear();
+    if (/ plays /.test(line)) return null;
+    if (/ channels /.test(line)) return sfx.rune();
+    return null;
+  }
+
   // js/ui/play.js
   var HUMAN = 0;
   var AI = 1;
@@ -2024,32 +2323,65 @@ ${def.text}`;
       return;
     }
     if (!decks.some((d) => d.id === pick.me)) pick.me = decks[0].id;
+    if (pick.ai !== "random" && !decks.some((d) => d.id === pick.ai)) pick.ai = "random";
     const hour = (/* @__PURE__ */ new Date()).getHours();
-    const entry = (d, who) => {
+    const soon = comingSoonDecks();
+    const thumb = (d) => d ? cardHtml(getDef(d.legend), { size: "xs" }) : cardBackHtml({ size: "xs" });
+    const meta = (d) => {
+      if (!d) return "Surprise me";
       const L = getDef(d.legend);
       const v = validateDeck(d);
-      return `<div class="deck-pick ${pick[who] === d.id ? "on" : ""}" data-who="${who}" data-id="${d.id}">
-      ${cardHtml(L, { size: "xs" })}
-      <div><b>${esc(d.name)}</b><div class="muted">${L.colors.join(" / ")} \xB7 avg cost ${v.stats.avgCost.toFixed(1)} \xB7 ${d.premade ? "premade" : "custom"}${d.fillers ? ` \xB7 ${d.fillers} filler` : ""}</div></div></div>`;
+      return `${L.colors.join(" / ")} \xB7 avg cost ${v.stats.avgCost.toFixed(1)} \xB7 ${d.premade ? "premade" : "custom"}${d.fillers ? ` \xB7 ${d.fillers} filler` : ""}`;
     };
-    app2.innerHTML = `<div class="page">
-    <h2>Play against AI</h2>
-    <div class="setup">
-      <div class="col"><h3>Your deck</h3>${decks.map((d) => entry(d, "me")).join("")}</div>
-      <div class="col"><h3>Opponent (AI) deck</h3>
-        <div class="deck-pick ${pick.ai === "random" ? "on" : ""}" data-who="ai" data-id="random">
-          ${cardBackHtml({ size: "xs", classes: "" }).replace("size-xs", 'size-xs" style="--w:62px')}
-          <div><b>Random deck</b><div class="muted">Surprise me</div></div></div>
-        ${decks.map((d) => entry(d, "ai")).join("")}</div>
+    const option = (who, d, locked = false) => {
+      const id = d ? d.id : "random";
+      return `<div class="dd-opt ${pick[who] === id ? "on" : ""} ${locked ? "locked" : ""}" ${locked ? "" : `data-who="${who}" data-id="${id}"`}>
+      ${thumb(d)}<div class="dd-text"><b>${esc(d ? d.name : "Random deck")}</b><div class="muted">${locked ? getDef(d.legend).colors.join(" / ") : meta(d)}</div></div>
+      ${locked ? '<span class="soon-tag">COMING SOON</span>' : ""}</div>`;
+    };
+    const dropdown = (who, label) => {
+      const cur = pick[who] === "random" ? null : findDeck(pick[who]);
+      return `<div class="dd" data-dd="${who}">
+      <div class="dd-label">${label}</div>
+      <button class="dd-btn" type="button">${thumb(cur)}<div class="dd-text"><b>${esc(cur ? cur.name : "Random deck")}</b><div class="muted">${meta(cur)}</div></div><span class="dd-caret">\u25BE</span></button>
+      <div class="dd-list" hidden>
+        ${who === "ai" ? option(who, null) : ""}
+        ${decks.map((d) => option(who, d)).join("")}
+        ${soon.length ? `<div class="locked-head">Coming soon</div>${soon.map((d) => option(who, d, true)).join("")}` : ""}
+      </div>
+    </div>`;
+    };
+    app2.innerHTML = `<div class="page setup-page">
+    <div class="row setup-top">
+      <h2 style="margin:0">Play against AI</h2><span class="spacer"></span>
+      <span class="muted">Nostalgia Line is ${hour >= 16 && hour < 22 ? '<b style="color:var(--good)">active</b>' : "inactive"} (16.00 \u2013 22.00)</span>
+      <button class="primary" id="start" style="font-size:22px;padding:10px 44px">Start</button>
     </div>
-    <div class="start-row">
-      <button class="primary" id="start" style="font-size:22px;padding:12px 40px">Start</button>
-      <span class="muted">Nostalgia Line is ${hour >= 16 && hour < 22 ? '<b style="color:var(--good)">active</b>' : "inactive"} right now (16.00 \u2013 22.00).</span>
-    </div></div>`;
-    app2.querySelectorAll(".deck-pick").forEach((el) => el.onclick = () => {
+    <div class="versus">
+      ${dropdown("me", "Your deck")}
+      <div class="vs">VS</div>
+      ${dropdown("ai", "Opponent (AI) deck")}
+    </div>
+  </div>`;
+    const closeAll = () => app2.querySelectorAll(".dd-list").forEach((l) => l.hidden = true);
+    app2.querySelectorAll(".dd").forEach((dd) => {
+      dd.querySelector(".dd-btn").onclick = (e) => {
+        e.stopPropagation();
+        const list = dd.querySelector(".dd-list");
+        const open = list.hidden;
+        closeAll();
+        list.hidden = !open;
+        if (open) list.querySelector(".dd-opt.on")?.scrollIntoView({ block: "nearest" });
+      };
+    });
+    app2.querySelectorAll(".dd-opt[data-id]").forEach((el) => el.onclick = (e) => {
+      e.stopPropagation();
       pick[el.dataset.who] = el.dataset.id;
       renderSetup(app2);
     });
+    app2.onclick = (e) => {
+      if (!e.target.closest(".dd")) closeAll();
+    };
     app2.querySelector("#start").onclick = () => {
       const me = findDeck(pick.me);
       const ai = pick.ai === "random" ? decks[Math.floor(Math.random() * decks.length)] : findDeck(pick.ai);
@@ -2088,7 +2420,7 @@ ${def.text}`;
       ${midbar(s, legal, ui)}
       ${battleRow(s, me, hl)}
       ${playerRow(s, me, true, hl)}
-      <div class="hand-row mine">${me.hand.map((c) => unitCard(s, c, hl, { inHand: true })).join("") || '<span class="muted">Empty hand</span>'}</div>
+      <div class="hand-row mine" style="--n:${me.hand.length}">${me.hand.map((c, i) => unitCard(s, c, hl, { inHand: true, fan: fanStyle(i, me.hand.length) })).join("") || '<span class="muted">Empty hand</span>'}</div>
     </section>
     <aside class="side-panel">
       <div class="preview" id="preview"><span class="muted" style="align-self:center">Hover a card to inspect it \xB7 right-click for details</span></div>
@@ -2099,6 +2431,12 @@ ${def.text}`;
   ${winnerOverlay(s)}`;
     const log2 = app2.querySelector(".log");
     if (keepScroll) log2.scrollTop = log2.scrollHeight;
+    animateArrivals(s, app2);
+    if (G.logLen == null) G.logLen = s.logTotal || 0;
+    const n = Math.min((s.logTotal || 0) - G.logLen, s.log.length);
+    const fresh = n > 0 ? s.log.slice(-n) : [];
+    G.logLen = s.logTotal || 0;
+    fresh.slice(-4).forEach((l, i) => setTimeout(() => soundForLog(l, s.players[HUMAN].name), i * 90));
     scheduleAI();
   }
   function highlights(s, legal, ui) {
@@ -2127,6 +2465,12 @@ ${def.text}`;
     }
     return h;
   }
+  function fanStyle(i, n) {
+    const mid = (n - 1) / 2;
+    const step2 = Math.min(7, 44 / Math.max(n, 1));
+    const off = i - mid;
+    return `--fr:${(off * step2).toFixed(2)}deg;--fy:${(off * off * Math.min(4.5, 26 / n)).toFixed(1)}px;--fz:${i + 1}`;
+  }
   function unitCard(s, inst, hl, opts = {}) {
     const d = getDef(inst.id);
     const onBoard = !opts.inHand && kindOf(d) === "unit" && !opts.slot;
@@ -2141,7 +2485,17 @@ ${def.text}`;
     const cost = opts.inHand && inst.owner === HUMAN ? effectiveCost(s, inst.owner, d) : void 0;
     const sick = onBoard && !canAttackNow(s, inst) && !inst.tapped && s.active === inst.owner ? '<div class="badge-sick">zZ</div>' : "";
     const uses = inst.uses != null && !opts.inHand ? `<div class="badge-sick" style="top:auto;bottom:30%">${inst.uses} left</div>` : "";
-    return cardHtml(d, { size: "sm", mini: true, uid: inst.uid, tapped: inst.tapped && !opts.inHand, power: pw, cost, classes: cls.join(" "), badges: sick + uses });
+    return cardHtml(d, {
+      size: "sm",
+      mini: !(opts.inHand && !opts.slot),
+      uid: inst.uid,
+      tapped: inst.tapped && !opts.inHand,
+      power: pw,
+      cost,
+      classes: cls.join(" "),
+      badges: sick + uses,
+      style: opts.fan || ""
+    });
   }
   function playerRow(s, p, mine, hl) {
     const zone = (label, inner, attrs = "", empty = "") => `<div class="zone ${!inner && empty ? "empty-slot" : ""}" ${attrs} data-empty="${empty}"><span class="lbl">${label}</span>${inner}</div>`;
@@ -2254,6 +2608,96 @@ ${def.text}`;
       <button class="primary" data-btn="rematch">Rematch</button>
       <button data-btn="newgame">Choose decks</button>
       <button class="ghost" data-btn="menu">Main menu</button></div></div></div>`;
+  }
+  function animateArrivals(s, app2) {
+    const now = new Set(s.players.flatMap((p) => p.battle.map((u) => u.uid)));
+    if (!G.seen) {
+      G.seen = now;
+      return;
+    }
+    const fresh = [...now].filter((uid) => !G.seen.has(uid));
+    G.seen = now;
+    if (!fresh.length || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    for (const uid of fresh) {
+      const el = app2.querySelector(`.battle [data-uid="${uid}"]`);
+      if (!el) continue;
+      const inst = findInst(s, uid)?.inst;
+      const d = getDef(inst.id);
+      const foil = isFoil(d);
+      const mighty = power(s, inst) >= 5;
+      el.classList.add(foil ? "arrive-foil" : "arrive");
+      const land = foil ? 620 : 280;
+      if (foil) sfx.foilLand(0.55);
+      else if (!mighty) sfx.play();
+      if (mighty && !foil) sfx.play();
+      if (foil) setTimeout(() => shockwave(el), land - 60);
+      if (mighty) setTimeout(() => {
+        crackField(el, app2);
+        sfx.crack();
+      }, land - 40);
+    }
+  }
+  if (typeof window !== "undefined") window.RajongoiFX = { crack: (el) => crackField(el, document), land: (el) => shockwave(el) };
+  function shockwave(el) {
+    const r = el.getBoundingClientRect();
+    const fx = document.createElement("div");
+    fx.className = "land-fx";
+    fx.style.left = r.left + r.width / 2 + "px";
+    fx.style.top = r.top + r.height / 2 + "px";
+    fx.style.setProperty("--w", r.width + "px");
+    let sparks = "";
+    for (let i = 0; i < 18; i++) {
+      const a = Math.PI * 2 * i / 18 + Math.random() * 0.3;
+      const dist = r.width * (0.9 + Math.random() * 0.9);
+      sparks += `<i style="--x:${(Math.cos(a) * dist).toFixed(0)}px;--y:${(Math.sin(a) * dist * 0.6).toFixed(0)}px;animation-delay:${(Math.random() * 60).toFixed(0)}ms"></i>`;
+    }
+    fx.innerHTML = `<div class="ring"></div><div class="ring r2"></div>${sparks}`;
+    document.body.appendChild(fx);
+    setTimeout(() => fx.remove(), 1200);
+  }
+  function crackField(el, app2) {
+    const r = el.getBoundingClientRect();
+    const size = r.width * 3.4;
+    const c = size / 2;
+    let paths = "";
+    const rays = 7 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < rays; i++) {
+      const a = Math.PI * 2 * i / rays + (Math.random() - 0.5) * 0.5;
+      const len = c * (0.55 + Math.random() * 0.45);
+      let x = c, y = c, pts = `M${c} ${c}`;
+      const steps = 5;
+      for (let k = 1; k <= steps; k++) {
+        const t = len * k / steps;
+        x = c + Math.cos(a) * t + (Math.random() - 0.5) * size * 0.06;
+        y = c + Math.sin(a) * t * 0.7 + (Math.random() - 0.5) * size * 0.04;
+        pts += ` L${x.toFixed(1)} ${y.toFixed(1)}`;
+        if (k === 2 || k === 3) {
+          const b = a + (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 0.5);
+          const bl = len * 0.22;
+          paths += `<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${(x + Math.cos(b) * bl).toFixed(1)} ${(y + Math.sin(b) * bl * 0.62).toFixed(1)}" stroke-width="${(size * 8e-3).toFixed(1)}"/>`;
+        }
+      }
+      paths += `<path d="${pts}" stroke-width="${(size * 0.016).toFixed(1)}"/>`;
+    }
+    const fx = document.createElement("div");
+    fx.className = "crack-fx";
+    fx.style.left = r.left + r.width / 2 - c + "px";
+    fx.style.top = r.top + r.height / 2 - c + "px";
+    fx.style.width = fx.style.height = size + "px";
+    fx.innerHTML = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+    <defs><radialGradient id="cg"><stop offset="0" stop-color="#000" stop-opacity=".6"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+      <mask id="cm"><rect width="${size}" height="${size}" fill="#fff"/>
+        <rect x="${c - r.width / 2}" y="${c - r.height / 2}" width="${r.width}" height="${r.height}" rx="${r.width * 0.04}" fill="#000"/></mask></defs>
+    <g mask="url(#cm)">
+    <ellipse cx="${c}" cy="${c}" rx="${c * 0.8}" ry="${c * 0.5}" fill="url(#cg)"/>
+    <g class="glow" fill="none" stroke-linecap="round" stroke-linejoin="round">${paths}</g>
+    <g class="dark" fill="none" stroke-linecap="round" stroke-linejoin="round">${paths}</g></g></svg>
+    ${Array.from({ length: 10 }, () => `<b style="--x:${((Math.random() - 0.5) * size * 0.7).toFixed(0)}px;--y:${(-Math.random() * size * 0.45).toFixed(0)}px"></b>`).join("")}`;
+    document.body.appendChild(fx);
+    const table = app2.querySelector(".table");
+    table?.classList.add("quake");
+    setTimeout(() => table?.classList.remove("quake"), 450);
+    setTimeout(() => fx.remove(), 2600);
   }
   function act(a) {
     try {
@@ -2428,9 +2872,12 @@ ${def.text}`;
       commons: of("common"),
       uncommons: of("uncommon"),
       rares: cards.filter((c) => playable(c) && ["rare", "epic"].includes(rarityOf(c))),
-      hits: cards.filter((c) => c.type === "champion" || c.type === "signature"),
+      hits: [
+        ...cards.filter((c) => c.type === "champion" || c.type === "signature"),
+        ...allCards().filter((c) => c.type === "rune" && c.fullArtRune && String(c.setInfo || "").toUpperCase().startsWith(set))
+      ],
       legends: cards.filter((c) => c.type === "legend"),
-      extras: allCards().filter((c) => c.type === "rune" || c.type === "token")
+      extras: allCards().filter((c) => c.type === "rune" && !c.fullArtRune || c.type === "token")
     };
   }
   function openPack(set, rand2 = Math.random) {
@@ -2526,9 +2973,11 @@ ${def.text}`;
     const pack = wrap.querySelector(".booster");
     pack.classList.remove("idle");
     pack.classList.add("shake");
+    sfx.packShake();
     setTimeout(() => {
       pack.classList.remove("shake");
       pack.classList.add("torn");
+      sfx.packTear();
       burst(wrap, ["#fff", "#ffd36b", SET_INFO[state.set]?.c1 || "#d8433b"], 26);
     }, 520);
     setTimeout(() => {
@@ -2543,6 +2992,7 @@ ${def.text}`;
       savePulls(pulls);
       state.busy = false;
       drawReveal(app2, sets);
+      state.pack.forEach((_, i) => setTimeout(() => sfx.deal(i), 120 + i * 55));
     }, 1250);
   }
   function drawReveal(app2, sets) {
@@ -2574,6 +3024,8 @@ ${def.text}`;
       state.revealed.add(i);
       el.classList.add("flipped");
       const t = tier(state.pack[i]);
+      sfx.flip();
+      if (t !== "common") setTimeout(() => sfx.reveal(t), 200);
       if (["rare", "epic", "hit", "legend"].includes(t)) {
         setTimeout(() => {
           burst(el, t === "hit" || t === "epic" ? ["#ff5fd2", "#6be3ff", "#ffe36b", "#8dff7a"] : ["#ffd36b", "#fff2b8", "#e6ad3c"], t === "rare" ? 18 : 34);
@@ -2617,12 +3069,25 @@ ${def.text}`;
   // js/app.js
   var app = document.getElementById("app");
   function renderHome() {
-    const showcase = ["OGN-001", "OGN-002", "OGN-003", "OGN-004", "TKN-001"].filter(hasDef).map(getDef);
+    const pool = allCards().filter((c) => c.image && c.type !== "rune");
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const showcase = pool.slice(0, 5);
     const fan = showcase.map((d, i) => {
       const rot = (i - (showcase.length - 1) / 2) * 7;
-      return cardHtml(d, { size: "md", classes: "fan-card" }).replace('class="card', `style="transform:rotate(${rot}deg) translateY(${Math.abs(rot) * 1.4}px)" class="card`);
+      return cardHtml(d, { size: "md", classes: "fan-card", style: `transform:rotate(${rot}deg) translateY(${Math.abs(rot) * 1.4}px)` });
     }).join("");
-    app.innerHTML = `<section class="home"><div>
+    const seeds = Array.from({ length: 22 }, (_, i) => `<i style="left:${i * 37 % 100}%;animation-delay:${i * 0.73 % 9}s;animation-duration:${9 + i % 5 * 2}s;--s:${0.6 + i % 4 * 0.25}"></i>`).join("");
+    app.innerHTML = `<div class="home-bg" aria-hidden="true">
+    <div class="rays"></div><div class="rays rays-2"></div>
+    <div class="hero-glow"></div>
+    <img class="hero" src="img/mascot.svg" alt="">
+    <div class="seeds">${seeds}</div>
+    <div class="vignette"></div>
+  </div>
+  <section class="home"><div>
     <h1>RAJONGOI TCG</h1>
     <div class="tag">Shields, runes &amp; legends \u2014 a fan-made duel card game</div>
     <div class="menu">
@@ -2635,7 +3100,10 @@ ${def.text}`;
     <p class="muted" style="margin-top:20px">${allCards().length} cards loaded</p>
   </div></section>`;
   }
+  var firstRoute = true;
   function route() {
+    if (!firstRoute) sfx.nav();
+    firstRoute = false;
     stopGame();
     document.querySelectorAll(".modal").forEach((m) => m.remove());
     const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
@@ -2658,6 +3126,32 @@ ${def.text}`;
     }
   }
   installAutoFit();
+  var muteBtn = document.getElementById("mute");
+  var paintMute = () => {
+    muteBtn.textContent = isMuted() ? "\u{1F507}" : "\u{1F50A}";
+  };
+  paintMute();
+  muteBtn.onclick = (e) => {
+    e.stopPropagation();
+    setMuted(!isMuted());
+    paintMute();
+    sfx.toggle();
+  };
+  var CONTROLS = "button, .chip, .dd-opt, .deck-pick, .tabs button, nav a, .logo, select";
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest(CONTROLS);
+    if (t && t !== muteBtn && !t.disabled) sfx.click();
+  }, true);
+  var hoverEl = null;
+  document.addEventListener("mouseover", (e) => {
+    const t = e.target.closest(CONTROLS + ", .grid .card, .hand-row.mine .card, .flip");
+    if (t && t !== hoverEl) {
+      hoverEl = t;
+      if (t.matches(".hand-row.mine .card")) sfx.swish(0.5);
+      else sfx.hover();
+    }
+    if (!t) hoverEl = null;
+  });
   loadData().then(() => {
     window.addEventListener("hashchange", route);
     route();

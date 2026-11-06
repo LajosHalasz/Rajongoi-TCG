@@ -96,9 +96,9 @@ export function renderDecks(app) {
       <div style="flex:1;min-width:0">
         <h3>${esc(d.name)}</h3>
         <div class="meta">${legend ? esc(legend.colors.join(' / ')) : 'No legend'} · ${v.stats.total} cards · avg ${v.stats.avgCost.toFixed(1)}</div>
-        <div class="meta">${d.premade ? 'Premade' : 'Custom'} · ${v.errors.length ? `<span class="msg err">${v.errors.length} problem(s)</span>` : '<span class="msg ok">Legal</span>'}</div>
+        <div class="meta">${d.comingSoon ? '<span class="soon-tag">COMING SOON</span> ' : ''}${d.premade ? 'Premade' : 'Custom'} · ${v.errors.length ? `<span class="msg err">${v.errors.length} problem(s)</span>` : '<span class="msg ok">Legal</span>'}</div>
         <div class="row" style="margin-top:8px">
-          ${d.premade ? `<button data-copy="${d.id}">Copy &amp; edit</button>` : `<button data-edit="${d.id}">Edit</button><button class="danger" data-del="${d.id}">Delete</button>`}
+          ${d.comingSoon ? '' : d.premade ? `<button data-copy="${d.id}">Copy &amp; edit</button>` : `<button data-edit="${d.id}">Edit</button><button class="danger" data-del="${d.id}">Delete</button>`}
           <button class="ghost" data-export="${d.id}" title="Copy deck JSON">Export</button>
         </div>
       </div></div>`;

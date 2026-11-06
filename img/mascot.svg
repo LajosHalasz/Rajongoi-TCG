@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="960" height="960">
+  <!-- Vector redraw of dinnye.png (the watermelon side-eye smiley) -->
+  <defs>
+    <radialGradient id="face" cx="44%" cy="20%" r="85%">
+      <stop offset="0" stop-color="#fffbd0"/>
+      <stop offset=".22" stop-color="#ffec7a"/>
+      <stop offset=".6" stop-color="#ffd23f"/>
+      <stop offset="1" stop-color="#f7a823"/>
+    </radialGradient>
+    <radialGradient id="hand" cx="40%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#fff2a6"/>
+      <stop offset=".6" stop-color="#ffd84d"/>
+      <stop offset="1" stop-color="#f2ab2a"/>
+    </radialGradient>
+    <linearGradient id="flesh" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e55a58"/>
+      <stop offset="1" stop-color="#d93f45"/>
+    </linearGradient>
+    <linearGradient id="pill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e7e3dc"/>
+    </linearGradient>
+  </defs>
+
+  <!-- face -->
+  <circle cx="240" cy="226" r="226" fill="url(#face)"/>
+
+  <!-- eyebrows -->
+  <path d="M98 134 Q120 100 164 110" fill="none" stroke="#2c2016" stroke-width="12" stroke-linecap="round"/>
+  <path d="M346 110 Q388 100 410 136" fill="none" stroke="#2c2016" stroke-width="12" stroke-linecap="round"/>
+
+  <!-- eyes: white pill + black pupil looking left -->
+  <rect x="86" y="190" width="142" height="46" rx="23" fill="url(#pill)" stroke="#5a3a1c" stroke-width="5"/>
+  <rect x="306" y="190" width="144" height="46" rx="23" fill="url(#pill)" stroke="#5a3a1c" stroke-width="5"/>
+  <circle cx="91" cy="213" r="29" fill="#0d0d0d"/>
+  <circle cx="311" cy="213" r="29" fill="#0d0d0d"/>
+
+  <!-- chewing mouth -->
+  <path d="M214 268 Q236 274 224 291 Q240 300 223 312" fill="none" stroke="#2c2016" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M238 302 Q262 314 289 278" fill="none" stroke="#2c2016" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- watermelon slice with a bite out of the top -->
+  <path d="M116 372 C168 486 368 478 434 286 L414 290 C352 430 196 438 136 364 Z" fill="#2c9a3a"/>
+  <path d="M136 364 C196 438 352 430 414 290 L404 293 C346 418 200 426 146 360 Z" fill="#9fdc84"/>
+  <path d="M146 360 C200 426 346 418 404 293
+           C384 296 372 302 360 312 C344 318 330 316 318 324
+           C300 338 286 332 270 340 C254 350 238 344 222 352
+           C204 360 188 354 174 360 C164 362 154 358 146 360 Z" fill="url(#flesh)"/>
+  <path d="M160 368 C220 412 330 402 392 312" fill="none" stroke="#f08b86" stroke-width="5" stroke-linecap="round" opacity=".45"/>
+
+  <!-- little hands -->
+  <ellipse cx="110" cy="414" rx="36" ry="40" fill="url(#hand)"/>
+  <ellipse cx="420" cy="398" rx="33" ry="42" fill="url(#hand)"/>
+</svg>

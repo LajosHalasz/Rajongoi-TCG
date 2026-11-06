@@ -82,6 +82,9 @@ def slug(x):
     return re.sub(r'[^a-z0-9]+', '-', x.lower()).strip('-')
 
 
+# Premade decks playable in 'Play vs AI'; every other owner's deck shows as Coming soon.
+PLAYABLE_OWNERS = {'Lui', 'Balu'}
+
 GUIDE_CURVE = {1: 3, 2: 4, 3: 4, 4: 3, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 10: 1}
 
 
@@ -373,14 +376,17 @@ def build_decks(cards, fillers, imported, overrides):
             added += 1
         champ_slot = next((c for c in ch if ok_champ(c)), None)
         runes = {lcolors[0]: 12} if len(lcolors) == 1 else {lcolors[0]: 6, lcolors[1]: 6}
-        rune_art = {c['colors'][0]: c['id'] for c in imported
-                    if c.get('type') == 'rune' and c.get('image') and c['colors']
-                    and owner.lower() in [o.lower() for o in c.get('owners', [])]}
+        rune_art = {}
+        for c in sorted(imported, key=lambda c: not c.get('fullArtRune')):  # regular runes win
+            if c.get('type') == 'rune' and c.get('image') and c['colors'] \
+                    and owner.lower() in [o.lower() for o in c.get('owners', [])]:
+                rune_art[c['colors'][0]] = c['id']
         decks.append({
             'id': f'ogn-{re.sub(r"[^a-z0-9]+", "-", owner.lower())}', 'name': f"{owner}'s deck", 'premade': True,
             'owner': owner, 'legend': legend['id'], 'champion': champ_slot['id'] if champ_slot else None,
             'signature': sg[0]['id'] if sg else None, 'cards': {c['id']: 1 for c in picked}, 'runes': runes,
             'fillers': added, **({'runeArt': rune_art} if rune_art else {}),
+            **({} if owner in PLAYABLE_OWNERS else {'comingSoon': True}),
         })
         report.append(f"  {owner:8s} {'/'.join(lcolors):12s} own {len(own):2d}  used {len(picked) - added:2d}  fillers {added:2d}"
                       + (f"  dropped: {', '.join(dropped)}" if dropped else ''))

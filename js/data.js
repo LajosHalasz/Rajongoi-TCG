@@ -34,5 +34,6 @@ export function saveCustomDecks(list) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(list)); } catch { /* storage unavailable */ }
 }
 export function allDecks() { return [...premade, ...customDecks()]; }
-export function playableDecks() { return allDecks().filter(d => !validateDeck(d).errors.length); }
+export function playableDecks() { return allDecks().filter(d => !d.comingSoon && !validateDeck(d).errors.length); }
+export function comingSoonDecks() { return allDecks().filter(d => d.comingSoon); }
 export function findDeck(id) { return allDecks().find(d => d.id === id); }

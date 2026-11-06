@@ -37,7 +37,8 @@
     "runeArt": {
       "Chaos": "RUN-Chaos-anna",
       "Order": "RUN-Order-anna"
-    }
+    },
+    "comingSoon": true
   },
   {
     "id": "ogn-balu",
@@ -109,7 +110,8 @@
       "Calm": 6,
       "Chaos": 6
     },
-    "fillers": 0
+    "fillers": 0,
+    "comingSoon": true
   },
   {
     "id": "ogn-chris",
@@ -148,7 +150,8 @@
     "fillers": 0,
     "runeArt": {
       "Mind": "RUN-Mind-chris"
-    }
+    },
+    "comingSoon": true
   },
   {
     "id": "ogn-domi",
@@ -184,7 +187,8 @@
       "Mind": 6,
       "Calm": 6
     },
-    "fillers": 3
+    "fillers": 3,
+    "comingSoon": true
   },
   {
     "id": "ogn-kozi",
@@ -220,7 +224,8 @@
       "Mind": 6,
       "Chaos": 6
     },
-    "fillers": 7
+    "fillers": 7,
+    "comingSoon": true
   },
   {
     "id": "ogn-laci",
@@ -256,7 +261,8 @@
       "Chaos": 6,
       "Fury": 6
     },
-    "fillers": 0
+    "fillers": 0,
+    "comingSoon": true
   },
   {
     "id": "ogn-lui",
@@ -328,7 +334,8 @@
       "Body": 6,
       "Chaos": 6
     },
-    "fillers": 10
+    "fillers": 10,
+    "comingSoon": true
   },
   {
     "id": "ogn-tatai",
@@ -364,7 +371,8 @@
       "Body": 6,
       "Mind": 6
     },
-    "fillers": 12
+    "fillers": 12,
+    "comingSoon": true
   },
   {
     "id": "ogn-varon",
@@ -400,7 +408,8 @@
       "Calm": 6,
       "Fury": 6
     },
-    "fillers": 5
+    "fillers": 5,
+    "comingSoon": true
   },
   {
     "id": "ogn-vince",
@@ -436,6 +445,7 @@
       "Body": 6,
       "Calm": 6
     },
-    "fillers": 0
+    "fillers": 0,
+    "comingSoon": true
   }
 ]

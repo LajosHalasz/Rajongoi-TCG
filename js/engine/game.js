@@ -73,6 +73,7 @@ function buildPlayer(s, deck, idx, name, isAI) {
 
 // -------------------------------------------------------------- helpers ----
 export function log(s, msg) {
+  s.logTotal = (s.logTotal || 0) + 1;
   s.log.push(msg);
   if (s.log.length > 150) s.log.splice(0, s.log.length - 150);
 }

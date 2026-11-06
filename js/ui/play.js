@@ -3,9 +3,10 @@ import { chooseAction } from '../engine/ai.js';
 import { getDef, hasDef, kindOf } from '../engine/cards.js';
 import { COLORS, RULES } from '../engine/rules.js';
 import { validateDeck } from '../engine/deck.js';
-import { playableDecks, findDeck } from '../data.js';
-import { cardHtml, cardBackHtml, cardDetailsHtml, esc } from './card.js';
+import { playableDecks, comingSoonDecks, findDeck } from '../data.js';
+import { cardHtml, cardBackHtml, cardDetailsHtml, esc, isFoil } from './card.js';
 import { showCardModal } from './collection.js';
+import { sfx, soundForLog } from './sfx.js';
 
 const HUMAN = 0, AI = 1;
 const AI_DELAY = 750;
@@ -26,29 +27,66 @@ export function renderSetup(app) {
     return;
   }
   if (!decks.some(d => d.id === pick.me)) pick.me = decks[0].id;
+  if (pick.ai !== 'random' && !decks.some(d => d.id === pick.ai)) pick.ai = 'random';
   const hour = new Date().getHours();
-  const entry = (d, who) => {
+  const soon = comingSoonDecks();
+
+  const thumb = (d) => (d ? cardHtml(getDef(d.legend), { size: 'xs' }) : cardBackHtml({ size: 'xs' }));
+  const meta = (d) => {
+    if (!d) return 'Surprise me';
     const L = getDef(d.legend);
     const v = validateDeck(d);
-    return `<div class="deck-pick ${pick[who] === d.id ? 'on' : ''}" data-who="${who}" data-id="${d.id}">
-      ${cardHtml(L, { size: 'xs' })}
-      <div><b>${esc(d.name)}</b><div class="muted">${L.colors.join(' / ')} · avg cost ${v.stats.avgCost.toFixed(1)} · ${d.premade ? 'premade' : 'custom'}${d.fillers ? ` · ${d.fillers} filler` : ''}</div></div></div>`;
+    return `${L.colors.join(' / ')} · avg cost ${v.stats.avgCost.toFixed(1)} · ${d.premade ? 'premade' : 'custom'}${d.fillers ? ` · ${d.fillers} filler` : ''}`;
   };
-  app.innerHTML = `<div class="page">
-    <h2>Play against AI</h2>
-    <div class="setup">
-      <div class="col"><h3>Your deck</h3>${decks.map(d => entry(d, 'me')).join('')}</div>
-      <div class="col"><h3>Opponent (AI) deck</h3>
-        <div class="deck-pick ${pick.ai === 'random' ? 'on' : ''}" data-who="ai" data-id="random">
-          ${cardBackHtml({ size: 'xs', classes: '' }).replace('size-xs', 'size-xs" style="--w:62px')}
-          <div><b>Random deck</b><div class="muted">Surprise me</div></div></div>
-        ${decks.map(d => entry(d, 'ai')).join('')}</div>
+  const option = (who, d, locked = false) => {
+    const id = d ? d.id : 'random';
+    return `<div class="dd-opt ${pick[who] === id ? 'on' : ''} ${locked ? 'locked' : ''}" ${locked ? '' : `data-who="${who}" data-id="${id}"`}>
+      ${thumb(d)}<div class="dd-text"><b>${esc(d ? d.name : 'Random deck')}</b><div class="muted">${locked ? getDef(d.legend).colors.join(' / ') : meta(d)}</div></div>
+      ${locked ? '<span class="soon-tag">COMING SOON</span>' : ''}</div>`;
+  };
+  const dropdown = (who, label) => {
+    const cur = pick[who] === 'random' ? null : findDeck(pick[who]);
+    return `<div class="dd" data-dd="${who}">
+      <div class="dd-label">${label}</div>
+      <button class="dd-btn" type="button">${thumb(cur)}<div class="dd-text"><b>${esc(cur ? cur.name : 'Random deck')}</b><div class="muted">${meta(cur)}</div></div><span class="dd-caret">▾</span></button>
+      <div class="dd-list" hidden>
+        ${who === 'ai' ? option(who, null) : ''}
+        ${decks.map(d => option(who, d)).join('')}
+        ${soon.length ? `<div class="locked-head">Coming soon</div>${soon.map(d => option(who, d, true)).join('')}` : ''}
+      </div>
+    </div>`;
+  };
+
+  app.innerHTML = `<div class="page setup-page">
+    <div class="row setup-top">
+      <h2 style="margin:0">Play against AI</h2><span class="spacer"></span>
+      <span class="muted">Nostalgia Line is ${hour >= 16 && hour < 22 ? '<b style="color:var(--good)">active</b>' : 'inactive'} (16.00 – 22.00)</span>
+      <button class="primary" id="start" style="font-size:22px;padding:10px 44px">Start</button>
     </div>
-    <div class="start-row">
-      <button class="primary" id="start" style="font-size:22px;padding:12px 40px">Start</button>
-      <span class="muted">Nostalgia Line is ${hour >= 16 && hour < 22 ? '<b style="color:var(--good)">active</b>' : 'inactive'} right now (16.00 – 22.00).</span>
-    </div></div>`;
-  app.querySelectorAll('.deck-pick').forEach(el => el.onclick = () => { pick[el.dataset.who] = el.dataset.id; renderSetup(app); });
+    <div class="versus">
+      ${dropdown('me', 'Your deck')}
+      <div class="vs">VS</div>
+      ${dropdown('ai', 'Opponent (AI) deck')}
+    </div>
+  </div>`;
+
+  const closeAll = () => app.querySelectorAll('.dd-list').forEach(l => (l.hidden = true));
+  app.querySelectorAll('.dd').forEach(dd => {
+    dd.querySelector('.dd-btn').onclick = (e) => {
+      e.stopPropagation();
+      const list = dd.querySelector('.dd-list');
+      const open = list.hidden;
+      closeAll();
+      list.hidden = !open;
+      if (open) list.querySelector('.dd-opt.on')?.scrollIntoView({ block: 'nearest' });
+    };
+  });
+  app.querySelectorAll('.dd-opt[data-id]').forEach(el => el.onclick = (e) => {
+    e.stopPropagation();
+    pick[el.dataset.who] = el.dataset.id;
+    renderSetup(app);
+  });
+  app.onclick = (e) => { if (!e.target.closest('.dd')) closeAll(); };
   app.querySelector('#start').onclick = () => {
     const me = findDeck(pick.me);
     const ai = pick.ai === 'random' ? decks[Math.floor(Math.random() * decks.length)] : findDeck(pick.ai);
@@ -89,7 +127,7 @@ function render() {
       ${midbar(s, legal, ui)}
       ${battleRow(s, me, hl)}
       ${playerRow(s, me, true, hl)}
-      <div class="hand-row mine">${me.hand.map(c => unitCard(s, c, hl, { inHand: true })).join('') || '<span class="muted">Empty hand</span>'}</div>
+      <div class="hand-row mine" style="--n:${me.hand.length}">${me.hand.map((c, i) => unitCard(s, c, hl, { inHand: true, fan: fanStyle(i, me.hand.length) })).join('') || '<span class="muted">Empty hand</span>'}</div>
     </section>
     <aside class="side-panel">
       <div class="preview" id="preview"><span class="muted" style="align-self:center">Hover a card to inspect it · right-click for details</span></div>
@@ -101,6 +139,14 @@ function render() {
 
   const log = app.querySelector('.log');
   if (keepScroll) log.scrollTop = log.scrollHeight;
+  animateArrivals(s, app);
+  // game sounds from new log lines
+  // logTotal counts every line ever logged (the visible log is capped)
+  if (G.logLen == null) G.logLen = s.logTotal || 0;
+  const n = Math.min((s.logTotal || 0) - G.logLen, s.log.length);
+  const fresh = n > 0 ? s.log.slice(-n) : [];
+  G.logLen = s.logTotal || 0;
+  fresh.slice(-4).forEach((l, i) => setTimeout(() => soundForLog(l, s.players[HUMAN].name), i * 90));
   scheduleAI();
 }
 
@@ -128,6 +174,14 @@ function highlights(s, legal, ui) {
   return h;
 }
 
+/** Hearthstone-like fan: each card rotated and dropped along an arc. */
+function fanStyle(i, n) {
+  const mid = (n - 1) / 2;
+  const step = Math.min(7, 44 / Math.max(n, 1));
+  const off = i - mid;
+  return `--fr:${(off * step).toFixed(2)}deg;--fy:${(off * off * Math.min(4.5, 26 / n)).toFixed(1)}px;--fz:${i + 1}`;
+}
+
 function unitCard(s, inst, hl, opts = {}) {
   const d = getDef(inst.id);
   const onBoard = !opts.inHand && kindOf(d) === 'unit' && !opts.slot;
@@ -142,7 +196,8 @@ function unitCard(s, inst, hl, opts = {}) {
   const cost = opts.inHand && inst.owner === HUMAN ? effectiveCost(s, inst.owner, d) : undefined;
   const sick = onBoard && !canAttackNow(s, inst) && !inst.tapped && s.active === inst.owner ? '<div class="badge-sick">zZ</div>' : '';
   const uses = inst.uses != null && !opts.inHand ? `<div class="badge-sick" style="top:auto;bottom:30%">${inst.uses} left</div>` : '';
-  return cardHtml(d, { size: 'sm', mini: true, uid: inst.uid, tapped: inst.tapped && !opts.inHand, power: pw, cost, classes: cls.join(' '), badges: sick + uses });
+  return cardHtml(d, { size: 'sm', mini: !(opts.inHand && !opts.slot), uid: inst.uid, tapped: inst.tapped && !opts.inHand, power: pw, cost,
+    classes: cls.join(' '), badges: sick + uses, style: opts.fan || '' });
 }
 
 function playerRow(s, p, mine, hl) {
@@ -263,6 +318,97 @@ function winnerOverlay(s) {
       <button class="primary" data-btn="rematch">Rematch</button>
       <button data-btn="newgame">Choose decks</button>
       <button class="ghost" data-btn="menu">Main menu</button></div></div></div>`;
+}
+
+// ========================================================= arrivals =====
+// Units that just entered the battlefield get a landing animation:
+// foil cards drop in from above the board, Mighty units (5+) crack the field.
+function animateArrivals(s, app) {
+  const now = new Set(s.players.flatMap(p => p.battle.map(u => u.uid)));
+  if (!G.seen) { G.seen = now; return; }
+  const fresh = [...now].filter(uid => !G.seen.has(uid));
+  G.seen = now;
+  if (!fresh.length || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  for (const uid of fresh) {
+    const el = app.querySelector(`.battle [data-uid="${uid}"]`);
+    if (!el) continue;
+    const inst = findInst(s, uid)?.inst;
+    const d = getDef(inst.id);
+    const foil = isFoil(d);
+    const mighty = power(s, inst) >= 5;
+    el.classList.add(foil ? 'arrive-foil' : 'arrive');
+    const land = foil ? 620 : 280;
+    if (foil) sfx.foilLand(0.55); else if (!mighty) sfx.play();
+    if (mighty && !foil) sfx.play();
+    if (foil) setTimeout(() => shockwave(el), land - 60);
+    if (mighty) setTimeout(() => { crackField(el, app); sfx.crack(); }, land - 40);
+  }
+}
+
+// debug hook: window.RajongoiFX.crack(el) / .land(el) replays the effects on any element
+if (typeof window !== 'undefined') window.RajongoiFX = { crack: (el) => crackField(el, document), land: (el) => shockwave(el) };
+
+function shockwave(el) {
+  const r = el.getBoundingClientRect();
+  const fx = document.createElement('div');
+  fx.className = 'land-fx';
+  fx.style.left = r.left + r.width / 2 + 'px';
+  fx.style.top = r.top + r.height / 2 + 'px';
+  fx.style.setProperty('--w', r.width + 'px');
+  let sparks = '';
+  for (let i = 0; i < 18; i++) {
+    const a = (Math.PI * 2 * i) / 18 + Math.random() * 0.3;
+    const dist = r.width * (0.9 + Math.random() * 0.9);
+    sparks += `<i style="--x:${(Math.cos(a) * dist).toFixed(0)}px;--y:${(Math.sin(a) * dist * 0.6).toFixed(0)}px;animation-delay:${(Math.random() * 60).toFixed(0)}ms"></i>`;
+  }
+  fx.innerHTML = `<div class="ring"></div><div class="ring r2"></div>${sparks}`;
+  document.body.appendChild(fx);
+  setTimeout(() => fx.remove(), 1200);
+}
+
+function crackField(el, app) {
+  const r = el.getBoundingClientRect();
+  const size = r.width * 3.4;
+  const c = size / 2;
+  let paths = '';
+  const rays = 7 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < rays; i++) {
+    const a = (Math.PI * 2 * i) / rays + (Math.random() - 0.5) * 0.5;
+    const len = c * (0.55 + Math.random() * 0.45);
+    let x = c, y = c, pts = `M${c} ${c}`;
+    const steps = 5;
+    for (let k = 1; k <= steps; k++) {
+      const t = (len * k) / steps;
+      x = c + Math.cos(a) * t + (Math.random() - 0.5) * size * 0.06;
+      y = c + Math.sin(a) * t * 0.7 + (Math.random() - 0.5) * size * 0.04;
+      pts += ` L${x.toFixed(1)} ${y.toFixed(1)}`;
+      if (k === 2 || k === 3) { // small side branches
+        const b = a + (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 0.5);
+        const bl = len * 0.22;
+        paths += `<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${(x + Math.cos(b) * bl).toFixed(1)} ${(y + Math.sin(b) * bl * 0.62).toFixed(1)}" stroke-width="${(size * 0.008).toFixed(1)}"/>`;
+      }
+    }
+    paths += `<path d="${pts}" stroke-width="${(size * 0.016).toFixed(1)}"/>`;
+  }
+  const fx = document.createElement('div');
+  fx.className = 'crack-fx';
+  fx.style.left = r.left + r.width / 2 - c + 'px';
+  fx.style.top = r.top + r.height / 2 - c + 'px';
+  fx.style.width = fx.style.height = size + 'px';
+  fx.innerHTML = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+    <defs><radialGradient id="cg"><stop offset="0" stop-color="#000" stop-opacity=".6"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+      <mask id="cm"><rect width="${size}" height="${size}" fill="#fff"/>
+        <rect x="${c - r.width / 2}" y="${c - r.height / 2}" width="${r.width}" height="${r.height}" rx="${r.width * 0.04}" fill="#000"/></mask></defs>
+    <g mask="url(#cm)">
+    <ellipse cx="${c}" cy="${c}" rx="${c * 0.8}" ry="${c * 0.5}" fill="url(#cg)"/>
+    <g class="glow" fill="none" stroke-linecap="round" stroke-linejoin="round">${paths}</g>
+    <g class="dark" fill="none" stroke-linecap="round" stroke-linejoin="round">${paths}</g></g></svg>
+    ${Array.from({ length: 10 }, () => `<b style="--x:${((Math.random() - 0.5) * size * 0.7).toFixed(0)}px;--y:${(-Math.random() * size * 0.45).toFixed(0)}px"></b>`).join('')}`;
+  document.body.appendChild(fx);
+  const table = app.querySelector('.table');
+  table?.classList.add('quake');
+  setTimeout(() => table?.classList.remove('quake'), 450);
+  setTimeout(() => fx.remove(), 2600);
 }
 
 // ============================================================== input =====

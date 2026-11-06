@@ -4,6 +4,7 @@ import { rarityOf, getDef } from '../engine/cards.js';
 import { COLORS } from '../engine/rules.js';
 import { cardHtml, esc } from './card.js';
 import { showCardModal } from './collection.js';
+import { sfx } from './sfx.js';
 
 const SET_INFO = {
   OGN: { name: 'OGN 2026-01', sub: 'Origins', c1: '#d8433b', c2: '#3b82c8' },
@@ -65,9 +66,11 @@ function tearOpen(app, sets) {
   const pack = wrap.querySelector('.booster');
   pack.classList.remove('idle');
   pack.classList.add('shake');
+  sfx.packShake();
   setTimeout(() => {
     pack.classList.remove('shake');
     pack.classList.add('torn');
+    sfx.packTear();
     burst(wrap, ['#fff', '#ffd36b', SET_INFO[state.set]?.c1 || '#d8433b'], 26);
   }, 520);
   setTimeout(() => {
@@ -79,6 +82,7 @@ function tearOpen(app, sets) {
     savePulls(pulls);
     state.busy = false;
     drawReveal(app, sets);
+    state.pack.forEach((_, i) => setTimeout(() => sfx.deal(i), 120 + i * 55));
   }, 1250);
 }
 
@@ -108,6 +112,8 @@ function drawReveal(app, sets) {
     state.revealed.add(i);
     el.classList.add('flipped');
     const t = tier(state.pack[i]);
+    sfx.flip();
+    if (t !== 'common') setTimeout(() => sfx.reveal(t), 200);
     if (['rare', 'epic', 'hit', 'legend'].includes(t)) {
       setTimeout(() => {
         burst(el, t === 'hit' || t === 'epic' ? ['#ff5fd2', '#6be3ff', '#ffe36b', '#8dff7a'] : ['#ffd36b', '#fff2b8', '#e6ad3c'], t === 'rare' ? 18 : 34);

@@ -1,5 +1,5 @@
 // Booster packs (15 cards):
-//   1 Champion or Signature in ~1 of 8 packs (otherwise a Rare, or an Uncommon if the set has no Rares)
+//   1 Champion, Signature or full-art (foil) Rune in ~1 of 8 packs (otherwise a Rare, or an Uncommon if the set has no Rares)
 //   3 Uncommons
 //   10 Commons (a Legend may replace one of them)
 //   1 Rune or Token (may fall back to a Common)
@@ -24,9 +24,10 @@ export function setPools(set) {
     commons: of('common'),
     uncommons: of('uncommon'),
     rares: cards.filter(c => playable(c) && ['rare', 'epic'].includes(rarityOf(c))),
-    hits: cards.filter(c => c.type === 'champion' || c.type === 'signature'),
+    hits: [...cards.filter(c => c.type === 'champion' || c.type === 'signature'),
+      ...allCards().filter(c => c.type === 'rune' && c.fullArtRune && String(c.setInfo || '').toUpperCase().startsWith(set))],
     legends: cards.filter(c => c.type === 'legend'),
-    extras: allCards().filter(c => c.type === 'rune' || c.type === 'token'),
+    extras: allCards().filter(c => (c.type === 'rune' && !c.fullArtRune) || c.type === 'token'),
   };
 }
 

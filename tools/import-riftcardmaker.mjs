@@ -73,6 +73,13 @@ function parseSetInfo(info = '') {
 const slug = (x) => String(x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const baseName = (n) => String(n || '').split(/[|,]/)[0].trim();
 
+function writeLayer(im, base) {
+  const [, ext, b64] = im.src.match(/^data:image\/(\w+);base64,(.*)$/s) || [];
+  const tmp = path.join(imgDir, `${base}.${ext === 'jpeg' ? 'jpg' : ext || 'png'}`);
+  fs.writeFileSync(tmp, Buffer.from(b64, 'base64'));
+  return tmp;
+}
+
 function convert(j) {
   let { set, number } = parseSetInfo(j.setInfo);
   let type = String(j.type || 'unit').toLowerCase();
@@ -94,7 +101,7 @@ function convert(j) {
     const owner = (String(j.setInfo || '').split('-')[1] || j.illustrator || 'basic').trim();
     owners = [owner];
     set = 'RUN';
-    number = `${colors[0] || 'Rune'}-${slug(owner)}`;
+    number = `${colors[0] || 'Rune'}-${slug(owner)}${(j.name || '').trim() ? '' : '-fullart'}`;
     id = `${set}-${number}`;
   }
 
@@ -128,22 +135,44 @@ function convert(j) {
   if (type === 'token') card.token = true;
   card.recycle = j.power != null && j.power > 0 ? j.power : 0; // riftcardmaker 'power' = runes to recycle
 
-  const img = (j.images || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))[0];
-  if (img && /^data:image\//.test(img.src || '')) {
-    const [, ext, b64] = img.src.match(/^data:image\/(\w+);base64,(.*)$/s) || [];
-    if (b64) {
-      const file = path.join(imgDir, `${id}.jpg`);
-      const tmp = path.join(imgDir, `${id}.src.${ext === 'jpeg' ? 'jpg' : ext}`);
-      fs.writeFileSync(tmp, Buffer.from(b64, 'base64'));
-      try {
-        execFileSync('convert', [tmp, '-resize', '900x900>', '-quality', '82', file]);
-        fs.unlinkSync(tmp);
-      } catch {
-        fs.renameSync(tmp, file);
-      }
-      card.image = `data/img/${id}.jpg`;
-      if (img.croppedArea) card.imageCrop = img.croppedArea;
+  const layers = (j.images || []).filter(im => /^data:image\//.test(im.src || ''))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  if (layers.length === 1) {
+    const img = layers[0];
+    const tmp = writeLayer(img, `${id}.src`);
+    const file = path.join(imgDir, `${id}.jpg`);
+    try {
+      execFileSync('convert', [tmp, '-resize', '900x900>', '-quality', '82', file]);
+      fs.unlinkSync(tmp);
+    } catch {
+      fs.renameSync(tmp, file);
     }
+    card.image = `data/img/${id}.jpg`;
+    if (img.croppedArea) card.imageCrop = img.croppedArea;
+  } else if (layers.length > 1) {
+    // Several image layers (e.g. full-art runes): composite them the way riftcardmaker
+    // places them onto the card, so the game shows exactly what the editor shows.
+    const W = 900, H = Math.round(900 * 2000 / 1433);
+    const args = ['-size', `${W}x${H}`, 'xc:#000'];
+    const tmps = [];
+    layers.forEach((im, i) => {
+      const tmp = writeLayer(im, `${id}.layer${i}`);
+      tmps.push(tmp);
+      const [iw, ih] = execFileSync('identify', ['-format', '%w %h', tmp]).toString().split(' ').map(Number);
+      const c = im.croppedArea || { x: 0, y: 0, width: 100, height: 100 };
+      const sx = W / (iw * c.width / 100), sy = H / (ih * c.height / 100);
+      const ox = Math.round(-c.x / 100 * iw * sx), oy = Math.round(-c.y / 100 * ih * sy);
+      const op = im.opacity ?? 1;
+      args.push('(', tmp, '-resize', `${Math.round(iw * sx)}x${Math.round(ih * sy)}!`, '-alpha', 'set',
+        '-channel', 'A', '-evaluate', 'multiply', String(op), '+channel', ')',
+        '-geometry', `${ox >= 0 ? '+' : ''}${ox}${oy >= 0 ? '+' : ''}${oy}`, '-composite');
+    });
+    const file = path.join(imgDir, `${id}.jpg`);
+    execFileSync('convert', [...args, '-quality', '85', file]);
+    tmps.forEach(t => fs.unlinkSync(t));
+    card.image = `data/img/${id}.jpg`;
+    card.imageCrop = { x: 0, y: 0, width: 100, height: 100 };
+    console.log(`  note: ${id} has ${layers.length} image layers - composited into one picture`);
   }
   return card;
 }

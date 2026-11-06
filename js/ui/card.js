@@ -12,7 +12,7 @@ export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp
 
 const ICONS = {
   T: '<span class="ico ico-tap" title="Tap">↷</span>',
-  M: '<span class="ico ico-might" title="Might">⛨</span>',
+  M: '<span class="ico ico-might" title="Might"><i class="mi"></i></span>',
   R: '<span class="ico ico-rune" title="Rune of this card\'s color">◆</span>',
 };
 
@@ -43,6 +43,8 @@ const color2 = (def) => (def.colors[1] ? COLORS[def.colors[1]].hex : colorHex(de
 export function isFullArt(def) {
   return !!def.image && def.type !== 'rune' && (rarityOf(def) === 'epic' || def.type === 'signature' || def.type === 'legend');
 }
+/** Foil finish: Champions, Legends and EPIC cards (Signatures are EPIC). */
+export const isFoil = (def) => ['champion', 'legend'].includes(def.type) || rarityOf(def) === 'epic' || !!def.fullArtRune;
 const isRareArt = (def) => !!def.image && rarityOf(def) === 'rare';
 
 /** Image placed exactly as riftcardmaker crops it onto the whole card. */
@@ -81,11 +83,11 @@ function rulesHtml(def) {
 
 /**
  * Full card face.
- * opts: size ('xs'|'sm'|'md'|'lg'), power (current might), cost (current cost),
+ * opts: size ('xs'|'sm'|'md'|'lg'), power (current might), cost (current cost), style (extra inline CSS),
  *       tapped, classes, uid, mini (battlefield version: no text), badges
  */
 function runeHtml(def, opts) {
-  const cls = ['card', 'rune-card', def.name && !/^\s*$/.test(def.name) && !def.fullArtRune ? '' : 'rune-bare',
+  const cls = ['card', 'rune-card', def.name && !/^\s*$/.test(def.name) && !def.fullArtRune ? '' : 'rune-bare', isFoil(def) ? 'foil' : '',
     `size-${opts.size || 'md'}`, opts.mini ? 'mini' : '', opts.classes || ''].join(' ');
   return `<div class="${cls}" data-cid="${esc(def.id)}" style="--c1:${colorHex(def)};--c2:${colorHex(def)}">
     <div class="art art-full">${def.image ? cardImg(def) : placeholderArt(def)}</div>
@@ -93,6 +95,7 @@ function runeHtml(def, opts) {
     <div class="typeline"><span class="domains"><span class="domain" style="background:${colorHex(def)}"></span></span><span class="type-badge">Rune</span></div>
     <div class="rune-name">${esc(def.name)}</div>
     <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || '')}</span></div>
+    ${isFoil(def) ? '<div class="foil-layer"></div>' : ''}
   </div>`;
 }
 
@@ -107,7 +110,7 @@ export function cardHtml(def, opts = {}) {
   const mightCls = opts.power != null && opts.power !== def.power ? (opts.power > def.power ? 'up' : 'down') : '';
   const prov = def.provisional || [];
   const cls = ['card', `r-${rarity}`, full ? 'fullart' : rare ? 'rareart' : 'standard', legend ? 'is-legend' : '', k === 'gear' ? 'is-gear' : '',
-    `size-${opts.size || 'md'}`, opts.mini ? 'mini' : '', opts.tapped ? 'tapped' : '', opts.classes || ''].join(' ');
+    isFoil(def) ? 'foil' : '', `size-${opts.size || 'md'}`, opts.mini ? 'mini' : '', opts.tapped ? 'tapped' : '', opts.classes || ''].join(' ');
   const data = `data-cid="${esc(def.id)}"${opts.uid ? ` data-uid="${esc(opts.uid)}"` : ''}`;
   const style = `--domain:${colorHex(def)};--c1:${colorHex(def)};--c2:${color2(def)};--type:${TYPE_INFO[def.type]?.hex || '#555'}`;
   const tribes = (def.tribes || []).slice(0, 2);
@@ -120,12 +123,12 @@ export function cardHtml(def, opts = {}) {
   const domainsTopLeft = full && legend
     ? `<div class="fa-domains">${def.colors.map(c => `<span style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join('')}</div>` : '';
   const mightHtml = showMight
-    ? `<div class="might ${mightCls} ${prov.includes('might') ? 'prov' : ''}"><span class="might-ico">⛨</span><span class="might-val">${might}</span></div>` : '';
+    ? `<div class="might ${mightCls} ${prov.includes('might') ? 'prov' : ''}"><span class="might-ico"><i></i></span><span class="might-val">${might}</span></div>` : '';
   const typeline = full
     ? `<div class="typeline gold"><span>${[typeLabel(def), ...tribes].map(esc).join(' <i>◆</i> ')}</span></div>`
     : `<div class="typeline"><span class="domains">${def.colors.map(c => `<span class="domain" style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join('')}</span><span class="type-badge">${esc(typeLabel(def))}</span>${tribes.map(t => `<span class="tribe">${esc(t)}</span>`).join('')}</div>`;
 
-  return `<div class="${cls}" ${data} style="${style}">
+  return `<div class="${cls}" ${data} style="${style};${opts.style || ''}">
     ${art}
     ${full || rare ? '<div class="art-shade"></div>' : ''}
     <div class="frame"></div>
@@ -135,6 +138,7 @@ export function cardHtml(def, opts = {}) {
     <div class="namebar"><span class="name">${esc(def.name)}</span>${def.subname && !opts.mini ? `<small>${esc(def.subname)}</small>` : ''}</div>
     ${rulesHtml(def)}
     <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || (def.owners || []).join(' / '))}</span></div>
+    ${isFoil(def) ? '<div class="foil-layer"></div>' : ''}
     ${opts.badges || ''}
   </div>`;
 }
@@ -204,5 +208,18 @@ export function installAutoFit() {
   window.addEventListener('resize', schedule);
   document.addEventListener('load', schedule, true); // images load -> layout settles
   if (document.fonts?.ready) document.fonts.ready.then(() => fitCards(document, true));
+  // foil shine follows the pointer
+  document.addEventListener('pointermove', (e) => {
+    const card = e.target.closest?.('.card.foil');
+    if (!card) return;
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+    card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+    card.classList.add('foil-hover');
+  });
+  document.addEventListener('pointerout', (e) => {
+    const card = e.target.closest?.('.card.foil');
+    if (card && !card.contains(e.relatedTarget)) card.classList.remove('foil-hover');
+  });
   schedule();
 }

@@ -8,6 +8,19 @@ A browser card game: **Duel Masters** basics (shields, Shield Triggers, attackin
 
 It's a static site with no build step and no dependencies, so it works on GitHub Pages as-is.
 
+## Mascot
+
+`img/mascot.svg` (the watermelon smiley, a sharp vector redraw of `img/mascot-original.png`) is the epic home-page background, with spinning rays, a glow and floating seeds. It also appears faintly on every card back and on the booster packs. To change it, replace that file.
+
+## Sound
+
+All sound effects are generated live with the Web Audio API (`js/ui/sfx.js`): filtered noise, tuned oscillators, envelopes, a reverb and a compressor, so there are no audio files. They cover:
+- UI clicks and hovers, and page changes.
+- Booster packs: shake, tear, dealing, flips, and rarity reveals.
+- The game: card play, spells, gear, runes, turn gong, attacks, blocks, fights, destruction, shield shatter, Shield Triggers, the foil landing boom, the Mighty crack, and the win and lose fanfares.
+
+The 🔊 button in the top bar mutes all sound. The setting is remembered.
+
 ## Booster packs
 
 The **Boosters** page opens 15-card packs with an animation: the pack tears open, the cards are dealt face down, and rarer cards glow before they flip. A pack contains:
@@ -116,6 +129,10 @@ Gaps are filled so the game stays playable:
 - **Each deck gets a placeholder Legend** (OGN has no Legends yet) named after the owner's Champion, so the "same name" rule holds. The Legend's two colors are the deck's most common ones, and cards outside them are left out.
 - **Decks under 20 cards** are completed with neutral **Filler** cards following the Assembly Guide curve. **Decks over 20** are trimmed, keeping fully designed cards first.
 
+### Playable premade decks
+
+Only the decks of the owners in `PLAYABLE_OWNERS` (in `tools/import_accdb.py`, currently Lui and Balu) can be played in **Play vs AI**. The others are listed as *Coming soon*: neither you nor the AI can pick them, and they can't be copied. To unlock a deck, add its owner to the list and re-run the database import.
+
 ### Adding finished cards (riftcardmaker export)
 
 ```bash
@@ -139,6 +156,8 @@ A card is matched to its database row by name and type, so a typo'd printed numb
 - **Rules text:** auto-fitted to its box. The in-game preview also shows the card's text written out below the card.
 
 If an export has no `rarity`, its rarity icon decides the frame.
+
+**Foil:** Champions, Legends and EPIC cards (which includes all Signatures) get a holographic foil shine everywhere: in the Collection, in boosters and in game. The shine follows the mouse pointer. It is set by `isFoil()` in `js/ui/card.js`.
 
 The earlier full-art note still applies: **EPIC Champions and Legends** use the full-art frame: the artwork covers the whole card, placed with the export's crop data. They also get the gold frame, the colored name band and white rules text over the art.
 
