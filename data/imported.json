@@ -1735,7 +1735,7 @@
     "tribes": [
       "ART"
     ],
-    "text": "{Shield Trigger#CE356B}__(If you got this from you Shield Zone, you may play it immediately for [0] mana.){Reaction#21705B}__(Play any time, even before spells and abilities resolve.)__\nYour Units have {Indestructible#CE356B} this turn. This can't be countered.",
+    "text": "{Shield Trigger#CE356B}__(If you got this from you Shield Zone, you may play it immediately for [0] mana.){Reaction#21705B}__(Play any time, even before spells and abilities resolve.)__\nYour Units have {Indestructible#CE356B} this turn. You can't lose the game this turn. This can't be countered.",
     "flavor": "",
     "rarity": "epic",
     "illustrator": "Lui",

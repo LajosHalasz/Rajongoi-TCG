@@ -232,6 +232,8 @@ ${def.text}`;
         return `Your opponent discards ${n} random card${n > 1 ? "s" : ""}.`;
       case "recover":
         return `Return a Unit from your Graveyard to your hand.`;
+      case "cantLose":
+        return "You can't lose the game this turn.";
       case "grantKeyword":
         return `Give ${t} ${e.keyword}${dur}.`;
       case "copyUnit":
@@ -1420,6 +1422,10 @@ ${def.text}`;
   }
   function setWinner(s, pi, reason) {
     if (s.winner != null) return;
+    if (pi >= 0 && s.players[other(pi)].cantLoseTurn === s.turn) {
+      log(s, `${s.players[other(pi)].name} can't lose the game this turn!`);
+      return;
+    }
     s.winner = pi;
     s.winReason = reason;
     log(s, pi === -1 ? `Draw \u2014 ${reason}.` : `${s.players[pi].name} wins! ${reason}`);
@@ -1715,6 +1721,10 @@ ${def.text}`;
         break;
       case "grantKeyword":
         for (const u of targets) u.mods.push({ keyword: e.keyword, ...until(u) });
+        break;
+      case "cantLose":
+        me.cantLoseTurn = s.turn;
+        log(s, `${me.name} can't lose the game this turn.`);
         break;
       case "ready":
         for (const u of targets) if (okPower(u)) {

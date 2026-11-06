@@ -48,6 +48,7 @@
     "legend": "OGN-L-balu",
     "champion": "OGN-038",
     "signature": "OGN-033",
+    "comingSoon": true,
     "cards": {
       "OGN-038": 1,
       "OGN-040": 1,

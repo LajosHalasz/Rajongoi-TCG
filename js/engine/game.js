@@ -485,6 +485,10 @@ export function emit(s, type, data = {}) {
 
 function setWinner(s, pi, reason) {
   if (s.winner != null) return;
+  if (pi >= 0 && s.players[other(pi)].cantLoseTurn === s.turn) { // The ULTIMATE FLEX
+    log(s, `${s.players[other(pi)].name} can't lose the game this turn!`);
+    return;
+  }
   s.winner = pi;
   s.winReason = reason;
   log(s, pi === -1 ? `Draw — ${reason}.` : `${s.players[pi].name} wins! ${reason}`);
@@ -755,6 +759,10 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       break;
     case 'grantKeyword':
       for (const u of targets) u.mods.push({ keyword: e.keyword, ...until(u) });
+      break;
+    case 'cantLose':
+      me.cantLoseTurn = s.turn;
+      log(s, `${me.name} can't lose the game this turn.`);
       break;
     case 'ready':
       for (const u of targets) if (okPower(u)) { u.tapped = false; u.sick = false; }

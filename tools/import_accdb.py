@@ -83,7 +83,7 @@ def slug(x):
 
 
 # Premade decks playable in 'Play vs AI'; every other owner's deck shows as Coming soon.
-PLAYABLE_OWNERS = {'Lui', 'Balu'}
+PLAYABLE_OWNERS = {'Lui'}  # Balu's deck is being reworked
 
 GUIDE_CURVE = {1: 3, 2: 4, 3: 4, 4: 3, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 10: 1}
 

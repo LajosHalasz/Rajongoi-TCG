@@ -27,6 +27,20 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  "The ULTIMATE FLEX: you can't lose the game this turn"() {
+    const s = fresh();
+    const a1 = card(s, 1, 'OGN-181', 'battle'); const a2 = card(s, 1, 'OGN-181', 'battle');
+    s.players[0].shields = [{ uid: 'flex', id: 'OGN-186', owner: 0, tapped: false, sick: false, mods: [], uses: null }];
+    const passAll = () => { for (let i = 0; i < 20 && s.pending && ['priority', 'block'].includes(s.pending.kind); i++) step(s, { type: s.pending.kind === 'block' ? 'noBlock' : 'pass' }); };
+    s.active = 1; s.phase = 'combat';
+    step(s, { type: 'attack', uid: a1.uid, target: { kind: 'shield' } }); passAll();
+    assert.equal(s.pending?.kind, 'shieldTrigger');
+    step(s, legalActions(s, 0).find(a => a.use)); passAll();
+    assert.equal(s.players[0].shields.length, 0);
+    step(s, { type: 'attack', uid: a2.uid, target: { kind: 'player' } }); passAll();
+    assert.equal(s.winner, null, 'the direct attack must not win this turn');
+    assert(s.log.some(l => l.includes("can't lose the game this turn")));
+  },
   'Recycle puts runes on the bottom of the Mana Deck'() {
     const s = fresh(); const c = card(s, 0, 'OGN-002'); // Villamos, recycle 1
     const before = s.players[0].mana.length;

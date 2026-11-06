@@ -650,6 +650,9 @@
     "target": "allFriendlyUnits",
     "keyword": "Indestructible",
     "duration": "turn"
+   },
+   {
+    "do": "cantLose"
    }
   ]
  },

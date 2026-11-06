@@ -169,6 +169,7 @@ export function describeEffect(e, def) {
     case 'channel': return `Channel ${n} extra rune${n > 1 ? 's' : ''}${e.tapped ? ' tapped' : ''}.`;
     case 'discard': return `Your opponent discards ${n} random card${n > 1 ? 's' : ''}.`;
     case 'recover': return `Return a Unit from your Graveyard to your hand.`;
+    case 'cantLose': return "You can't lose the game this turn.";
     case 'grantKeyword': return `Give ${t} ${e.keyword}${dur}.`;
     case 'copyUnit': return `Copy ${t}${pw}; the copy has Haste and dies at the end of this turn.`;
     case 'artDiscount': return 'Your other Art cards cost [1] this turn; any played this way are banished at the end of your turn.';
