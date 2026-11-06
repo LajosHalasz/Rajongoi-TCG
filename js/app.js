@@ -4,7 +4,8 @@ import { cardHtml, installAutoFit, thumbOf } from './ui/card.js';
 import { renderCollection, renderDecks, renderBuilder } from './ui/collection.js';
 import { renderSetup, stopGame } from './ui/play.js';
 import { renderBoosters } from './ui/boosters.js';
-import { renderAchievements } from './ui/achievements.js';
+import { renderAchievements, unlockedMap } from './ui/achievements.js';
+import { ACHIEVEMENTS } from './engine/achievements.js';
 import { sfx, isMuted, setMuted } from './ui/sfx.js';
 
 const app = document.getElementById('app');
@@ -20,6 +21,9 @@ function renderHome() {
   }).join('');
   const seeds = Array.from({ length: 22 }, (_, i) =>
     `<i style="left:${(i * 37) % 100}%;animation-delay:${(i * 0.73) % 9}s;animation-duration:${9 + (i % 5) * 2}s;--s:${0.6 + (i % 4) * 0.25}"></i>`).join('');
+  const achDone = unlockedMap();
+  const achTotal = ACHIEVEMENTS.filter(a => !a.unobtainable).length;
+  const achGot = ACHIEVEMENTS.filter(a => achDone[a.id]).length;
   app.innerHTML = `<div class="home-bg" aria-hidden="true">
     <div class="rays"></div><div class="rays rays-2"></div>
     <div class="hero-glow"></div>
@@ -35,6 +39,7 @@ function renderHome() {
       <button onclick="location.hash='#/boosters'">Open boosters</button>
       <button onclick="location.hash='#/collection'">Collection</button>
       <button class="ghost" onclick="location.hash='#/decks'">Decks</button>
+      <button class="ach-home" onclick="location.hash='#/achievements'">🏆 Achievements <span class="ach-home-count">${achGot} / ${achTotal}</span></button>
     </div>
     <div class="fan">${fan}</div>
     <p class="muted" style="margin-top:20px">${allCards().length} cards loaded</p>

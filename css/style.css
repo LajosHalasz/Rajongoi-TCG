@@ -776,3 +776,7 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
   .zone { min-height: auto; }
 }
 .sortby { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 15px; }
+
+/* home: achievements button with progress */
+.home .menu .ach-home { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.ach-home-count { font-size: .8em; font-weight: 800; padding: 1px 8px; border-radius: 99px; background: rgba(224,164,99,.18); color: var(--copper-hi); }
