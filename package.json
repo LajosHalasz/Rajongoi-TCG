@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Duel Masters-style card game with Riftbound mechanics - play vs AI in the browser.",
   "scripts": {
-    "test": "node tests/mechanics.test.mjs && node tests/booster.test.mjs && node tests/sim.test.mjs",
+    "test": "node tests/mechanics.test.mjs && node tests/achievements.test.mjs && node tests/booster.test.mjs && node tests/sim.test.mjs",
     "build": "node tools/build-data.mjs && npx esbuild@0.24.0 js/app.js --bundle --format=iife --target=es2020 --outfile=js/bundle.js",
     "import": "node tools/import-riftcardmaker.mjs",
     "serve": "python3 -m http.server 8080"

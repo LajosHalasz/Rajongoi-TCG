@@ -631,7 +631,20 @@ ${def.text}`;
     });
     document.body.appendChild(m);
   }
-  var filt = { types: /* @__PURE__ */ new Set(), colors: /* @__PURE__ */ new Set(), owner: "", status: "", q: "" };
+  var filt = { types: /* @__PURE__ */ new Set(), colors: /* @__PURE__ */ new Set(), owner: "", status: "", q: "", sort: "auto" };
+  var COLOR_ORDER = ["Fury", "Calm", "Mind", "Body", "Chaos", "Order"];
+  var RARITY_ORDER = ["common", "uncommon", "rare", "epic"];
+  var DECK_TYPE_ORDER = { legend: 0, champion: 1, signature: 2 };
+  var byNumber = (a, b) => sortCards(a, b);
+  var colorKey = (c) => c.colors.length ? COLOR_ORDER.indexOf(c.colors[0]) * 10 + (c.colors[1] ? 1 + COLOR_ORDER.indexOf(c.colors[1]) : 0) : 99;
+  var SORTS = {
+    number: { label: "Card number", fn: byNumber },
+    mana: { label: "Mana", fn: (a, b) => (a.cost || 0) - (b.cost || 0) || byNumber(a, b) },
+    color: { label: "Color", fn: (a, b) => colorKey(a) - colorKey(b) || (a.cost || 0) - (b.cost || 0) || byNumber(a, b) },
+    rarity: { label: "Rarity", fn: (a, b) => RARITY_ORDER.indexOf(rarityOf(b)) - RARITY_ORDER.indexOf(rarityOf(a)) || (a.cost || 0) - (b.cost || 0) || byNumber(a, b) },
+    // a deck reads best as Legend, Champions, Signatures, then everything by mana
+    deck: { label: "Deck order", fn: (a, b) => (DECK_TYPE_ORDER[a.type] ?? 3) - (DECK_TYPE_ORDER[b.type] ?? 3) || (a.cost || 0) - (b.cost || 0) || byNumber(a, b) }
+  };
   function renderCollection(app2, set) {
     const cards = allCards();
     const ORDER = ["OGN", "DND", "TKN", "RUN", "BAS"];
@@ -644,7 +657,8 @@ ${def.text}`;
     if (filt.owner && !owners.includes(filt.owner)) filt.owner = "";
     const status = (c) => c.image ? "art" : c.wip || c.placeholder ? "wip" : "designed";
     const draw = () => {
-      const shown = inSet.filter((c) => (!filt.types.size || filt.types.has(c.type)) && (!filt.colors.size || c.colors.some((x) => filt.colors.has(x))) && (!filt.owner || (c.owners || []).includes(filt.owner)) && (!filt.status || status(c) === filt.status) && (!filt.q || (c.name + " " + c.text).toLowerCase().includes(filt.q.toLowerCase())));
+      const sortKey = filt.sort === "auto" ? filt.owner ? "deck" : "number" : filt.sort;
+      const shown = inSet.filter((c) => (!filt.types.size || filt.types.has(c.type)) && (!filt.colors.size || c.colors.some((x) => filt.colors.has(x))) && (!filt.owner || (c.owners || []).includes(filt.owner)) && (!filt.status || status(c) === filt.status) && (!filt.q || (c.name + " " + c.text).toLowerCase().includes(filt.q.toLowerCase()))).sort(SORTS[sortKey].fn);
       const nArt = inSet.filter((c) => status(c) === "art").length;
       const nWip = inSet.filter((c) => status(c) === "wip").length;
       app2.innerHTML = `<div class="page">
@@ -658,6 +672,9 @@ ${def.text}`;
           <option value="art" ${filt.status === "art" ? "selected" : ""}>With artwork</option>
           <option value="designed" ${filt.status === "designed" ? "selected" : ""}>Designed (FLAG off)</option>
           <option value="wip" ${filt.status === "wip" ? "selected" : ""}>Work in progress</option></select>
+        <label class="sortby">Sort <select id="sort">
+          <option value="auto" ${filt.sort === "auto" ? "selected" : ""}>Auto (${filt.owner ? "deck order" : "card number"})</option>
+          ${Object.entries(SORTS).map(([k, v]) => `<option value="${k}" ${filt.sort === k ? "selected" : ""}>${v.label}</option>`).join("")}</select></label>
         <input type="search" placeholder="Search\u2026" value="${esc(filt.q)}" id="q">
         <span class="muted">${shown.length} shown \xB7 ${nArt} with art \xB7 ${nWip} WIP</span>
       </div>
@@ -678,6 +695,10 @@ ${def.text}`;
       };
       app2.querySelector("#status").onchange = (e) => {
         filt.status = e.target.value;
+        draw();
+      };
+      app2.querySelector("#sort").onchange = (e) => {
+        filt.sort = e.target.value;
         draw();
       };
       const q = app2.querySelector("#q");
@@ -1393,11 +1414,16 @@ ${def.text}`;
   function nextFromQueue(s) {
     s.pending = s.queue.length ? s.queue[0] : takeSuspended(s);
   }
+  function emit(s, type, data = {}) {
+    s.evCount = (s.evCount || 0) + 1;
+    s.events = [...s.events || [], { n: s.evCount, type, turn: s.turn, ...data }].slice(-60);
+  }
   function setWinner(s, pi, reason) {
     if (s.winner != null) return;
     s.winner = pi;
     s.winReason = reason;
     log(s, pi === -1 ? `Draw \u2014 ${reason}.` : `${s.players[pi].name} wins! ${reason}`);
+    emit(s, "win", { player: pi });
   }
   function checkDeaths(s) {
     for (const p of s.players) {
@@ -1477,11 +1503,13 @@ ${def.text}`;
         } else if (u.banishEot) {
           p.battle.splice(p.battle.indexOf(u), 1);
           log(s, `${nm(u)} is banished.`);
+          emit(s, "banish", { player: p.idx, id: u.id });
         }
       }
       for (const g of [...p.gear]) if (g.banishEot) {
         p.gear.splice(p.gear.indexOf(g), 1);
         log(s, `${nm(g)} is banished.`);
+        emit(s, "banish", { player: p.idx, id: g.id });
       }
     }
     for (const p of s.players) for (const u of p.battle) {
@@ -1566,6 +1594,7 @@ ${def.text}`;
   }
   function notePlay(s, pi, id, via) {
     s.plays = [...s.plays || [], { player: pi, id, via, turn: s.turn, n: s.playCount = (s.playCount || 0) + 1 }].slice(-12);
+    emit(s, "play", { player: pi, id, via });
   }
   function putIntoPlay(s, pi, inst, target, modes = null, replace = null) {
     const p = s.players[pi];
@@ -1591,6 +1620,7 @@ ${def.text}`;
         const [old] = p.gear.splice(i, 1);
         p.graveyard.push(old);
         log(s, `${nm(old)} is replaced and goes to the Graveyard.`);
+        emit(s, "gearReplace", { player: pi, oldId: old.id, newId: inst.id });
       }
       p.gear.push(inst);
       log(s, `${p.name} equips ${d.name}.`);
@@ -1599,14 +1629,15 @@ ${def.text}`;
       log(s, `${p.name} casts ${d.name}${target && findInst(s, target) ? " \u2192 " + nm(findInst(s, target).inst) : ""}.`);
       fireAll(s, pi, "spellCast");
       runTwiceIfDoubled(s, pi, inst, playEffects(d, modes), target);
-      finishSpell(p, inst, modes);
+      finishSpell(s, p, inst, modes);
     }
   }
-  function finishSpell(p, inst, modes) {
+  function finishSpell(s, p, inst, modes) {
     const d = getDef(inst.id);
     const after = (modes || []).map((i) => d.modes?.[i]?.afterCast).find(Boolean) || d.afterCast;
     if (inst.banishEot) {
       delete inst.banishEot;
+      emit(s, "banish", { player: p.idx, id: inst.id });
       return;
     }
     if (after === "deckTop") p.deck.unshift(inst);
@@ -1833,6 +1864,7 @@ ${def.text}`;
             payCost(s, me, 1, getDef(accel.id).colors, 0);
             t.sick = false;
             log(s, `${nm(t)} enters ready (Accelerate).`);
+            emit(s, "accelerate", { player: pi, id: t.id });
           }
         }
         break;
@@ -2000,8 +2032,10 @@ ${def.text}`;
     const q = s.queue[0];
     const p = s.players[pi];
     const i = p.hand.findIndex((c) => c.uid === a.uid);
-    p.shields.push(p.hand.splice(i, 1)[0]);
+    const card = p.hand.splice(i, 1)[0];
+    p.shields.push(card);
     log(s, `${p.name} puts a card from hand into their Shield Zone.`);
+    emit(s, "shieldify", { player: pi, id: card.id });
     q.remaining--;
     if (q.remaining <= 0 || !p.hand.length) {
       s.queue.shift();
@@ -2042,7 +2076,7 @@ ${def.text}`;
       log(s, `${d.name} resolves.`);
       const modes = resolveModes(s, it.controller, d, it.modes);
       runTwiceIfDoubled(s, it.controller, it.inst, playEffects(d, modes), it.target);
-      finishSpell(s.players[it.controller], it.inst, modes);
+      finishSpell(s, s.players[it.controller], it.inst, modes);
       pd.passes = 0;
       pd.player = s.combat ? other(s.combat.attackerOwner) : other(s.active);
       return;
@@ -2081,11 +2115,15 @@ ${def.text}`;
           log(s, `${nm(u)} rolls a D6: ${d6}${d6 >= roll ? " \u2014 survives!" : "."}`);
           if (d6 >= roll) continue;
         }
+        const killer = u === att ? def : att;
+        const wasOn = s.players[u.owner].battle.includes(u);
         destroyUnit(s, u);
+        if (wasOn && !s.players[u.owner].battle.includes(u)) emit(s, "kill", { victim: u.id, victimOwner: u.owner, killer: killer.id, killerOwner: killer.owner });
       }
       return;
     }
     if (c.target.kind === "player" && D.shields.length === 0) {
+      emit(s, "finalBlow", { player: A.idx, id: att.id, copy: !!att.temp, token: !!getDef(att.id).token });
       setWinner(s, A.idx, `${nm(att)} lands the direct attack.`);
       return;
     }
@@ -2521,6 +2559,165 @@ ${def.text}`;
     return null;
   }
 
+  // js/engine/achievements.js
+  var sameTurn = (events, ev, f) => events.filter((e) => e.turn === ev.turn && f(e));
+  var playedThisTurn = (events, ev, me, id) => events.some((e) => e.type === "play" && e.player === me && e.id === id && e.turn === ev.turn);
+  var ACHIEVEMENTS = [
+    {
+      id: "funniest",
+      name: "Funniest shit I have ever seen",
+      icon: "\u{1F923}",
+      desc: "Destroy your opponent with a copy of a token creature they created, using the Parody Alchemist.",
+      check: ({ ev, me }) => ev.type === "finalBlow" && ev.player === me && ev.copy && ev.token
+    },
+    {
+      id: "unexpected-flex",
+      name: "Unexpected FLEX",
+      icon: "\u{1F4AA}",
+      desc: "Play The Ultimate Flex from a triggered shield.",
+      check: ({ ev, me }) => ev.type === "play" && ev.player === me && ev.id === "OGN-186" && ev.via === "shieldTrigger"
+    },
+    {
+      id: "painter",
+      name: "Speed Painting",
+      icon: "\u{1F58C}\uFE0F",
+      desc: "Accelerate 3 Miniatures with the Miniature Painter in a single turn.",
+      check: ({ ev, me, events }) => ev.type === "accelerate" && ev.player === me && sameTurn(events, ev, (e) => e.type === "accelerate" && e.player === me).length >= 3
+    },
+    {
+      id: "manyika-rest",
+      name: "Manyika can rest finally",
+      icon: "\u{1FAA6}",
+      desc: "Watch a Manyika Dreadnought die from a Burst-Pouch (either of you may control them).",
+      check: ({ ev }) => ev.type === "kill" && ev.victim === "OGN-176" && ev.killer === "TKN-005"
+    },
+    {
+      id: "art-destruction",
+      name: "Art of Destruction",
+      icon: "\u{1F3A8}",
+      desc: "Banish 5 cards in a turn with The Chronicler.",
+      check: ({ ev, me, events }) => ev.type === "banish" && ev.player === me && sameTurn(events, ev, (e) => e.type === "banish" && e.player === me).length >= 5
+    },
+    {
+      id: "came-prepared",
+      name: "Came Prepared",
+      icon: "\u{1F6E1}\uFE0F",
+      desc: "Shieldify a Shield Trigger card.",
+      check: ({ ev, me }) => ev.type === "shieldify" && ev.player === me && (getDef(ev.id).keywords || []).includes("Shield Trigger")
+    },
+    {
+      id: "art-of-deal",
+      name: "Art of the Deal",
+      icon: "\u{1F91D}",
+      desc: "Make a deal with your opponent using The Dealmaker.",
+      unobtainable: "Unlocks with online play \u2014 the AI never accepts a deal.",
+      check: () => false
+    },
+    {
+      id: "strawberry",
+      name: "Join the Strawberry Club",
+      icon: "\u{1F353}",
+      desc: "Have your opponent play Welcome to the Strawberry Club! against you as a Shield Trigger.",
+      check: ({ ev, op }) => ev.type === "play" && ev.player === op && ev.id === "OGN-012" && ev.via === "shieldTrigger"
+    },
+    {
+      id: "movie-night",
+      name: "Quality Movie Night",
+      icon: "\u{1F3AC}",
+      desc: "Play Movie Night at Chris and The Law on the same turn.",
+      check: ({ ev, me, events }) => ev.type === "play" && ev.player === me && ["OGN-173", "OGN-171"].includes(ev.id) && playedThisTurn(events, ev, me, "OGN-173") && playedThisTurn(events, ev, me, "OGN-171")
+    },
+    {
+      id: "finale",
+      name: "Finale",
+      icon: "\u{1F404}",
+      desc: "Play Cowtrix and GOLDEN on the same turn.",
+      check: ({ ev, me, events }) => ev.type === "play" && ev.player === me && ["OGN-172", "OGN-177"].includes(ev.id) && playedThisTurn(events, ev, me, "OGN-172") && playedThisTurn(events, ev, me, "OGN-177")
+    },
+    {
+      id: "printer-upgrade",
+      name: "Printer Upgrade",
+      icon: "\u{1F5A8}\uFE0F",
+      desc: "Replace 3D Printer - Lui's Forge with 3D Printer - X Forge 2.",
+      check: ({ ev, me }) => ev.type === "gearReplace" && ev.player === me && ev.oldId === "OGN-179" && ev.newId === "OGN-189"
+    },
+    {
+      id: "dungeon-survivors",
+      name: "Dungeon Survivors",
+      icon: "\u{1F3F0}",
+      desc: "Win the game with Darkest Dungeoneers tapped on your side of the battlefield.",
+      check: ({ ev, me, s }) => ev.type === "win" && ev.player === me && s.players[me].battle.some((u) => u.id === "OGN-045" && u.tapped)
+    }
+  ];
+  function checkAchievements(s, me, seen, already = /* @__PURE__ */ new Set()) {
+    const events = s.events || [];
+    const out = [];
+    for (const ev of events) {
+      if (ev.n <= seen) continue;
+      for (const a of ACHIEVEMENTS) {
+        if (already.has(a.id) || out.includes(a.id)) continue;
+        try {
+          if (a.check({ s, me, op: 1 - me, ev, events })) out.push(a.id);
+        } catch {
+        }
+      }
+    }
+    return out;
+  }
+
+  // js/ui/achievements.js
+  var LS2 = "rajongoi.achievements.v1";
+  function unlockedMap() {
+    try {
+      return JSON.parse(localStorage.getItem(LS2)) || {};
+    } catch {
+      return {};
+    }
+  }
+  function save2(m) {
+    try {
+      localStorage.setItem(LS2, JSON.stringify(m));
+    } catch {
+    }
+  }
+  function unlock(ids) {
+    const m = unlockedMap();
+    const fresh = ids.filter((id) => !m[id]);
+    for (const id of fresh) m[id] = Date.now();
+    if (!fresh.length) return;
+    save2(m);
+    fresh.forEach((id, i) => setTimeout(() => toast(ACHIEVEMENTS.find((a) => a.id === id)), i * 1600));
+  }
+  function toast(a) {
+    if (!a) return;
+    const el = document.createElement("div");
+    el.className = "ach-toast";
+    el.innerHTML = `<div class="ach-ico">${a.icon}</div><div><div class="ach-kicker">Achievement unlocked!</div><b>${esc(a.name)}</b><div class="ach-desc">${esc(a.desc)}</div></div>`;
+    document.body.appendChild(el);
+    sfx.reveal("rare");
+    setTimeout(() => el.classList.add("out"), 4200);
+    setTimeout(() => el.remove(), 4800);
+  }
+  function renderAchievements(app2) {
+    const m = unlockedMap();
+    const got = ACHIEVEMENTS.filter((a) => m[a.id]).length;
+    const obtainable = ACHIEVEMENTS.filter((a) => !a.unobtainable).length;
+    app2.innerHTML = `<div class="page ach-page">
+    <div class="row" style="margin-bottom:6px"><h2 style="margin:0">Achievements</h2><span class="spacer"></span>
+      <span class="ach-count"><b>${got}</b> / ${obtainable} unlocked</span></div>
+    <div class="ach-bar"><i style="width:${(100 * got / obtainable).toFixed(0)}%"></i></div>
+    <p class="muted">Achievements are unlocked in <b>Play vs AI</b> and are saved in this browser.</p>
+    <div class="ach-grid">${ACHIEVEMENTS.map((a) => {
+      const when = m[a.id] ? new Date(m[a.id]).toLocaleDateString() : "";
+      return `<div class="ach ${m[a.id] ? "got" : "locked"} ${a.unobtainable ? "unob" : ""}">
+        <div class="ach-ico">${a.icon}</div>
+        <div class="ach-body"><b>${esc(a.name)}</b><div class="ach-desc">${esc(a.desc)}</div>
+          <div class="ach-state">${m[a.id] ? `\u2713 Unlocked ${esc(when)}` : a.unobtainable ? esc(a.unobtainable) : "Locked"}</div></div>
+      </div>`;
+    }).join("")}</div>
+  </div>`;
+  }
+
   // js/ui/play.js
   var HUMAN = 0;
   var AI = 1;
@@ -2664,6 +2861,9 @@ ${def.text}`;
     const fresh = n > 0 ? s.log.slice(-n) : [];
     G.logLen = s.logTotal || 0;
     fresh.slice(-4).forEach((l, i) => setTimeout(() => soundForLog(l, s.players[HUMAN].name), i * 90));
+    const ach = checkAchievements(s, HUMAN, G.evSeen || 0, new Set(Object.keys(unlockedMap())));
+    G.evSeen = s.evCount || 0;
+    if (ach.length) unlock(ach);
     let breaks = 0;
     for (const l of fresh) {
       const b = l.match(/^(.+?)'s shield breaks/);
@@ -3277,12 +3477,12 @@ ${def.text}`;
     try {
       step(G.s, a);
     } catch (e) {
-      toast(e.message);
+      toast2(e.message);
     }
     G.ui.sel = null;
     render();
   }
-  function toast(msg) {
+  function toast2(msg) {
     const t = document.createElement("div");
     t.className = "toast";
     t.textContent = msg;
@@ -3710,6 +3910,8 @@ ${def.text}`;
         return renderBuilder(app, arg || "new");
       case "boosters":
         return renderBoosters(app);
+      case "achievements":
+        return renderAchievements(app);
       default:
         return renderHome();
     }

@@ -12,6 +12,16 @@ It's a static site with no build step and no dependencies, so it works on GitHub
 
 `img/mascot.svg` (the watermelon smiley, a sharp vector redraw of `img/mascot-original.png`) is the epic home-page background, with spinning rays, a glow and floating seeds. It also appears faintly on every card back and on the booster packs. To change it, replace that file.
 
+## Achievements
+
+The **Achievements** tab lists 12 achievements. They are unlocked in Play vs AI and saved in the browser, and an unlock shows a toast with a sound.
+
+The engine emits structured events (`play`, `kill`, `banish`, `shieldify`, `gearReplace`, `accelerate`, `finalBlow`, `win`). `js/engine/achievements.js` checks them; each achievement is a small `check()` function, so new ones are easy to add. *Art of the Deal* can't be unlocked yet, because the AI never accepts a Dealmaker deal; it will work with online play.
+
+## Collection sorting
+
+The Collection can be sorted by card number, mana, color, rarity or deck order. When a deck owner is selected, the default (Auto) is deck order: Legend, Champions, Signatures, then everything else by mana.
+
 ## Loading speed
 
 - **Thumbnails:** `npm run build` (and both importers) make small WebP previews in `data/img/thumb/`. The grid, hand and board use these; only the big card view loads the full image.

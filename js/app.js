@@ -4,6 +4,7 @@ import { cardHtml, installAutoFit, thumbOf } from './ui/card.js';
 import { renderCollection, renderDecks, renderBuilder } from './ui/collection.js';
 import { renderSetup, stopGame } from './ui/play.js';
 import { renderBoosters } from './ui/boosters.js';
+import { renderAchievements } from './ui/achievements.js';
 import { sfx, isMuted, setMuted } from './ui/sfx.js';
 
 const app = document.getElementById('app');
@@ -56,6 +57,7 @@ function route() {
     case 'decks': return renderDecks(app);
     case 'deck': return renderBuilder(app, arg || 'new');
     case 'boosters': return renderBoosters(app);
+    case 'achievements': return renderAchievements(app);
     default: return renderHome();
   }
 }

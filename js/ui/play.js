@@ -7,6 +7,8 @@ import { playableDecks, comingSoonDecks, findDeck } from '../data.js';
 import { cardHtml, cardBackHtml, cardDetailsHtml, esc, isFoil } from './card.js';
 import { showCardModal } from './collection.js';
 import { sfx, soundForLog } from './sfx.js';
+import { checkAchievements } from '../engine/achievements.js';
+import { unlock, unlockedMap } from './achievements.js';
 
 const HUMAN = 0, AI = 1;
 const ICON = {
@@ -159,6 +161,10 @@ function render() {
   const fresh = n > 0 ? s.log.slice(-n) : [];
   G.logLen = s.logTotal || 0;
   fresh.slice(-4).forEach((l, i) => setTimeout(() => soundForLog(l, s.players[HUMAN].name), i * 90));
+  // achievements from the engine's events
+  const ach = checkAchievements(s, HUMAN, G.evSeen || 0, new Set(Object.keys(unlockedMap())));
+  G.evSeen = s.evCount || 0;
+  if (ach.length) unlock(ach);
   // shield breaks shatter; enemy Shield Triggers get their own burst
   let breaks = 0;
   for (const l of fresh) {

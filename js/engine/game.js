@@ -477,11 +477,18 @@ const isQueueKind = (pd) => pd.kind === 'shieldTrigger' || pd.kind === 'shieldif
 function takeSuspended(s) { const x = s.suspended; s.suspended = null; return x; }
 function nextFromQueue(s) { s.pending = s.queue.length ? s.queue[0] : takeSuspended(s); }
 
+/** Structured game events (for achievements and other listeners). */
+export function emit(s, type, data = {}) {
+  s.evCount = (s.evCount || 0) + 1;
+  s.events = [...(s.events || []), { n: s.evCount, type, turn: s.turn, ...data }].slice(-60);
+}
+
 function setWinner(s, pi, reason) {
   if (s.winner != null) return;
   s.winner = pi;
   s.winReason = reason;
   log(s, pi === -1 ? `Draw — ${reason}.` : `${s.players[pi].name} wins! ${reason}`);
+  emit(s, 'win', { player: pi });
 }
 
 // Units with 0 or less Might are destroyed.
@@ -553,9 +560,9 @@ function doEndPhase(s) {
   for (const p of s.players) {
     for (const u of [...p.battle]) {
       if (u.temp) { p.battle.splice(p.battle.indexOf(u), 1); log(s, `The copy of ${nm(u)} dies at end of turn.`); }
-      else if (u.banishEot) { p.battle.splice(p.battle.indexOf(u), 1); log(s, `${nm(u)} is banished.`); }
+      else if (u.banishEot) { p.battle.splice(p.battle.indexOf(u), 1); log(s, `${nm(u)} is banished.`); emit(s, 'banish', { player: p.idx, id: u.id }); }
     }
-    for (const g of [...p.gear]) if (g.banishEot) { p.gear.splice(p.gear.indexOf(g), 1); log(s, `${nm(g)} is banished.`); }
+    for (const g of [...p.gear]) if (g.banishEot) { p.gear.splice(p.gear.indexOf(g), 1); log(s, `${nm(g)} is banished.`); emit(s, 'banish', { player: p.idx, id: g.id }); }
   }
   for (const p of s.players) for (const u of p.battle) {
     u.mods = u.mods.filter(m => !(m.until === 'eot' || (m.untilTurn != null && m.untilTurn <= s.turn)));
@@ -631,6 +638,7 @@ function runTwiceIfDoubled(s, pi, src, effects, target) {
 /** Resolve a card entering play (normal play, or a free Shield Trigger). */
 function notePlay(s, pi, id, via) {
   s.plays = [...(s.plays || []), { player: pi, id, via, turn: s.turn, n: (s.playCount = (s.playCount || 0) + 1) }].slice(-12);
+  emit(s, 'play', { player: pi, id, via });
 }
 
 function putIntoPlay(s, pi, inst, target, modes = null, replace = null) {
@@ -656,6 +664,7 @@ function putIntoPlay(s, pi, inst, target, modes = null, replace = null) {
       const [old] = p.gear.splice(i, 1);
       p.graveyard.push(old);
       log(s, `${nm(old)} is replaced and goes to the Graveyard.`);
+      emit(s, 'gearReplace', { player: pi, oldId: old.id, newId: inst.id });
     }
     p.gear.push(inst);
     log(s, `${p.name} equips ${d.name}.`);
@@ -664,14 +673,14 @@ function putIntoPlay(s, pi, inst, target, modes = null, replace = null) {
     log(s, `${p.name} casts ${d.name}${target && findInst(s, target) ? ' → ' + nm(findInst(s, target).inst) : ''}.`);
     fireAll(s, pi, 'spellCast');
     runTwiceIfDoubled(s, pi, inst, playEffects(d, modes), target);
-    finishSpell(p, inst, modes);
+    finishSpell(s, p, inst, modes);
   }
 }
 
-function finishSpell(p, inst, modes) {
+function finishSpell(s, p, inst, modes) {
   const d = getDef(inst.id);
   const after = (modes || []).map(i => d.modes?.[i]?.afterCast).find(Boolean) || d.afterCast;
-  if (inst.banishEot) { delete inst.banishEot; return; } // played via The Chronicler
+  if (inst.banishEot) { delete inst.banishEot; emit(s, 'banish', { player: p.idx, id: inst.id }); return; } // played via The Chronicler
   if (after === 'deckTop') p.deck.unshift(inst);
   else if (after === 'banish') { /* removed from the game */ }
   else p.graveyard.push(inst);
@@ -860,6 +869,7 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
           payCost(s, me, 1, getDef(accel.id).colors, 0);
           t.sick = false;
           log(s, `${nm(t)} enters ready (Accelerate).`);
+          emit(s, 'accelerate', { player: pi, id: t.id });
         }
       }
       break;
@@ -995,8 +1005,10 @@ function doShieldify(s, pi, a) {
   const q = s.queue[0];
   const p = s.players[pi];
   const i = p.hand.findIndex(c => c.uid === a.uid);
-  p.shields.push(p.hand.splice(i, 1)[0]);
+  const card = p.hand.splice(i, 1)[0];
+  p.shields.push(card);
   log(s, `${p.name} puts a card from hand into their Shield Zone.`);
+  emit(s, 'shieldify', { player: pi, id: card.id });
   q.remaining--;
   if (q.remaining <= 0 || !p.hand.length) { s.queue.shift(); nextFromQueue(s); }
 }
@@ -1036,7 +1048,7 @@ function doPass(s, pd) {
     log(s, `${d.name} resolves.`);
     const modes = resolveModes(s, it.controller, d, it.modes);
     runTwiceIfDoubled(s, it.controller, it.inst, playEffects(d, modes), it.target);
-    finishSpell(s.players[it.controller], it.inst, modes);
+    finishSpell(s, s.players[it.controller], it.inst, modes);
     pd.passes = 0;
     pd.player = s.combat ? other(s.combat.attackerOwner) : other(s.active);
     return;
@@ -1071,11 +1083,15 @@ function resolveCombat(s) {
         log(s, `${nm(u)} rolls a D6: ${d6}${d6 >= roll ? ' — survives!' : '.'}`);
         if (d6 >= roll) continue;
       }
+      const killer = u === att ? def : att;
+      const wasOn = s.players[u.owner].battle.includes(u);
       destroyUnit(s, u);
+      if (wasOn && !s.players[u.owner].battle.includes(u)) emit(s, 'kill', { victim: u.id, victimOwner: u.owner, killer: killer.id, killerOwner: killer.owner });
     }
     return;
   }
   if (c.target.kind === 'player' && D.shields.length === 0) {
+    emit(s, 'finalBlow', { player: A.idx, id: att.id, copy: !!att.temp, token: !!getDef(att.id).token });
     setWinner(s, A.idx, `${nm(att)} lands the direct attack.`);
     return;
   }

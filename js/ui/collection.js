@@ -1,4 +1,4 @@
-import { allCards, getDef, hasDef, kindOf, championMatchesLegend, signatureMatchesLegend } from '../engine/cards.js';
+import { allCards, getDef, hasDef, kindOf, rarityOf, championMatchesLegend, signatureMatchesLegend } from '../engine/cards.js';
 import { COLORS, TYPE_INFO, GUIDE, RULES } from '../engine/rules.js';
 import { validateDeck } from '../engine/deck.js';
 import { cardHtml, cardDetailsHtml, esc } from './card.js';
@@ -33,7 +33,22 @@ export function showCardModal(def) {
 }
 
 // ------------------------------------------------------------ collection --
-const filt = { types: new Set(), colors: new Set(), owner: '', status: '', q: '' };
+const filt = { types: new Set(), colors: new Set(), owner: '', status: '', q: '', sort: 'auto' };
+
+// ---- sorting
+const COLOR_ORDER = ['Fury', 'Calm', 'Mind', 'Body', 'Chaos', 'Order'];
+const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic'];
+const DECK_TYPE_ORDER = { legend: 0, champion: 1, signature: 2 };
+const byNumber = (a, b) => sortCards(a, b);
+const colorKey = (c) => (c.colors.length ? COLOR_ORDER.indexOf(c.colors[0]) * 10 + (c.colors[1] ? 1 + COLOR_ORDER.indexOf(c.colors[1]) : 0) : 99);
+const SORTS = {
+  number: { label: 'Card number', fn: byNumber },
+  mana: { label: 'Mana', fn: (a, b) => (a.cost || 0) - (b.cost || 0) || byNumber(a, b) },
+  color: { label: 'Color', fn: (a, b) => colorKey(a) - colorKey(b) || (a.cost || 0) - (b.cost || 0) || byNumber(a, b) },
+  rarity: { label: 'Rarity', fn: (a, b) => RARITY_ORDER.indexOf(rarityOf(b)) - RARITY_ORDER.indexOf(rarityOf(a)) || (a.cost || 0) - (b.cost || 0) || byNumber(a, b) },
+  // a deck reads best as Legend, Champions, Signatures, then everything by mana
+  deck: { label: 'Deck order', fn: (a, b) => (DECK_TYPE_ORDER[a.type] ?? 3) - (DECK_TYPE_ORDER[b.type] ?? 3) || (a.cost || 0) - (b.cost || 0) || byNumber(a, b) },
+};
 
 export function renderCollection(app, set) {
   const cards = allCards();
@@ -48,12 +63,14 @@ export function renderCollection(app, set) {
   const status = (c) => (c.image ? 'art' : c.wip || c.placeholder ? 'wip' : 'designed');
 
   const draw = () => {
+    const sortKey = filt.sort === 'auto' ? (filt.owner ? 'deck' : 'number') : filt.sort;
     const shown = inSet.filter(c =>
       (!filt.types.size || filt.types.has(c.type)) &&
       (!filt.colors.size || c.colors.some(x => filt.colors.has(x))) &&
       (!filt.owner || (c.owners || []).includes(filt.owner)) &&
       (!filt.status || status(c) === filt.status) &&
-      (!filt.q || (c.name + ' ' + c.text).toLowerCase().includes(filt.q.toLowerCase())));
+      (!filt.q || (c.name + ' ' + c.text).toLowerCase().includes(filt.q.toLowerCase())))
+      .sort(SORTS[sortKey].fn);
     const nArt = inSet.filter(c => status(c) === 'art').length;
     const nWip = inSet.filter(c => status(c) === 'wip').length;
     app.innerHTML = `<div class="page">
@@ -67,6 +84,9 @@ export function renderCollection(app, set) {
           <option value="art" ${filt.status === 'art' ? 'selected' : ''}>With artwork</option>
           <option value="designed" ${filt.status === 'designed' ? 'selected' : ''}>Designed (FLAG off)</option>
           <option value="wip" ${filt.status === 'wip' ? 'selected' : ''}>Work in progress</option></select>
+        <label class="sortby">Sort <select id="sort">
+          <option value="auto" ${filt.sort === 'auto' ? 'selected' : ''}>Auto (${filt.owner ? 'deck order' : 'card number'})</option>
+          ${Object.entries(SORTS).map(([k, v]) => `<option value="${k}" ${filt.sort === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
         <input type="search" placeholder="Search…" value="${esc(filt.q)}" id="q">
         <span class="muted">${shown.length} shown · ${nArt} with art · ${nWip} WIP</span>
       </div>
@@ -77,6 +97,7 @@ export function renderCollection(app, set) {
     app.querySelectorAll('[data-color]').forEach(b => b.onclick = () => { toggle(filt.colors, b.dataset.color); draw(); });
     if (app.querySelector('#owner')) app.querySelector('#owner').onchange = (e) => { filt.owner = e.target.value; draw(); };
     app.querySelector('#status').onchange = (e) => { filt.status = e.target.value; draw(); };
+    app.querySelector('#sort').onchange = (e) => { filt.sort = e.target.value; draw(); };
     const q = app.querySelector('#q');
     q.oninput = () => { filt.q = q.value; draw(); const nq = app.querySelector('#q'); nq.focus(); nq.setSelectionRange(nq.value.length, nq.value.length); };
     app.querySelectorAll('.grid .card').forEach(el => el.onclick = () => showCardModal(getDef(el.dataset.cid)));
