@@ -208,18 +208,5 @@ export function installAutoFit() {
   window.addEventListener('resize', schedule);
   document.addEventListener('load', schedule, true); // images load -> layout settles
   if (document.fonts?.ready) document.fonts.ready.then(() => fitCards(document, true));
-  // foil shine follows the pointer
-  document.addEventListener('pointermove', (e) => {
-    const card = e.target.closest?.('.card.foil');
-    if (!card) return;
-    const r = card.getBoundingClientRect();
-    card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
-    card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
-    card.classList.add('foil-hover');
-  });
-  document.addEventListener('pointerout', (e) => {
-    const card = e.target.closest?.('.card.foil');
-    if (card && !card.contains(e.relatedTarget)) card.classList.remove('foil-hover');
-  });
   schedule();
 }

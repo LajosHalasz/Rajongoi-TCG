@@ -289,7 +289,7 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
   position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit; overflow: hidden;
   mix-blend-mode: color-dodge; opacity: .2;
   background:
-    radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.5), transparent 32%),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.5), transparent 32%),
     linear-gradient(115deg, transparent 30%, #ff3fb2 38%, #ffe14d 44%, #4dffb0 50%, #42c8ff 56%, #b06bff 62%, transparent 70%);
   background-size: 100% 100%, 260% 260%;
   background-position: center, 0% 50%;
@@ -303,8 +303,6 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
   background-size: 7cqw 7cqw, 11cqw 11cqw; background-position: 0 0, 3cqw 5cqw;
   mix-blend-mode: overlay; animation: foil-sparkle 3.2s ease-in-out infinite alternate;
 }
-.card.foil.foil-hover .foil-layer { animation: none; opacity: .34;
-  background-position: center, calc(100% - var(--mx, 50%)) calc(100% - var(--my, 50%)); }
 @keyframes foil-drift { from { background-position: center, 0% 40%; } to { background-position: center, 100% 60%; } }
 @keyframes foil-sparkle { from { opacity: .25; } to { opacity: .65; } }
 /* subtle on the battlefield so the board stays readable */
@@ -484,16 +482,23 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
 @keyframes ring { to { transform: translate(-50%, -50%) scale(2.6); opacity: 0; } }
 .land-fx i { position: absolute; width: 6px; height: 6px; border-radius: 50%; left: -3px; top: -3px;
   background: radial-gradient(circle, #fff, #ffd36b 50%, transparent 70%); animation: fly .8s cubic-bezier(.1,.7,.3,1) forwards; }
-.crack-fx { position: fixed; z-index: 15; pointer-events: none; animation: crack-fade 2.6s ease-in forwards; }
+.crack-layer { position: absolute; inset: 0; overflow: hidden; border-radius: 12px; pointer-events: none; z-index: 0; }
+.battle > .card { position: relative; z-index: 1; }
+.crack-fx { position: absolute; pointer-events: none; animation: crack-fade 2.6s ease-in forwards; animation-delay: calc(var(--t, 0ms) * -1); }
 .crack-fx svg { position: absolute; inset: 0; }
 .crack-fx .dark path { stroke: #0b0805; }
 .crack-fx .glow path { stroke: rgba(255,140,40,.85); filter: blur(2px); }
-.crack-fx .dark, .crack-fx .glow { stroke-dasharray: 1200; stroke-dashoffset: 1200; animation: crack-draw .35s ease-out forwards; }
+.crack-fx .dark, .crack-fx .glow { stroke-dasharray: 1200; stroke-dashoffset: 1200; animation: crack-draw .35s ease-out forwards; animation-delay: calc(var(--t, 0ms) * -1); }
 .crack-fx b { position: absolute; left: 50%; top: 50%; width: 7px; height: 5px; background: #3b3024; border-radius: 1px;
-  animation: debris .7s cubic-bezier(.2,.6,.4,1) forwards; }
+  animation: debris .7s cubic-bezier(.2,.6,.4,1) forwards; animation-delay: calc(var(--t, 0ms) * -1); }
 @keyframes crack-draw { to { stroke-dashoffset: 0; } }
 @keyframes crack-fade { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes debris { to { transform: translate(var(--x), var(--y)) rotate(400deg); opacity: 0; } }
+
+
+/* ---------------------------------------------- 10+ Might lightning (canvas) */
+.bolt-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 70; pointer-events: none; mix-blend-mode: screen; }
+@media (prefers-reduced-motion: reduce) { .bolt-canvas { display: none; } }
 
 /* -------------------------------------------------------------- board */
 .game { display: grid; grid-template-columns: 1fr 290px; height: calc(100vh - 47px); overflow: hidden; }
@@ -510,32 +515,39 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
 .zone { background: rgba(0,0,0,.22); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 6px 6px 4px; display: flex; gap: 6px; align-items: center; position: relative; min-height: calc(var(--cw) * 1.4 + 10px); }
 .zone .lbl { position: absolute; top: -9px; left: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); background: #1b2117; padding: 0 5px; border-radius: 4px; }
 .zone.empty-slot::after { content: attr(data-empty); color: rgba(255,255,255,.25); font-size: 13px; width: var(--cw); text-align: center; }
-.battle { min-height: calc(var(--cw) * 1.4 + 14px); display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap;
+.battle { position: relative; min-height: calc(var(--cw) * 1.4 + 14px); display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap;
   border: 1px dashed rgba(255,255,255,.12); border-radius: 12px; padding: 6px; }
 .battle .empty { color: rgba(255,255,255,.25); }
 .hand-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; min-height: calc(var(--cw) * 1.4); }
 .hand-row.opp { min-height: 0; }
 /* hand: Hearthstone-style fan, hovered card lifts and grows */
 .hand-row.mine { flex-wrap: nowrap; align-items: flex-end; padding: 18px 40px 6px; min-height: calc(var(--cw) * 1.4 * 1.4 + 30px); }
-.hand-row.mine .card {
+/* Each card sits in a fixed, non-moving slot: hovering the slot (or the area the
+   enlarged card covers) keeps the card raised, so it never slips out from under the cursor. */
+.hand-row.mine .hand-slot {
   --w: calc(var(--cw) * 1.4);
+  position: relative; flex: none; width: var(--w); aspect-ratio: 5 / 7;
   margin: 0 calc(var(--cw) * -0.26 - min(18px, max(0px, (var(--n) - 6) * 4px)));
   transform-origin: 50% 100%;
   transform: translateY(var(--fy, 0)) rotate(var(--fr, 0deg));
   z-index: var(--fz, 1);
-  transition: transform .18s cubic-bezier(.2,.8,.3,1.1), box-shadow .18s, margin .18s;
 }
-.hand-row.mine .card.selected { transform: translateY(calc(var(--fy, 0px) - 22px)) rotate(var(--fr, 0deg)); }
-.hand-row.mine .card.mull-sel { transform: translateY(calc(var(--fy, 0px) - 26px)) rotate(var(--fr, 0deg)); }
-.hand-row.mine .card:hover {
-  transform: translateY(-34%) rotate(0deg) scale(1.75);
-  z-index: 60; box-shadow: 0 18px 40px rgba(0,0,0,.7), 0 0 0 2px rgba(255,255,255,.15);
-  margin: 0 calc(var(--cw) * 0.12);
+.hand-row.mine .hand-slot:hover { z-index: 60; }
+.hand-row.mine .hand-slot .card {
+  transform-origin: 50% 100%;
+  transition: transform .18s cubic-bezier(.2,.8,.3,1.1), box-shadow .18s;
 }
-.hand-row.mine .card.playable:hover { box-shadow: 0 0 0 2px var(--good), 0 0 26px rgba(95,191,106,.7), 0 18px 40px rgba(0,0,0,.7); }
+.hand-row.mine .hand-slot .card.selected { transform: translateY(-22px); }
+.hand-row.mine .hand-slot .card.mull-sel { transform: translateY(-26px); }
+.hand-row.mine .hand-slot:hover .card {
+  transform: rotate(calc(var(--fr, 0deg) * -1)) translateY(-34%) scale(1.75);
+  box-shadow: 0 18px 40px rgba(0,0,0,.7), 0 0 0 2px rgba(255,255,255,.15);
+}
+.hand-row.mine .hand-slot:hover .card.playable { box-shadow: 0 0 0 2px var(--good), 0 0 26px rgba(95,191,106,.7), 0 18px 40px rgba(0,0,0,.7); }
 @media (max-width: 700px) {
   .hand-row.mine { padding: 12px 20px 4px; }
-  .hand-row.mine .card:hover { transform: translateY(-30%) scale(1.5); }
+  .hand-row.mine .hand-slot:hover .card { transform: rotate(calc(var(--fr, 0deg) * -1)) translateY(-30%) scale(1.5); }
+}
 }
 .hand-row.opp .card { --w: calc(var(--cw) * .42); margin-left: calc(var(--cw) * -.12); }
 .stack-pile { position: relative; }
@@ -610,6 +622,8 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
 .flip.flipped .flip-inner { transform: rotateY(180deg); }
 .flip-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .flip-front { transform: rotateY(180deg); }
+.flip-back, .flip-back * { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.flip.flipped .flip-back { visibility: hidden; transition: visibility 0s .3s; }
 .flip-front .card { --w: 170px; }
 .flip:not(.flipped):hover .flip-inner { transform: translateY(-6px) rotateZ(-1deg); }
 .pack-back { container-type: inline-size; width: 100%; height: 100%; border-radius: 3.2% / 2.3%; display: grid; place-items: center; text-align: center;

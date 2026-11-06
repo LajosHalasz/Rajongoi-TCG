@@ -157,7 +157,7 @@ A card is matched to its database row by name and type, so a typo'd printed numb
 
 If an export has no `rarity`, its rarity icon decides the frame.
 
-**Foil:** Champions, Legends and EPIC cards (which includes all Signatures) get a holographic foil shine everywhere: in the Collection, in boosters and in game. The shine follows the mouse pointer. It is set by `isFoil()` in `js/ui/card.js`.
+**Foil:** Champions, Legends and EPIC cards (which includes all Signatures) get a holographic foil shine everywhere: in the Collection, in boosters and in game.. It is set by `isFoil()` in `js/ui/card.js`.
 
 The earlier full-art note still applies: **EPIC Champions and Legends** use the full-art frame: the artwork covers the whole card, placed with the export's crop data. They also get the gold frame, the colored name band and white rules text over the art.
 

@@ -165,6 +165,14 @@ export const sfx = {
     noise({ filter: 'lowpass', freq: 700, to: 120, dur: 0.6, gain: 0.45, delay, rev: 0.5 });
     [1568, 2093, 2637, 3136].forEach((f, i) => tone({ freq: f, type: 'sine', dur: 0.6, gain: 0.035, delay: delay + 0.05 + i * 0.04, rev: 0.7 }));
   }),
+  lightning: play(() => {
+    // sharp crack, then rolling thunder
+    noise({ filter: 'highpass', freq: 2500, dur: 0.12, gain: 0.5, attack: 0.001, rev: 0.6 });
+    for (let i = 0; i < 10; i++) noise({ filter: 'bandpass', freq: 1500 + Math.random() * 5000, q: 3, dur: 0.02, gain: 0.25, delay: Math.random() * 0.12, rev: 0.4 });
+    noise({ filter: 'highpass', freq: 1800, dur: 0.1, gain: 0.35, delay: 0.17, rev: 0.6 });
+    tone({ freq: 55, to: 28, type: 'sine', dur: 1.6, gain: 0.55, delay: 0.05, rev: 0.7 });
+    noise({ filter: 'lowpass', freq: 380, to: 90, dur: 2.2, gain: 0.45, attack: 0.08, delay: 0.1, rev: 0.8 });
+  }),
   crack: play(() => {
     for (let i = 0; i < 12; i++) noise({ filter: 'bandpass', freq: 600 + Math.random() * 2200, q: 4, dur: 0.03 + Math.random() * 0.05, gain: 0.25, delay: i * 0.025 + Math.random() * 0.02, rev: 0.2 });
     tone({ freq: 48, to: 30, type: 'sine', dur: 1.1, gain: 0.55, rev: 0.4 });

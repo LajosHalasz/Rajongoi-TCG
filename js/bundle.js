@@ -564,18 +564,6 @@ ${def.text}`;
     window.addEventListener("resize", schedule);
     document.addEventListener("load", schedule, true);
     if (document.fonts?.ready) document.fonts.ready.then(() => fitCards(document, true));
-    document.addEventListener("pointermove", (e) => {
-      const card = e.target.closest?.(".card.foil");
-      if (!card) return;
-      const r = card.getBoundingClientRect();
-      card.style.setProperty("--mx", ((e.clientX - r.left) / r.width * 100).toFixed(1) + "%");
-      card.style.setProperty("--my", ((e.clientY - r.top) / r.height * 100).toFixed(1) + "%");
-      card.classList.add("foil-hover");
-    });
-    document.addEventListener("pointerout", (e) => {
-      const card = e.target.closest?.(".card.foil");
-      if (card && !card.contains(e.relatedTarget)) card.classList.remove("foil-hover");
-    });
     schedule();
   }
 
@@ -2229,6 +2217,13 @@ ${def.text}`;
       noise({ filter: "lowpass", freq: 700, to: 120, dur: 0.6, gain: 0.45, delay, rev: 0.5 });
       [1568, 2093, 2637, 3136].forEach((f, i) => tone({ freq: f, type: "sine", dur: 0.6, gain: 0.035, delay: delay + 0.05 + i * 0.04, rev: 0.7 }));
     }),
+    lightning: play(() => {
+      noise({ filter: "highpass", freq: 2500, dur: 0.12, gain: 0.5, attack: 1e-3, rev: 0.6 });
+      for (let i = 0; i < 10; i++) noise({ filter: "bandpass", freq: 1500 + Math.random() * 5e3, q: 3, dur: 0.02, gain: 0.25, delay: Math.random() * 0.12, rev: 0.4 });
+      noise({ filter: "highpass", freq: 1800, dur: 0.1, gain: 0.35, delay: 0.17, rev: 0.6 });
+      tone({ freq: 55, to: 28, type: "sine", dur: 1.6, gain: 0.55, delay: 0.05, rev: 0.7 });
+      noise({ filter: "lowpass", freq: 380, to: 90, dur: 2.2, gain: 0.45, attack: 0.08, delay: 0.1, rev: 0.8 });
+    }),
     crack: play(() => {
       for (let i = 0; i < 12; i++) noise({ filter: "bandpass", freq: 600 + Math.random() * 2200, q: 4, dur: 0.03 + Math.random() * 0.05, gain: 0.25, delay: i * 0.025 + Math.random() * 0.02, rev: 0.2 });
       tone({ freq: 48, to: 30, type: "sine", dur: 1.1, gain: 0.55, rev: 0.4 });
@@ -2420,7 +2415,7 @@ ${def.text}`;
       ${midbar(s, legal, ui)}
       ${battleRow(s, me, hl)}
       ${playerRow(s, me, true, hl)}
-      <div class="hand-row mine" style="--n:${me.hand.length}">${me.hand.map((c, i) => unitCard(s, c, hl, { inHand: true, fan: fanStyle(i, me.hand.length) })).join("") || '<span class="muted">Empty hand</span>'}</div>
+      <div class="hand-row mine" style="--n:${me.hand.length}">${me.hand.map((c, i) => `<div class="hand-slot" style="${fanStyle(i, me.hand.length)}">${unitCard(s, c, hl, { inHand: true })}</div>`).join("") || '<span class="muted">Empty hand</span>'}</div>
     </section>
     <aside class="side-panel">
       <div class="preview" id="preview"><span class="muted" style="align-self:center">Hover a card to inspect it \xB7 right-click for details</span></div>
@@ -2432,11 +2427,25 @@ ${def.text}`;
     const log2 = app2.querySelector(".log");
     if (keepScroll) log2.scrollTop = log2.scrollHeight;
     animateArrivals(s, app2);
+    placeCracks(app2);
     if (G.logLen == null) G.logLen = s.logTotal || 0;
     const n = Math.min((s.logTotal || 0) - G.logLen, s.log.length);
     const fresh = n > 0 ? s.log.slice(-n) : [];
     G.logLen = s.logTotal || 0;
     fresh.slice(-4).forEach((l, i) => setTimeout(() => soundForLog(l, s.players[HUMAN].name), i * 90));
+    for (const l of fresh) {
+      const m = l.match(/^(.+?) (casts|equips) (.+?)(?: →| \(on the stack\)|\.)/);
+      if (!m) continue;
+      const who = s.players.find((p) => p.name === m[1]);
+      const def = who && allCards().find((c) => c.name === m[3]);
+      if (!def || (def.cost || 0) < 10) continue;
+      const zone = app2.querySelectorAll(".battle")[who.idx === HUMAN ? 1 : 0];
+      if (zone) setTimeout(() => {
+        const z = zone.getBoundingClientRect(), w = Math.min(z.height * 0.7, 90);
+        lightning({ rect: { left: z.left + z.width / 2 - w / 2, top: z.top + z.height / 2 - w * 0.7, width: w, height: w * 1.4 } }, def.colors);
+        sfx.lightning();
+      }, 120);
+    }
     scheduleAI();
   }
   function highlights(s, legal, ui) {
@@ -2493,8 +2502,7 @@ ${def.text}`;
       power: pw,
       cost,
       classes: cls.join(" "),
-      badges: sick + uses,
-      style: opts.fan || ""
+      badges: sick + uses
     });
   }
   function playerRow(s, p, mine, hl) {
@@ -2625,21 +2633,63 @@ ${def.text}`;
       const d = getDef(inst.id);
       const foil = isFoil(d);
       const mighty = power(s, inst) >= 5;
+      const titanic = (d.cost || 0) >= 10;
       el.classList.add(foil ? "arrive-foil" : "arrive");
       const land = foil ? 620 : 280;
       if (foil) sfx.foilLand(0.55);
       else if (!mighty) sfx.play();
       if (mighty && !foil) sfx.play();
       if (foil) setTimeout(() => shockwave(el), land - 60);
+      if (titanic) setTimeout(() => {
+        lightning(el, d.colors);
+        sfx.lightning();
+      }, Math.max(0, land - 140));
       if (mighty) setTimeout(() => {
         crackField(el, app2);
         sfx.crack();
       }, land - 40);
     }
   }
-  if (typeof window !== "undefined") window.RajongoiFX = { crack: (el) => crackField(el, document), land: (el) => shockwave(el) };
+  if (typeof window !== "undefined") window.RajongoiFX = {
+    crack: (el) => crackField(el, G ? G.app : document),
+    land: (el) => shockwave(el),
+    bolt: (el, colors, opts) => {
+      lightning(el, colors, opts);
+      if (!opts) sfx.lightning();
+    },
+    // demo(cardId): drop a card onto your battle zone with the real arrival effects
+    demo: (id) => {
+      const d = getDef(id);
+      const zone = document.querySelectorAll(".battle")[1];
+      zone.querySelectorAll(":scope > .card, :scope > .empty").forEach((n) => n.remove());
+      zone.insertAdjacentHTML("beforeend", cardHtml(d, { size: "sm", mini: true, uid: "demo-" + id }));
+      const el = zone.querySelector(":scope > .card:last-child");
+      const foil = isFoil(d), pw = d.power || 0, land = foil ? 620 : 280;
+      el.classList.add(foil ? "arrive-foil" : "arrive");
+      if (foil) {
+        sfx.foilLand(0.55);
+        setTimeout(() => shockwave(el), land - 60);
+      }
+      if ((d.cost || 0) >= 10) setTimeout(() => {
+        lightning(el, d.colors);
+        sfx.lightning();
+      }, Math.max(0, land - 140));
+      if (pw >= 5) setTimeout(() => {
+        crackField(el, G.app);
+        sfx.crack();
+      }, land - 40);
+    },
+    cracks: () => (G?.cracks || []).map((k) => k.uid)
+  };
+  function layoutRect(el) {
+    const parent = el.offsetParent;
+    if (!parent) return el.getBoundingClientRect();
+    const pr = parent.getBoundingClientRect();
+    const left = pr.left + parent.clientLeft + el.offsetLeft, top = pr.top + parent.clientTop + el.offsetTop;
+    return { left, top, width: el.offsetWidth, height: el.offsetHeight };
+  }
   function shockwave(el) {
-    const r = el.getBoundingClientRect();
+    const r = layoutRect(el);
     const fx = document.createElement("div");
     fx.className = "land-fx";
     fx.style.left = r.left + r.width / 2 + "px";
@@ -2655,49 +2705,251 @@ ${def.text}`;
     document.body.appendChild(fx);
     setTimeout(() => fx.remove(), 1200);
   }
+  function lightning(el, colors, opts = {}) {
+    const r = el.rect || layoutRect(el);
+    const W = window.innerWidth, H = window.innerHeight;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const cv = document.createElement("canvas");
+    cv.className = "bolt-canvas";
+    cv.width = W * dpr;
+    cv.height = H * dpr;
+    document.body.appendChild(cv);
+    const g = cv.getContext("2d");
+    g.scale(dpr, dpr);
+    const tx = r.left + r.width / 2, ty = r.top + r.height * 0.32;
+    const hexes = (colors && colors.length ? colors : ["Mind"]).map((c) => COLORS[c]?.hex || "#6be3ff");
+    const rgb = (hex) => {
+      const n = parseInt(hex.slice(1), 16);
+      return [n >> 16 & 255, n >> 8 & 255, n & 255];
+    };
+    function fractal(x0, y0, x1, y1, disp, depth) {
+      let pts = [[x0, y0], [x1, y1]];
+      for (let d = 0; d < depth; d++) {
+        const next = [pts[0]];
+        for (let i = 0; i < pts.length - 1; i++) {
+          const [ax, ay] = pts[i], [bx, by] = pts[i + 1];
+          const len = Math.hypot(bx - ax, by - ay);
+          const nx = -(by - ay) / (len || 1), ny = (bx - ax) / (len || 1);
+          const off = (Math.random() - 0.5) * disp;
+          next.push([(ax + bx) / 2 + nx * off, (ay + by) / 2 + ny * off], pts[i + 1]);
+        }
+        pts = next;
+        disp *= 0.55;
+      }
+      return pts;
+    }
+    function makeBolt(sx, ex, ey) {
+      const main = fractal(sx, -30, ex, ey, Math.max(140, ey * 0.32), 7);
+      const segs = [];
+      const add = (pts, width, alpha, t0, t1, level) => {
+        for (let i = 0; i < pts.length - 1; i++) {
+          const t = t0 + (t1 - t0) * (i / (pts.length - 1));
+          segs.push({ a: pts[i], b: pts[i + 1], w: width, al: alpha, t });
+          if (level < 2 && Math.random() < (level ? 0.03 : 0.045) && i > 4 && i < pts.length - 8) {
+            const [bx, by] = pts[i];
+            const ang = Math.PI / 2 + (Math.random() < 0.5 ? -1 : 1) * (0.35 + Math.random() * 0.65);
+            const L = (ey - by) * (0.25 + Math.random() * 0.35) / (level + 1);
+            const br = fractal(bx, by, bx + Math.cos(ang) * L, by + Math.sin(ang) * L, L * 0.45, 5);
+            add(br, width * 0.55, alpha * 0.6, t, Math.min(1, t + 0.25), level + 1);
+          }
+        }
+      };
+      add(main, 1, 1, 0, 1, 0);
+      return segs;
+    }
+    let bolts = [];
+    const spawn = () => {
+      bolts = hexes.map((hex, i) => ({
+        col: rgb(hex),
+        segs: makeBolt(tx + (Math.random() - 0.5) * W * 0.25 + (hexes.length > 1 ? (i ? 1 : -1) * 60 : 0), tx + (hexes.length > 1 ? (i ? 1 : -1) * 6 : 0), ty)
+      }));
+    };
+    spawn();
+    const sparks = [];
+    const burst2 = (n) => {
+      for (let i = 0; i < n; i++) {
+        const a = -Math.PI * (0.05 + Math.random() * 0.9);
+        const v = 2 + Math.random() * 7;
+        const c = bolts[i % bolts.length].col;
+        sparks.push({ x: tx, y: ty + r.height * 0.15, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, c });
+      }
+    };
+    const LEADER = 150, END = 1150;
+    const flicker = (t) => {
+      if (t < LEADER) return 0.35;
+      const k = t - LEADER;
+      const keys = [[0, 1], [95, 1], [125, 0.25], [150, 1], [230, 0.9], [260, 0.3], [290, 0.85], [420, 0.55], [END - LEADER, 0]];
+      for (let i = 0; i < keys.length - 1; i++) {
+        const [t0, v0] = keys[i], [t1, v1] = keys[i + 1];
+        if (k >= t0 && k <= t1) return v0 + (v1 - v0) * ((k - t0) / (t1 - t0));
+      }
+      return 0;
+    };
+    const start = performance.now();
+    let struck = false, restruck = false;
+    function drawBolt(bolt, progress, intensity) {
+      const [cr, cg, cb] = bolt.col;
+      const groups = /* @__PURE__ */ new Map();
+      for (const s of bolt.segs) {
+        if (s.t > progress) continue;
+        let p = groups.get(s.w);
+        if (!p) {
+          p = { path: new Path2D(), al: s.al };
+          groups.set(s.w, p);
+        }
+        p.path.moveTo(s.a[0], s.a[1]);
+        p.path.lineTo(s.b[0], s.b[1]);
+      }
+      const light = `${Math.min(255, cr + 90)},${Math.min(255, cg + 90)},${Math.min(255, cb + 90)}`;
+      const passes = [
+        { w: 54, a: 0.1, c: `${cr},${cg},${cb}`, blur: 0 },
+        { w: 24, a: 0.3, c: `${cr},${cg},${cb}`, blur: 28 },
+        { w: 9, a: 0.95, c: `${cr},${cg},${cb}`, blur: 10 },
+        { w: 4, a: 0.9, c: light, blur: 0 },
+        { w: 2.2, a: 1, c: "255,255,255", blur: 0 }
+      ];
+      for (const [w, grp] of groups) {
+        for (const p of passes) {
+          g.shadowBlur = p.blur;
+          g.shadowColor = `rgb(${cr},${cg},${cb})`;
+          g.strokeStyle = `rgba(${p.c},${p.a * grp.al * intensity})`;
+          g.lineWidth = p.w * w;
+          g.stroke(grp.path);
+        }
+      }
+      g.shadowBlur = 0;
+    }
+    function frame(now) {
+      const t = now - start;
+      g.clearRect(0, 0, W, H);
+      g.globalCompositeOperation = "lighter";
+      g.lineCap = "round";
+      g.lineJoin = "round";
+      const inten = flicker(t);
+      if (!struck && t >= LEADER) {
+        struck = true;
+        burst2(42);
+      }
+      if (!restruck && t >= LEADER + 125) {
+        restruck = true;
+        spawn();
+        burst2(18);
+      }
+      const progress = Math.min(1, t / LEADER);
+      if (t >= LEADER) {
+        const [cr, cg, cb] = bolts[0].col;
+        g.fillStyle = `rgba(${cr},${cg},${cb},${0.3 * inten})`;
+        g.fillRect(0, 0, W, H);
+        g.fillStyle = `rgba(255,255,255,${0.12 * inten})`;
+        g.fillRect(0, 0, W, H);
+      }
+      for (const bolt of bolts) drawBolt(bolt, progress, t < LEADER ? 0.55 : inten);
+      if (t >= LEADER) {
+        const [cr, cg, cb] = bolts[bolts.length - 1].col;
+        const rad = r.width * (1.6 + inten);
+        const gr = g.createRadialGradient(tx, ty + r.height * 0.2, 0, tx, ty + r.height * 0.2, rad);
+        gr.addColorStop(0, `rgba(255,255,255,${0.75 * inten})`);
+        gr.addColorStop(0.25, `rgba(${cr},${cg},${cb},${0.55 * inten})`);
+        gr.addColorStop(1, "rgba(0,0,0,0)");
+        g.fillStyle = gr;
+        g.beginPath();
+        g.ellipse(tx, ty + r.height * 0.2, rad, rad * 0.55, 0, 0, Math.PI * 2);
+        g.fill();
+      }
+      for (const p of sparks) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.32;
+        p.vx *= 0.985;
+        p.life -= 0.022;
+        if (p.life <= 0) continue;
+        g.strokeStyle = `rgba(${p.c[0]},${p.c[1]},${p.c[2]},${p.life})`;
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(p.x, p.y);
+        g.lineTo(p.x - p.vx * 2.2, p.y - p.vy * 2.2);
+        g.stroke();
+        g.fillStyle = `rgba(255,255,255,${p.life})`;
+        g.fillRect(p.x - 1, p.y - 1, 2, 2);
+      }
+      if (opts.freezeAt != null) return;
+      if (t < END || sparks.some((p) => p.life > 0)) requestAnimationFrame(frame);
+      else cv.remove();
+    }
+    if (opts.freezeAt != null) {
+      for (let ft = 0; ft <= opts.freezeAt; ft += 16) frame(start + ft);
+      setTimeout(() => cv.remove(), opts.hold || 1500);
+      return;
+    }
+    requestAnimationFrame(frame);
+  }
+  var CRACK_MS = 2600;
   function crackField(el, app2) {
-    const r = el.getBoundingClientRect();
-    const size = r.width * 3.4;
+    const w = el.offsetWidth, h = el.offsetHeight;
+    const size = w * 3.6;
     const c = size / 2;
     let paths = "";
-    const rays = 7 + Math.floor(Math.random() * 3);
+    const rays = 8 + Math.floor(Math.random() * 3);
     for (let i = 0; i < rays; i++) {
       const a = Math.PI * 2 * i / rays + (Math.random() - 0.5) * 0.5;
       const len = c * (0.55 + Math.random() * 0.45);
       let x = c, y = c, pts = `M${c} ${c}`;
-      const steps = 5;
-      for (let k = 1; k <= steps; k++) {
-        const t = len * k / steps;
+      for (let k = 1; k <= 5; k++) {
+        const t = len * k / 5;
         x = c + Math.cos(a) * t + (Math.random() - 0.5) * size * 0.06;
-        y = c + Math.sin(a) * t * 0.7 + (Math.random() - 0.5) * size * 0.04;
+        y = c + Math.sin(a) * t * 0.55 + (Math.random() - 0.5) * size * 0.035;
         pts += ` L${x.toFixed(1)} ${y.toFixed(1)}`;
         if (k === 2 || k === 3) {
-          const b = a + (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 0.5);
+          const br = a + (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 0.5);
           const bl = len * 0.22;
-          paths += `<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${(x + Math.cos(b) * bl).toFixed(1)} ${(y + Math.sin(b) * bl * 0.62).toFixed(1)}" stroke-width="${(size * 8e-3).toFixed(1)}"/>`;
+          paths += `<path d="M${x.toFixed(1)} ${y.toFixed(1)} L${(x + Math.cos(br) * bl).toFixed(1)} ${(y + Math.sin(br) * bl * 0.55).toFixed(1)}" stroke-width="${(size * 8e-3).toFixed(1)}"/>`;
         }
       }
       paths += `<path d="${pts}" stroke-width="${(size * 0.016).toFixed(1)}"/>`;
     }
-    const fx = document.createElement("div");
-    fx.className = "crack-fx";
-    fx.style.left = r.left + r.width / 2 - c + "px";
-    fx.style.top = r.top + r.height / 2 - c + "px";
-    fx.style.width = fx.style.height = size + "px";
-    fx.innerHTML = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
-    <defs><radialGradient id="cg"><stop offset="0" stop-color="#000" stop-opacity=".6"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
-      <mask id="cm"><rect width="${size}" height="${size}" fill="#fff"/>
-        <rect x="${c - r.width / 2}" y="${c - r.height / 2}" width="${r.width}" height="${r.height}" rx="${r.width * 0.04}" fill="#000"/></mask></defs>
-    <g mask="url(#cm)">
-    <ellipse cx="${c}" cy="${c}" rx="${c * 0.8}" ry="${c * 0.5}" fill="url(#cg)"/>
+    const html = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+    <defs><radialGradient id="cg"><stop offset="0" stop-color="#000" stop-opacity=".6"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>
+    <ellipse cx="${c}" cy="${c}" rx="${c * 0.85}" ry="${c * 0.42}" fill="url(#cg)"/>
     <g class="glow" fill="none" stroke-linecap="round" stroke-linejoin="round">${paths}</g>
-    <g class="dark" fill="none" stroke-linecap="round" stroke-linejoin="round">${paths}</g></g></svg>
-    ${Array.from({ length: 10 }, () => `<b style="--x:${((Math.random() - 0.5) * size * 0.7).toFixed(0)}px;--y:${(-Math.random() * size * 0.45).toFixed(0)}px"></b>`).join("")}`;
-    document.body.appendChild(fx);
-    const table = app2.querySelector(".table");
+    <g class="dark" fill="none" stroke-linecap="round" stroke-linejoin="round">${paths}</g></svg>
+    ${Array.from({ length: 10 }, () => `<b style="--x:${((Math.random() - 0.5) * size * 0.7).toFixed(0)}px;--y:${(-Math.random() * size * 0.3).toFixed(0)}px"></b>`).join("")}`;
+    const uid = el.dataset.uid;
+    if (G) {
+      G.cracks = (G.cracks || []).filter((k) => k.uid !== uid);
+      G.cracks.push({ uid, html, size, start: performance.now() });
+      placeCracks(app2);
+    }
+    const table = (app2.querySelector ? app2 : document).querySelector(".table");
     table?.classList.add("quake");
     setTimeout(() => table?.classList.remove("quake"), 450);
-    setTimeout(() => fx.remove(), 2600);
+    setTimeout(() => G && placeCracks(G.app), CRACK_MS + 50);
+  }
+  function placeCracks(app2) {
+    if (!G || !G.cracks?.length) return;
+    const now = performance.now();
+    G.cracks = G.cracks.filter((k) => now - k.start < CRACK_MS);
+    app2.querySelectorAll(".crack-layer").forEach((l) => l.replaceChildren());
+    for (const k of G.cracks) {
+      const card = app2.querySelector(`.battle [data-uid="${k.uid}"]`);
+      let battle = card?.closest(".battle");
+      if (card) {
+        k.x = card.offsetLeft + card.offsetWidth / 2;
+        k.y = card.offsetTop + card.offsetHeight / 2;
+        k.side = [...app2.querySelectorAll(".battle")].indexOf(battle);
+      } else battle = app2.querySelectorAll(".battle")[k.side ?? -1];
+      if (!battle || k.x == null) continue;
+      let layer = battle.querySelector(":scope > .crack-layer");
+      if (!layer) {
+        layer = document.createElement("div");
+        layer.className = "crack-layer";
+        battle.prepend(layer);
+      }
+      const fx = document.createElement("div");
+      fx.className = "crack-fx";
+      fx.style.cssText = `left:${k.x - k.size / 2}px;top:${k.y - k.size / 2}px;width:${k.size}px;height:${k.size}px;--t:${Math.round(now - k.start)}ms`;
+      fx.innerHTML = k.html;
+      layer.appendChild(fx);
+    }
   }
   function act(a) {
     try {
