@@ -1,4 +1,4 @@
-import { createGame, step, legalActions, whoActs, power, canAttackNow, findInst, effectiveCost } from '../engine/game.js';
+import { createGame, step, legalActions, whoActs, power, canAttackNow, findInst, effectiveCost, hasKeyword } from '../engine/game.js';
 import { chooseAction } from '../engine/ai.js';
 import { getDef, hasDef, kindOf, allCards } from '../engine/cards.js';
 import { COLORS, RULES } from '../engine/rules.js';
@@ -9,6 +9,10 @@ import { showCardModal } from './collection.js';
 import { sfx, soundForLog } from './sfx.js';
 
 const HUMAN = 0, AI = 1;
+const ICON = {
+  skull: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C7 2 3.5 5.6 3.5 10.2c0 2.6 1.1 4.6 2.9 5.9V19c0 .8.7 1.5 1.5 1.5H9v-2h1.5v2h3v-2H15v2h1.1c.8 0 1.5-.7 1.5-1.5v-2.9c1.8-1.3 2.9-3.3 2.9-5.9C20.5 5.6 17 2 12 2zM8.6 13.6a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2zm6.8 0a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2zM12 14.2l1.3 2.3h-2.6z"/></svg>',
+  hammer: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M3.5 7.3 9.8 1l3.6 3.6-1.5 1.5 1.2 1.2 1.5-1.5 2.5 2.5-4.2 4.2-2.5-2.5 1.4-1.4-1.2-1.2-1.5 1.5zM12.6 13.1l2.8-2.8 7.4 7.4a2 2 0 0 1-2.8 2.8z"/></svg>',
+};
 const AI_DELAY = 750;
 let G = null; // { s, app, ui, timer, decks }
 
@@ -119,7 +123,13 @@ function render() {
   const prev = app.querySelector('.log');
   const keepScroll = prev ? prev.scrollHeight - prev.scrollTop - prev.clientHeight < 30 : true;
 
+  const oppPlays = (s.plays || []).filter(x => x.player === AI).slice(-4).reverse();
+  const played = `<aside class="played-panel"><div class="pp-title">AI played</div>
+    ${oppPlays.map((x, i) => `<div class="pp-card ${i === 0 ? 'newest' : ''} ${x.via === 'shieldTrigger' ? 'via-trigger' : ''}" data-cid="${x.id}">
+      ${x.via === 'shieldTrigger' ? '<div class="pp-tag">SHIELD TRIGGER</div>' : ''}${cardHtml(getDef(x.id), { size: 'md' })}
+      <div class="pp-turn">Turn ${x.turn}</div></div>`).join('') || '<p class="muted">Nothing yet.</p>'}</aside>`;
   app.innerHTML = `<div class="game">
+    ${played}
     <section class="table">
       <div class="hand-row opp">${op.hand.map(() => cardBackHtml({ size: 'sm' })).join('')}</div>
       ${playerRow(s, op, false, hl)}
@@ -135,6 +145,7 @@ function render() {
     </aside>
   </div>
   ${triggerOverlay(s, legal, ui)}
+  ${pickOverlay(s, legal, ui)}
   ${winnerOverlay(s)}`;
 
   const log = app.querySelector('.log');
@@ -148,6 +159,24 @@ function render() {
   const fresh = n > 0 ? s.log.slice(-n) : [];
   G.logLen = s.logTotal || 0;
   fresh.slice(-4).forEach((l, i) => setTimeout(() => soundForLog(l, s.players[HUMAN].name), i * 90));
+  // shield breaks shatter; enemy Shield Triggers get their own burst
+  let breaks = 0;
+  for (const l of fresh) {
+    const b = l.match(/^(.+?)'s shield breaks/);
+    if (b) {
+      const who = s.players.find(p => p.name === b[1]);
+      if (who) setTimeout(() => shieldShatter(app, who.idx), 60 + breaks++ * 260);
+    }
+    const t = l.match(/^Shield Trigger! (.+?) plays (.+?) for free\./);
+    if (t) {
+      const who = s.players.find(p => p.name === t[1]);
+      if (who) setTimeout(() => shieldTriggerFx(app, who.idx, t[2]), 200 + breaks * 260);
+    }
+  }
+  // nothing to respond with: don't make the player press Pass
+  if (whoActs(s) === HUMAN && s.pending?.kind === 'priority' && legal.length === 1 && legal[0].type === 'pass' && !G.autoPass) {
+    G.autoPass = setTimeout(() => { G.autoPass = null; if (G && s.pending?.kind === 'priority' && whoActs(s) === HUMAN) act({ type: 'pass' }); }, 450);
+  }
   // 10+ mana spells and gear: lightning on play (units get it in animateArrivals)
   for (const l of fresh) {
     const m = l.match(/^(.+?) (casts|equips) (.+?)(?: →| \(on the stack\)|\.)/);
@@ -174,6 +203,7 @@ function highlights(s, legal, ui) {
         if (a.target.kind === 'unit') h.targets.add(a.target.uid);
         else h.zoneTargets.add(a.target.kind);
       } else if (a.target) h.targets.add(a.target);
+      if (a.replace) h.targets.add(a.replace);
     }
     return h;
   }
@@ -182,6 +212,7 @@ function highlights(s, legal, ui) {
   else if (pd?.kind !== 'mulligan') {
     for (const a of legal) {
       if (a.type === 'play' || a.type === 'activate') h.playable.add(a.uid);
+      if (a.type === 'activate') (h.taps ||= new Set()).add(a.uid);
       if (a.type === 'attack') h.attackers.add(a.uid);
     }
   }
@@ -194,7 +225,9 @@ function fanStyle(i, n) {
   const mid = (n - 1) / 2;
   const step = Math.min(7, 44 / Math.max(n, 1));
   const off = i - mid;
-  return `--fr:${(off * step).toFixed(2)}deg;--fy:${(off * off * Math.min(4.5, 26 / n)).toFixed(1)}px;--fz:${i + 1}`;
+  const k = Math.min(4.5, 26 / n);
+  // the outermost cards sit at the bottom of the row, the middle ones arc upwards
+  return `--fr:${(off * step).toFixed(2)}deg;--fy:${(off * off * k - mid * mid * k).toFixed(1)}px;--fz:${i + 1}`;
 }
 
 function unitCard(s, inst, hl, opts = {}) {
@@ -209,10 +242,19 @@ function unitCard(s, inst, hl, opts = {}) {
   if (hl.attacking === inst.uid || hl.defending === inst.uid) cls.push('attacking');
   const pw = onBoard ? power(s, inst) : undefined;
   const cost = opts.inHand && inst.owner === HUMAN ? effectiveCost(s, inst.owner, d) : undefined;
-  const sick = onBoard && !canAttackNow(s, inst) && !inst.tapped && s.active === inst.owner ? '<div class="badge-sick">zZ</div>' : '';
-  const uses = inst.uses != null && !opts.inHand ? `<div class="badge-sick" style="top:auto;bottom:30%">${inst.uses} left</div>` : '';
+  // status icons stacked under the Might box (top right)
+  const icons = [];
+  if (onBoard) {
+    if (hasKeyword(s, inst, 'Deathtouch')) icons.push(`<i class="ui-ico ico-death" title="Deathtouch">${ICON.skull}</i>`);
+    if (hasKeyword(s, inst, 'Party Breaker')) icons.push(`<i class="ui-ico ico-party" title="Party Breaker: can attack untapped Units">${ICON.hammer}</i>`);
+    if (!canAttackNow(s, inst) && !inst.tapped && s.active === inst.owner) icons.push('<i class="ui-ico ico-sick" title="Summoning sickness">zZz</i>');
+    if (hasKeyword(s, inst, 'Defensive')) cls.push('is-def');
+  }
+  const iconCol = icons.length ? `<div class="ui-icons">${icons.join('')}</div>` : '';
+  const tapHint = hl.taps?.has(inst.uid) ? '<div class="tap-hint" title="Tap ability ready">↻ TAP</div>' : '';
+  const uses = inst.uses != null && !opts.inHand ? `<div class="badge-uses">${inst.uses} left</div>` : '';
   return cardHtml(d, { size: 'sm', mini: !(opts.inHand && !opts.slot), uid: inst.uid, tapped: inst.tapped && !opts.inHand, power: pw, cost,
-    classes: cls.join(' '), badges: sick + uses });
+    classes: cls.join(' '), badges: iconCol + tapHint + uses });
 }
 
 function playerRow(s, p, mine, hl) {
@@ -238,8 +280,8 @@ function playerRow(s, p, mine, hl) {
     ${zone('Champion', p.championSlot ? unitCard(s, p.championSlot, hl, { slot: true, inHand: true }) : '', '', 'played')}
     ${zone('Signature', p.signatureSlot ? unitCard(s, p.signatureSlot, hl, { slot: true, inHand: true }) : '', '', 'played')}
     ${zone(`Gear ${p.gear.length}/${RULES.GEAR_SLOTS}`, p.gear.map(g => unitCard(s, g, hl, { slot: true })).join(''), '', 'empty')}
-    ${zone('Shields', shields, `data-zone="${mine ? '' : 'shield'}"`, '').replace('class="zone', `class="zone zone-target ${shieldsTarget ? 'targetable' : ''}`)}
-    ${zone('Deck', `<div class="stack-pile">${p.deck.length ? cardBackHtml({ size: 'sm' }) : ''}<span class="count">${p.deck.length}</span></div>`)}
+    ${zone('Shields', shields, `data-zone="${mine ? '' : 'shield'}" data-shields="${p.idx}"`, '').replace('class="zone', `class="zone zone-target ${shieldsTarget ? 'targetable' : ''}`)}
+    ${zone('Deck', `${p.deck.length ? cardBackHtml({ size: 'sm' }) : ''}<div class="stack-pile"><span class="count" style="position:static">${p.deck.length}</span></div>`)}
     ${zone('Graveyard', `<div class="stack-pile" data-grave="${p.idx}" style="cursor:pointer">${gy ? cardHtml(getDef(gy.id), { size: 'sm', mini: true }) : `<div style="width:var(--cw)"></div>`}<span class="count">${p.graveyard.length}</span></div>`)}
   </div>`;
 }
@@ -281,8 +323,10 @@ function midbar(s, legal, ui) {
         seen.add(key);
         buttons += `<button class="primary" data-mode="${key}">${esc(a.modes.map(i => d.modes[i].name).join(' + '))}</button>`;
       }
+    } else if (ui.sel.options.some(a => a.replace)) {
+      prompt = `Both Gear slots are full: click the Gear that <b>${esc(d.name)}</b> replaces (it goes to the Graveyard).`;
     } else prompt = `Choose a target for <b>${esc(d.name)}</b>.`;
-    if (ui.sel.kind !== 'mode' && ui.sel.options.some(a => !a.target && a.type !== 'attack')) buttons += btn('no-target', 'Play without target');
+    if (ui.sel.kind !== 'mode' && ui.sel.options.some(a => !a.target && !a.replace && a.type !== 'attack')) buttons += btn('no-target', 'Play without target');
     buttons += btn('cancel', 'Cancel', 'ghost');
   } else if (pd?.kind === 'mulligan') {
     prompt = `Mulligan: click up to ${RULES.MULLIGAN_MAX} cards to put on the bottom of your deck.`;
@@ -297,6 +341,8 @@ function midbar(s, legal, ui) {
     prompt = `<b>Shieldify</b>: choose a card from your hand to put into your Shield Zone (${pd.remaining} left).`;
   } else if (pd?.kind === 'shieldTrigger') {
     prompt = 'Shield Trigger!';
+  } else if (pd?.kind === 'pick') {
+    prompt = 'Make your choice.';
   } else if (s.phase === 'play') {
     prompt = 'Play phase — click a glowing card to play it (at least 1 rune must match its color).';
     buttons = btn('end', 'To Combat →', 'primary');
@@ -322,6 +368,70 @@ function triggerOverlay(s, legal, ui) {
     <div class="row" style="justify-content:center">
       ${canUse ? '<button class="primary" data-btn="trig-use">Use it</button>' : '<span class="muted">No legal target.</span>'}
       <button data-btn="trig-skip">Keep in hand</button></div></div></div>`;
+}
+
+function pickOverlay(s, legal, ui) {
+  const pd = s.pending;
+  if (!pd || pd.kind !== 'pick' || pd.player !== HUMAN || s.winner != null) return '';
+  const me = s.players[HUMAN];
+  if (!ui.pick || ui.pick.key !== pd.uids.join()) {
+    // a single possible choice is preselected, but still has to be confirmed
+    ui.pick = { key: pd.uids.join(), sel: new Set(pd.min === 1 && pd.choosable.length === 1 ? pd.choosable : []) };
+  }
+  const zoneCards = pd.mode === 'keep' ? me.reveal : me.graveyard;
+  const cards = pd.uids.map(uid => zoneCards.find(c => c.uid === uid)).filter(Boolean);
+  const ok = ui.pick.sel.size >= pd.min && ui.pick.sel.size <= pd.max;
+  const src = pd.source ? getDef(pd.source).name : '';
+  const hint = pd.mode === 'keep'
+    ? (pd.choosable.length ? `Click the <b>${esc(pd.tribe)}</b> cards you want to keep. The rest are shuffled back into your deck.` : `No ${esc(pd.tribe)} card among them; all go back into your deck.`)
+    : 'Choose the card to return to your hand.';
+  return `<div class="overlay"><div class="box pick-box">
+    <h2>${esc(src || pd.title)}</h2><p>${hint}</p>
+    <div class="pick-row">${cards.map(c => {
+      const can = pd.choosable.includes(c.uid);
+      return `<div class="pick-card ${can ? 'can' : 'cannot'} ${ui.pick.sel.has(c.uid) ? 'on' : ''}" ${can ? `data-pick="${c.uid}"` : ''}>${cardHtml(getDef(c.id), { size: 'md' })}</div>`;
+    }).join('')}</div>
+    <div class="row" style="justify-content:center;margin-top:12px">
+      <button class="primary" data-btn="pick-ok" ${ok ? '' : 'disabled'}>${pd.mode === 'keep' ? `Keep ${ui.pick.sel.size} card${ui.pick.sel.size === 1 ? '' : 's'}` : 'Confirm choice'}</button></div>
+  </div></div>`;
+}
+
+/** Shield break: shards, red flash and a hit on that player's shield zone. */
+function shieldShatter(app, pi) {
+  const zone = app.querySelector(`[data-shields="${pi}"]`);
+  if (!zone) return;
+  const r = zone.getBoundingClientRect();
+  const fx = document.createElement('div');
+  fx.className = 'shatter-fx';
+  fx.style.left = r.left + r.width * 0.45 + 'px';
+  fx.style.top = r.top + r.height / 2 + 'px';
+  let shards = '';
+  for (let i = 0; i < 22; i++) {
+    const a = Math.random() * Math.PI * 2, d = 50 + Math.random() * 120;
+    const w = 6 + Math.random() * 14, h = 8 + Math.random() * 20;
+    shards += `<i style="--x:${(Math.cos(a) * d).toFixed(0)}px;--y:${(Math.sin(a) * d - 30).toFixed(0)}px;--r:${(Math.random() * 720 - 360).toFixed(0)}deg;width:${w.toFixed(0)}px;height:${h.toFixed(0)}px;clip-path:polygon(${[0, 1, 2].map(() => `${(Math.random() * 100).toFixed(0)}% ${(Math.random() * 100).toFixed(0)}%`).join(',')})"></i>`;
+  }
+  fx.innerHTML = `<div class="sh-flash"></div><div class="sh-crack"></div>${shards}<div class="sh-text">SHIELD BROKEN</div>`;
+  document.body.appendChild(fx);
+  zone.classList.add('shield-hit');
+  setTimeout(() => zone.classList.remove('shield-hit'), 600);
+  const table = app.querySelector('.table');
+  table?.classList.add('quake'); setTimeout(() => table?.classList.remove('quake'), 420);
+  setTimeout(() => fx.remove(), 1300);
+}
+
+/** Shield Trigger: a magenta burst over the shield zone with the card's name. */
+function shieldTriggerFx(app, pi, name) {
+  const zone = app.querySelector(`[data-shields="${pi}"]`);
+  if (!zone) return;
+  const r = zone.getBoundingClientRect();
+  const fx = document.createElement('div');
+  fx.className = 'trigger-fx';
+  fx.style.left = r.left + r.width * 0.45 + 'px';
+  fx.style.top = r.top + r.height / 2 + 'px';
+  fx.innerHTML = `<div class="tr-ring"></div><div class="tr-ring r2"></div><div class="tr-text">SHIELD TRIGGER!<small>${esc(name)}</small></div>`;
+  document.body.appendChild(fx);
+  setTimeout(() => fx.remove(), 1800);
 }
 
 function winnerOverlay(s) {
@@ -685,6 +795,13 @@ function onClick(e) {
     ui.sel = { ...ui.sel, kind: ui.sel.after || 'play', options: opts };
     return render();
   }
+  const pk = e.target.closest('[data-pick]');
+  if (pk && ui.pick && s.pending?.kind === 'pick') {
+    const uid = pk.dataset.pick, sel = ui.pick.sel;
+    if (sel.has(uid)) sel.delete(uid);
+    else { if (sel.size >= s.pending.max) sel.delete([...sel][0]); sel.add(uid); }
+    return render();
+  }
   const gy = e.target.closest('[data-grave]');
   if (gy) return showGrave(+gy.dataset.grave);
   if (s.winner != null || whoActs(s) !== HUMAN) return;
@@ -696,7 +813,7 @@ function onClick(e) {
   // --- choosing a target
   if (ui.sel) {
     let a = null;
-    if (uid) a = ui.sel.options.find(o => (o.type === 'attack' ? o.target.uid === uid : o.target === uid));
+    if (uid) a = ui.sel.options.find(o => (o.type === 'attack' ? o.target.uid === uid : o.target === uid || o.replace === uid));
     if (!a && zoneEl?.dataset.zone) a = ui.sel.options.find(o => o.type === 'attack' && o.target.kind === zoneEl.dataset.zone);
     if (a) return act(a);
     ui.sel = null; // clicked elsewhere: cancel and fall through to reselect
@@ -735,6 +852,11 @@ function onButton(id) {
     case 'atk-shield': return act(ui.sel.options.find(a => a.target.kind === 'shield'));
     case 'atk-player': return act(ui.sel.options.find(a => a.target.kind === 'player'));
     case 'no-target': return act(ui.sel.options.find(a => !a.target));
+    case 'pick-ok': {
+      const uids = [...(ui.pick?.sel || [])];
+      ui.pick = null;
+      return act({ type: 'pick', uids });
+    }
     case 'trig-skip': return act({ type: 'shieldTrigger', use: false });
     case 'trig-use': {
       const uses = legal.filter(a => a.type === 'shieldTrigger' && a.use);

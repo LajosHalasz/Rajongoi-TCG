@@ -49,12 +49,15 @@ export const isFoil = (def) => ['champion', 'legend'].includes(def.type) || rari
 const isRareArt = (def) => !!def.image && rarityOf(def) === 'rare';
 
 /** Image placed exactly as riftcardmaker crops it onto the whole card. */
-function cardImg(def) {
+/** Small WebP preview for grid/hand/board, the full image only for the big card view. */
+export const thumbOf = (src) => String(src).replace(/^data\/img\/([^/]+)\.jpe?g$/i, 'data/img/thumb/$1.webp');
+function cardImg(def, size) {
+  const src = size === 'lg' ? def.image : thumbOf(def.image);
   const c = def.imageCrop;
-  if (!c || !c.width || !c.height) return `<img class="card-img" src="${esc(def.image)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">`;
+  if (!c || !c.width || !c.height) return `<img class="card-img" src="${esc(src)}" alt="" decoding="async" style="width:100%;height:100%;object-fit:cover">`;
   const w = 10000 / c.width, h = 10000 / c.height;
   const l = -c.x / c.width * 100, t = -c.y / c.height * 100;
-  return `<img class="card-img" src="${esc(def.image)}" alt="" loading="lazy" style="width:${w.toFixed(2)}%;height:${h.toFixed(2)}%;left:${l.toFixed(2)}%;top:${t.toFixed(2)}%">`;
+  return `<img class="card-img" src="${esc(src)}" alt="" decoding="async" style="width:${w.toFixed(2)}%;height:${h.toFixed(2)}%;left:${l.toFixed(2)}%;top:${t.toFixed(2)}%">`;
 }
 
 function placeholderArt(def) {
@@ -93,7 +96,7 @@ function runeHtml(def, opts) {
   const cls = ['card', 'rune-card', def.name && !/^\s*$/.test(def.name) && !def.fullArtRune ? '' : 'rune-bare', isFoil(def) ? 'foil' : '',
     `size-${opts.size || 'md'}`, opts.mini ? 'mini' : '', opts.classes || ''].join(' ');
   return `<div class="${cls}" data-cid="${esc(def.id)}" style="--c1:${colorHex(def)};--c2:${colorHex(def)}">
-    <div class="art art-full">${def.image ? cardImg(def) : placeholderArt(def)}</div>
+    <div class="art art-full">${def.image ? cardImg(def, opts.size) : placeholderArt(def)}</div>
     <div class="frame"></div>
     <div class="typeline"><span class="domains"><span class="domain" style="background:${colorHex(def)}"></span></span><span class="type-badge">Rune</span></div>
     <div class="rune-name">${esc(def.name)}</div>
@@ -119,9 +122,9 @@ export function cardHtml(def, opts = {}) {
   const tribes = (def.tribes || []).slice(0, 2);
 
   const art = def.image
-    ? `<div class="art ${full || rare ? 'art-full' : 'art-window'}">${cardImg(def)}</div>`
+    ? `<div class="art ${full || rare ? 'art-full' : 'art-window'}">${cardImg(def, opts.size)}</div>`
     : `<div class="art art-window">${placeholderArt(def)}</div>`;
-  const cost = legend || def.type === 'rune' ? ''
+  const cost = legend || def.type === 'rune' || def.type === 'token' ? ''
     : `<div class="cost ${prov.includes('cost') ? 'prov' : ''}" title="${prov.includes('cost') ? 'Provisional cost' : 'Cost'}"><span>${opts.cost ?? def.cost}</span></div>`;
   const domainsTopLeft = full && legend
     ? `<div class="fa-domains">${def.colors.map(c => `<span style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join('')}</div>` : '';
@@ -192,24 +195,47 @@ function fitCard(card) {
       name.style.fontSize = ns + 'px';
     }
   }
-  card.dataset.fitted = card.getBoundingClientRect().width.toFixed(0);
+  card.dataset.fitted = String(card.offsetWidth);
 }
 
+/** Fit every card on screen now (cards off screen are fitted when they scroll into view). */
 export function fitCards(root = document, force = false) {
   for (const card of root.querySelectorAll('.card')) {
-    const w = card.getBoundingClientRect().width.toFixed(0);
-    if (!force && card.dataset.fitted === w) continue;
+    if (!force && card.dataset.fitted === String(card.offsetWidth)) continue;
+    if (io && !visible.has(card)) continue;
     fitCard(card);
   }
 }
 
+// Only cards that are (nearly) visible get fitted: fitting reads layout, which is
+// expensive for hundreds of cards in the Collection.
+let io = null;
+const visible = new WeakSet();
 let scheduled = false;
 export function installAutoFit() {
+  if ('IntersectionObserver' in window) {
+    io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          visible.add(e.target);
+          if (e.target.dataset.fitted !== String(e.target.offsetWidth)) fitCard(e.target);
+        } else visible.delete(e.target);
+      }
+    }, { rootMargin: '300px 0px' });
+  }
+  const watch = (root) => {
+    if (!io) return;
+    if (root.classList?.contains('card')) io.observe(root);
+    root.querySelectorAll?.('.card').forEach(c => io.observe(c));
+  };
   const run = () => { scheduled = false; fitCards(); };
   const schedule = () => { if (!scheduled) { scheduled = true; requestAnimationFrame(run); } };
-  new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+  new MutationObserver((muts) => {
+    for (const m of muts) m.addedNodes.forEach(n => n.nodeType === 1 && watch(n));
+    schedule();
+  }).observe(document.body, { childList: true, subtree: true });
   window.addEventListener('resize', schedule);
-  document.addEventListener('load', schedule, true); // images load -> layout settles
   if (document.fonts?.ready) document.fonts.ready.then(() => fitCards(document, true));
+  watch(document.body);
   schedule();
 }

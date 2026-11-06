@@ -526,8 +526,8 @@
    {
     "on": "activate",
     "do": "token",
-    "tokenId": "TKN-004",
-    "tokenName": "Pouch"
+    "tokenId": "TKN-005",
+    "tokenName": "Burst-Pouch"
    }
   ]
  },
@@ -605,7 +605,7 @@
    {
     "on": "activate",
     "do": "token",
-    "tokenId": "TKN-003",
+    "tokenId": "TKN-004",
     "tokenName": "Miniature"
    }
   ]
@@ -619,7 +619,7 @@
    {
     "on": "activate",
     "do": "token",
-    "tokenId": "TKN-005",
+    "tokenId": "TKN-003",
     "tokenName": "Miniature"
    }
   ]

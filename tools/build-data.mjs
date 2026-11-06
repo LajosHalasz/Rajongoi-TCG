@@ -4,11 +4,29 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rd = (f, fb) => { const p = path.join(root, 'data', f); return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : fb; };
 
+/** Small WebP previews (data/img/thumb/<id>.webp) used everywhere except the big card view. */
+export function buildThumbs() {
+  const src = path.join(root, 'data', 'img'), dst = path.join(src, 'thumb');
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(dst, { recursive: true });
+  let made = 0;
+  for (const f of fs.readdirSync(src)) {
+    if (!/\.jpe?g$/i.test(f)) continue;
+    const out = path.join(dst, f.replace(/\.jpe?g$/i, '.webp'));
+    if (fs.existsSync(out) && fs.statSync(out).mtimeMs >= fs.statSync(path.join(src, f)).mtimeMs) continue;
+    try { execFileSync('convert', [path.join(src, f), '-resize', '440x440>', '-quality', '74', out]); made++; }
+    catch { console.warn('  could not make thumbnail for', f, '(ImageMagick with WebP needed)'); }
+  }
+  if (made) console.log(`made ${made} thumbnail${made > 1 ? 's' : ''}`);
+}
+
 export function buildDataJs() {
+  buildThumbs();
   const data = {
     cards: rd('cards.json', []), imported: rd('imported.json', []),
     effects: rd('effects.json', {}), decks: rd('decks.json', []), tokens: rd('tokens.json', []),

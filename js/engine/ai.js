@@ -40,6 +40,7 @@ function quickResponse(s, pi) {
   if (pd.kind === 'priority') return { type: 'pass' };
   if (pd.kind === 'shieldTrigger') return acts.find(a => a.use) || acts[0];
   if (pd.kind === 'shieldify') return cheapestHand(s, pi, acts);
+  if (pd.kind === 'pick') return bestPick(s, pd, acts);
   if (pd.kind === 'mulligan') return { type: 'mulligan', uids: [] };
   return acts[0];
 }
@@ -59,6 +60,13 @@ function heuristicBlock(s, pi, acts) {
   const trade = options.find(o => power(s, o.u) === ap);
   if (trade && me.shields.length <= 2) return trade.a;
   return { type: 'noBlock' };
+}
+
+/** Keep every matching card; when returning one, take the most expensive. */
+function bestPick(s, pd, acts) {
+  if (pd.mode === 'keep') return acts.reduce((a, b) => (b.uids.length > a.uids.length ? b : a));
+  const cost = (uid) => { for (const p of s.players) { const c = p.graveyard.find(x => x.uid === uid); if (c) return getDef(c.id).cost; } return 0; };
+  return acts.reduce((a, b) => (cost(b.uids[0]) > cost(a.uids[0]) ? b : a));
 }
 
 function cheapestHand(s, pi, acts) {
@@ -109,6 +117,7 @@ export function chooseAction(s, pi) {
     return { type: 'mulligan', uids: hand.filter(h => h.cost >= 5).slice(0, 2).map(h => h.uid) };
   }
   if (pd && pd.kind === 'shieldify') return cheapestHand(s, pi, acts);
+  if (pd && pd.kind === 'pick') return bestPick(s, pd, acts);
 
   // Baseline = doing nothing (pass / no block / skip / end phase).
   const baseline = pd ? (pd.kind === 'priority' ? { type: 'pass' } : pd.kind === 'block' ? { type: 'noBlock' } : acts[0]) : null;

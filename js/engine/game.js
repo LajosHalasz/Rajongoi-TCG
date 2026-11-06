@@ -92,6 +92,7 @@ export function findInst(s, uid) {
     if (p.legend.uid === uid) return { inst: p.legend, zone: 'legend', player: p.idx };
   }
   for (const it of s.stack) if (it.inst.uid === uid) return { inst: it.inst, zone: 'stack', player: it.controller };
+  for (const p of s.players) { const r = (p.reveal || []).find(c => c.uid === uid); if (r) return { inst: r, zone: 'reveal', player: p.idx }; }
   return null;
 }
 
@@ -311,7 +312,10 @@ function playOptions(s, pi, mode) {
     if (seen.has(dupKey)) continue; // identical copies in hand -> one option
     seen.add(dupKey);
     for (const m of modeChoices(d)) {
-      acts.push(...withTargets(s, pi, d, { type: 'play', uid: inst.uid, ...(m ? { modes: m } : {}) }, k === 'spell', 'play', m));
+      const opts = withTargets(s, pi, d, { type: 'play', uid: inst.uid, ...(m ? { modes: m } : {}) }, k === 'spell', 'play', m);
+      // both Gear slots full: choose which Gear the new one replaces
+      if (k === 'gear' && p.gear.length >= RULES.GEAR_SLOTS) for (const o of opts) for (const g of p.gear) acts.push({ ...o, replace: g.uid });
+      else acts.push(...opts);
     }
   }
   return acts;
@@ -388,6 +392,8 @@ export function legalActions(s, pi) {
       }
       case 'shieldify':
         return me.hand.map(c => ({ type: 'shieldify', uid: c.uid }));
+      case 'pick':
+        return subsets(pd.choosable, pd.max).filter(u => u.length >= pd.min).map(uids => ({ type: 'pick', uids }));
     }
     return [];
   }
@@ -411,7 +417,7 @@ function blockers(s, defIdx) {
     !u.tapped && hasKeyword(s, u, 'Defensive') && !(c.target.kind === 'unit' && c.target.uid === u.uid));
 }
 
-const keyOf = (a) => JSON.stringify(a, Object.keys(a).sort()) + JSON.stringify(a.target ?? null) + JSON.stringify(a.uids ?? null) + JSON.stringify(a.modes ?? null);
+const keyOf = (a) => JSON.stringify(a, Object.keys(a).sort()) + JSON.stringify(a.target ?? null) + JSON.stringify(a.uids ?? null) + JSON.stringify(a.modes ?? null) + JSON.stringify(a.replace ?? null);
 export function isLegal(s, pi, a) {
   const k = keyOf(normalizeAction(a));
   return legalActions(s, pi).some(x => keyOf(normalizeAction(x)) === k);
@@ -436,6 +442,7 @@ export function step(s, a) {
     case 'pass': doPass(s, pd); break;
     case 'shieldTrigger': doShieldTrigger(s, pi, a); break;
     case 'shieldify': doShieldify(s, pi, a); break;
+    case 'pick': doPick(s, pi, a); break;
     case 'endPhase': doEndPhase(s); break;
   }
   settle(s);
@@ -466,7 +473,7 @@ function settle(s) {
     return;
   }
 }
-const isQueueKind = (pd) => pd.kind === 'shieldTrigger' || pd.kind === 'shieldify';
+const isQueueKind = (pd) => pd.kind === 'shieldTrigger' || pd.kind === 'shieldify' || pd.kind === 'pick';
 function takeSuspended(s) { const x = s.suspended; s.suspended = null; return x; }
 function nextFromQueue(s) { s.pending = s.queue.length ? s.queue[0] : takeSuspended(s); }
 
@@ -593,13 +600,14 @@ function doPlay(s, pi, a) {
   const k = kindOf(d);
   if (k === 'spell' && s.pending && s.pending.kind === 'priority') {
     s.stack.push({ inst, controller: pi, target: a.target ?? null, modes: a.modes ?? null });
+    notePlay(s, pi, inst.id, 'play');
     log(s, `${p.name} casts ${d.name}${a.target ? ' → ' + nm(findInst(s, a.target).inst) : ''} (on the stack).`);
     fireAll(s, pi, 'spellCast');
     s.pending.player = other(pi);
     s.pending.passes = 0;
     return;
   }
-  putIntoPlay(s, pi, inst, a.target, a.modes);
+  putIntoPlay(s, pi, inst, a.target, a.modes, a.replace);
 }
 
 function resolveModes(s, pi, d, modes) {
@@ -621,9 +629,15 @@ function runTwiceIfDoubled(s, pi, src, effects, target) {
 }
 
 /** Resolve a card entering play (normal play, or a free Shield Trigger). */
-function putIntoPlay(s, pi, inst, target, modes = null) {
+function notePlay(s, pi, id, via) {
+  s.plays = [...(s.plays || []), { player: pi, id, via, turn: s.turn, n: (s.playCount = (s.playCount || 0) + 1) }].slice(-12);
+}
+
+function putIntoPlay(s, pi, inst, target, modes = null, replace = null) {
   const p = s.players[pi];
   const d = getDef(inst.id);
+  notePlay(s, pi, inst.id, inst.viaTrigger ? 'shieldTrigger' : 'play');
+  delete inst.viaTrigger;
   const k = kindOf(d);
   modes = resolveModes(s, pi, d, modes);
   inst.tapped = false; inst.mods = [];
@@ -638,9 +652,10 @@ function putIntoPlay(s, pi, inst, target, modes = null) {
     for (const src of [p.legend, ...p.gear, ...p.battle]) if (src !== inst) fire(s, pi, src, 'unitPlayed', inst);
   } else if (k === 'gear') {
     if (p.gear.length >= RULES.GEAR_SLOTS) {
-      const old = p.gear.shift();
+      const i = Math.max(0, p.gear.findIndex(g => g.uid === replace)); // default: the oldest
+      const [old] = p.gear.splice(i, 1);
       p.graveyard.push(old);
-      log(s, `${nm(old)} expires (no free Gear slot).`);
+      log(s, `${nm(old)} is replaced and goes to the Graveyard.`);
     }
     p.gear.push(inst);
     log(s, `${p.name} equips ${d.name}.`);
@@ -857,21 +872,20 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       }
       break;
     case 'drawKeepTribe': {
+      // reveal the top cards; the player picks which matching ones to keep
       const seen = me.deck.splice(0, n);
-      const keep = seen.filter(c => hasTribe(getDef(c.id), e.tribe));
-      me.hand.push(...keep);
-      me.deck.push(...seen.filter(c => !keep.includes(c)));
-      shuffle(s, me.deck);
-      log(s, `${me.name} reveals ${seen.length} cards and keeps ${keep.length} ${e.tribe} card${keep.length === 1 ? '' : 's'}${keep.length ? ': ' + keep.map(nm).join(', ') : ''}.`);
+      me.reveal = [...(me.reveal || []), ...seen];
+      log(s, `${me.name} reveals ${seen.map(nm).join(', ') || 'nothing'}.`);
+      const choosable = seen.filter(c => hasTribe(getDef(c.id), e.tribe)).map(c => c.uid);
+      s.queue.push({ kind: 'pick', player: pi, mode: 'keep', tribe: e.tribe, uids: seen.map(c => c.uid), choosable, min: 0, max: choosable.length,
+        title: `Keep ${e.tribe} cards`, source: source?.id });
       break;
     }
     case 'recoverTribe': {
-      const pool = me.graveyard.filter(c => (e.tribes || []).some(t => hasTribe(getDef(c.id), t)))
-        .sort((a, b) => getDef(b.id).cost - getDef(a.id).cost);
+      const pool = me.graveyard.filter(c => (e.tribes || []).some(t => hasTribe(getDef(c.id), t)));
       if (!pool.length) { log(s, 'Nothing to return.'); break; }
-      me.graveyard.splice(me.graveyard.indexOf(pool[0]), 1);
-      me.hand.push(pool[0]);
-      log(s, `${me.name} returns ${nm(pool[0])} from the Graveyard to hand.`);
+      s.queue.push({ kind: 'pick', player: pi, mode: 'recover', uids: pool.map(c => c.uid), choosable: pool.map(c => c.uid), min: 1, max: 1,
+        title: `Return a ${(e.tribes || []).join(' or ')} card to your hand`, source: source?.id });
       break;
     }
     case 'lastPlayBuff':
@@ -946,7 +960,32 @@ function doShieldTrigger(s, pi, a) {
     if (inst) {
       p.hand.splice(p.hand.indexOf(inst), 1);
       log(s, `Shield Trigger! ${p.name} plays ${nm(inst)} for free.`);
+      inst.viaTrigger = true;
       putIntoPlay(s, pi, inst, a.target, a.modes);
+    }
+  }
+  nextFromQueue(s);
+}
+
+function doPick(s, pi, a) {
+  const q = s.queue.shift();
+  const p = s.players[pi];
+  const picked = new Set(a.uids);
+  if (q.mode === 'keep') {
+    const seen = q.uids.map(uid => p.reveal.find(c => c.uid === uid)).filter(Boolean);
+    p.reveal = p.reveal.filter(c => !seen.includes(c));
+    const keep = seen.filter(c => picked.has(c.uid));
+    p.hand.push(...keep);
+    p.deck.push(...seen.filter(c => !picked.has(c.uid)));
+    shuffle(s, p.deck);
+    log(s, `${p.name} keeps ${keep.length ? keep.map(nm).join(', ') : 'nothing'} and shuffles the rest back.`);
+  } else if (q.mode === 'recover') {
+    for (const uid of a.uids) {
+      const c = p.graveyard.find(x => x.uid === uid);
+      if (!c) continue;
+      p.graveyard.splice(p.graveyard.indexOf(c), 1);
+      p.hand.push(c);
+      log(s, `${p.name} returns ${nm(c)} from the Graveyard to hand.`);
     }
   }
   nextFromQueue(s);

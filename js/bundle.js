@@ -425,12 +425,14 @@ ${def.text}`;
   }
   var isFoil = (def) => ["champion", "legend"].includes(def.type) || rarityOf(def) === "epic" || !!def.fullArtRune;
   var isRareArt = (def) => !!def.image && rarityOf(def) === "rare";
-  function cardImg(def) {
+  var thumbOf = (src) => String(src).replace(/^data\/img\/([^/]+)\.jpe?g$/i, "data/img/thumb/$1.webp");
+  function cardImg(def, size) {
+    const src = size === "lg" ? def.image : thumbOf(def.image);
     const c = def.imageCrop;
-    if (!c || !c.width || !c.height) return `<img class="card-img" src="${esc(def.image)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">`;
+    if (!c || !c.width || !c.height) return `<img class="card-img" src="${esc(src)}" alt="" decoding="async" style="width:100%;height:100%;object-fit:cover">`;
     const w = 1e4 / c.width, h = 1e4 / c.height;
     const l = -c.x / c.width * 100, t = -c.y / c.height * 100;
-    return `<img class="card-img" src="${esc(def.image)}" alt="" loading="lazy" style="width:${w.toFixed(2)}%;height:${h.toFixed(2)}%;left:${l.toFixed(2)}%;top:${t.toFixed(2)}%">`;
+    return `<img class="card-img" src="${esc(src)}" alt="" decoding="async" style="width:${w.toFixed(2)}%;height:${h.toFixed(2)}%;left:${l.toFixed(2)}%;top:${t.toFixed(2)}%">`;
   }
   function placeholderArt(def) {
     const initials = def.name.replace(/[^A-Za-zÀ-ž ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
@@ -462,7 +464,7 @@ ${def.text}`;
       opts.classes || ""
     ].join(" ");
     return `<div class="${cls}" data-cid="${esc(def.id)}" style="--c1:${colorHex(def)};--c2:${colorHex(def)}">
-    <div class="art art-full">${def.image ? cardImg(def) : placeholderArt(def)}</div>
+    <div class="art art-full">${def.image ? cardImg(def, opts.size) : placeholderArt(def)}</div>
     <div class="frame"></div>
     <div class="typeline"><span class="domains"><span class="domain" style="background:${colorHex(def)}"></span></span><span class="type-badge">Rune</span></div>
     <div class="rune-name">${esc(def.name)}</div>
@@ -495,8 +497,8 @@ ${def.text}`;
     const data = `data-cid="${esc(def.id)}"${opts.uid ? ` data-uid="${esc(opts.uid)}"` : ""}`;
     const style = `--domain:${colorHex(def)};--c1:${colorHex(def)};--c2:${color2(def)};--type:${TYPE_INFO[def.type]?.hex || "#555"}`;
     const tribes = (def.tribes || []).slice(0, 2);
-    const art = def.image ? `<div class="art ${full || rare ? "art-full" : "art-window"}">${cardImg(def)}</div>` : `<div class="art art-window">${placeholderArt(def)}</div>`;
-    const cost = legend || def.type === "rune" ? "" : `<div class="cost ${prov.includes("cost") ? "prov" : ""}" title="${prov.includes("cost") ? "Provisional cost" : "Cost"}"><span>${opts.cost ?? def.cost}</span></div>`;
+    const art = def.image ? `<div class="art ${full || rare ? "art-full" : "art-window"}">${cardImg(def, opts.size)}</div>` : `<div class="art art-window">${placeholderArt(def)}</div>`;
+    const cost = legend || def.type === "rune" || def.type === "token" ? "" : `<div class="cost ${prov.includes("cost") ? "prov" : ""}" title="${prov.includes("cost") ? "Provisional cost" : "Cost"}"><span>${opts.cost ?? def.cost}</span></div>`;
     const domainsTopLeft = full && legend ? `<div class="fa-domains">${def.colors.map((c) => `<span style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join("")}</div>` : "";
     const mightHtml = showMight ? `<div class="might ${mightCls} ${prov.includes("might") ? "prov" : ""}"><span class="might-ico"><i></i></span><span class="might-val">${might}</span></div>` : "";
     const typeline = full ? `<div class="typeline gold"><span>${[typeLabel(def), ...tribes].map(esc).join(" <i>\u25C6</i> ")}</span></div>` : `<div class="typeline"><span class="domains">${def.colors.map((c) => `<span class="domain" style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join("")}</span><span class="type-badge">${esc(typeLabel(def))}</span>${tribes.map((t) => `<span class="tribe">${esc(t)}</span>`).join("")}</div>`;
@@ -553,17 +555,34 @@ ${def.text}`;
         name.style.fontSize = ns + "px";
       }
     }
-    card.dataset.fitted = card.getBoundingClientRect().width.toFixed(0);
+    card.dataset.fitted = String(card.offsetWidth);
   }
   function fitCards(root = document, force = false) {
     for (const card of root.querySelectorAll(".card")) {
-      const w = card.getBoundingClientRect().width.toFixed(0);
-      if (!force && card.dataset.fitted === w) continue;
+      if (!force && card.dataset.fitted === String(card.offsetWidth)) continue;
+      if (io && !visible.has(card)) continue;
       fitCard(card);
     }
   }
+  var io = null;
+  var visible = /* @__PURE__ */ new WeakSet();
   var scheduled = false;
   function installAutoFit() {
+    if ("IntersectionObserver" in window) {
+      io = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            visible.add(e.target);
+            if (e.target.dataset.fitted !== String(e.target.offsetWidth)) fitCard(e.target);
+          } else visible.delete(e.target);
+        }
+      }, { rootMargin: "300px 0px" });
+    }
+    const watch = (root) => {
+      if (!io) return;
+      if (root.classList?.contains("card")) io.observe(root);
+      root.querySelectorAll?.(".card").forEach((c) => io.observe(c));
+    };
     const run = () => {
       scheduled = false;
       fitCards();
@@ -574,10 +593,13 @@ ${def.text}`;
         requestAnimationFrame(run);
       }
     };
-    new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+    new MutationObserver((muts) => {
+      for (const m of muts) m.addedNodes.forEach((n) => n.nodeType === 1 && watch(n));
+      schedule();
+    }).observe(document.body, { childList: true, subtree: true });
     window.addEventListener("resize", schedule);
-    document.addEventListener("load", schedule, true);
     if (document.fonts?.ready) document.fonts.ready.then(() => fitCards(document, true));
+    watch(document.body);
     schedule();
   }
 
@@ -975,6 +997,10 @@ ${def.text}`;
       if (p.legend.uid === uid) return { inst: p.legend, zone: "legend", player: p.idx };
     }
     for (const it of s.stack) if (it.inst.uid === uid) return { inst: it.inst, zone: "stack", player: it.controller };
+    for (const p of s.players) {
+      const r = (p.reveal || []).find((c) => c.uid === uid);
+      if (r) return { inst: r, zone: "reveal", player: p.idx };
+    }
     return null;
   }
   function hasKeyword(s, inst, kw) {
@@ -1185,7 +1211,9 @@ ${def.text}`;
       if (seen.has(dupKey)) continue;
       seen.add(dupKey);
       for (const m of modeChoices(d)) {
-        acts.push(...withTargets(s, pi, d, { type: "play", uid: inst.uid, ...m ? { modes: m } : {} }, k === "spell", "play", m));
+        const opts = withTargets(s, pi, d, { type: "play", uid: inst.uid, ...m ? { modes: m } : {} }, k === "spell", "play", m);
+        if (k === "gear" && p.gear.length >= RULES.GEAR_SLOTS) for (const o of opts) for (const g of p.gear) acts.push({ ...o, replace: g.uid });
+        else acts.push(...opts);
       }
     }
     return acts;
@@ -1258,6 +1286,8 @@ ${def.text}`;
         }
         case "shieldify":
           return me.hand.map((c) => ({ type: "shieldify", uid: c.uid }));
+        case "pick":
+          return subsets(pd.choosable, pd.max).filter((u) => u.length >= pd.min).map((uids) => ({ type: "pick", uids }));
       }
       return [];
     }
@@ -1278,7 +1308,7 @@ ${def.text}`;
     if (att && hasKeyword(s, att, "Unstoppable")) return [];
     return s.players[defIdx].battle.filter((u) => !u.tapped && hasKeyword(s, u, "Defensive") && !(c.target.kind === "unit" && c.target.uid === u.uid));
   }
-  var keyOf = (a) => JSON.stringify(a, Object.keys(a).sort()) + JSON.stringify(a.target ?? null) + JSON.stringify(a.uids ?? null) + JSON.stringify(a.modes ?? null);
+  var keyOf = (a) => JSON.stringify(a, Object.keys(a).sort()) + JSON.stringify(a.target ?? null) + JSON.stringify(a.uids ?? null) + JSON.stringify(a.modes ?? null) + JSON.stringify(a.replace ?? null);
   function isLegal(s, pi, a) {
     const k = keyOf(normalizeAction(a));
     return legalActions(s, pi).some((x) => keyOf(normalizeAction(x)) === k);
@@ -1318,6 +1348,9 @@ ${def.text}`;
       case "shieldify":
         doShieldify(s, pi, a);
         break;
+      case "pick":
+        doPick(s, pi, a);
+        break;
       case "endPhase":
         doEndPhase(s);
         break;
@@ -1351,7 +1384,7 @@ ${def.text}`;
       return;
     }
   }
-  var isQueueKind = (pd) => pd.kind === "shieldTrigger" || pd.kind === "shieldify";
+  var isQueueKind = (pd) => pd.kind === "shieldTrigger" || pd.kind === "shieldify" || pd.kind === "pick";
   function takeSuspended(s) {
     const x = s.suspended;
     s.suspended = null;
@@ -1504,13 +1537,14 @@ ${def.text}`;
     const k = kindOf(d);
     if (k === "spell" && s.pending && s.pending.kind === "priority") {
       s.stack.push({ inst, controller: pi, target: a.target ?? null, modes: a.modes ?? null });
+      notePlay(s, pi, inst.id, "play");
       log(s, `${p.name} casts ${d.name}${a.target ? " \u2192 " + nm(findInst(s, a.target).inst) : ""} (on the stack).`);
       fireAll(s, pi, "spellCast");
       s.pending.player = other(pi);
       s.pending.passes = 0;
       return;
     }
-    putIntoPlay(s, pi, inst, a.target, a.modes);
+    putIntoPlay(s, pi, inst, a.target, a.modes, a.replace);
   }
   function resolveModes(s, pi, d, modes) {
     if (d.opponentChooses && d.modes?.length) {
@@ -1530,9 +1564,14 @@ ${def.text}`;
     }
     for (let i = 0; i < times; i++) runEffects(s, pi, src, effects, target);
   }
-  function putIntoPlay(s, pi, inst, target, modes = null) {
+  function notePlay(s, pi, id, via) {
+    s.plays = [...s.plays || [], { player: pi, id, via, turn: s.turn, n: s.playCount = (s.playCount || 0) + 1 }].slice(-12);
+  }
+  function putIntoPlay(s, pi, inst, target, modes = null, replace = null) {
     const p = s.players[pi];
     const d = getDef(inst.id);
+    notePlay(s, pi, inst.id, inst.viaTrigger ? "shieldTrigger" : "play");
+    delete inst.viaTrigger;
     const k = kindOf(d);
     modes = resolveModes(s, pi, d, modes);
     inst.tapped = false;
@@ -1548,9 +1587,10 @@ ${def.text}`;
       for (const src of [p.legend, ...p.gear, ...p.battle]) if (src !== inst) fire(s, pi, src, "unitPlayed", inst);
     } else if (k === "gear") {
       if (p.gear.length >= RULES.GEAR_SLOTS) {
-        const old = p.gear.shift();
+        const i = Math.max(0, p.gear.findIndex((g) => g.uid === replace));
+        const [old] = p.gear.splice(i, 1);
         p.graveyard.push(old);
-        log(s, `${nm(old)} expires (no free Gear slot).`);
+        log(s, `${nm(old)} is replaced and goes to the Graveyard.`);
       }
       p.gear.push(inst);
       log(s, `${p.name} equips ${d.name}.`);
@@ -1808,22 +1848,40 @@ ${def.text}`;
         break;
       case "drawKeepTribe": {
         const seen = me.deck.splice(0, n);
-        const keep = seen.filter((c) => hasTribe(getDef(c.id), e.tribe));
-        me.hand.push(...keep);
-        me.deck.push(...seen.filter((c) => !keep.includes(c)));
-        shuffle(s, me.deck);
-        log(s, `${me.name} reveals ${seen.length} cards and keeps ${keep.length} ${e.tribe} card${keep.length === 1 ? "" : "s"}${keep.length ? ": " + keep.map(nm).join(", ") : ""}.`);
+        me.reveal = [...me.reveal || [], ...seen];
+        log(s, `${me.name} reveals ${seen.map(nm).join(", ") || "nothing"}.`);
+        const choosable = seen.filter((c) => hasTribe(getDef(c.id), e.tribe)).map((c) => c.uid);
+        s.queue.push({
+          kind: "pick",
+          player: pi,
+          mode: "keep",
+          tribe: e.tribe,
+          uids: seen.map((c) => c.uid),
+          choosable,
+          min: 0,
+          max: choosable.length,
+          title: `Keep ${e.tribe} cards`,
+          source: source?.id
+        });
         break;
       }
       case "recoverTribe": {
-        const pool = me.graveyard.filter((c) => (e.tribes || []).some((t) => hasTribe(getDef(c.id), t))).sort((a, b) => getDef(b.id).cost - getDef(a.id).cost);
+        const pool = me.graveyard.filter((c) => (e.tribes || []).some((t) => hasTribe(getDef(c.id), t)));
         if (!pool.length) {
           log(s, "Nothing to return.");
           break;
         }
-        me.graveyard.splice(me.graveyard.indexOf(pool[0]), 1);
-        me.hand.push(pool[0]);
-        log(s, `${me.name} returns ${nm(pool[0])} from the Graveyard to hand.`);
+        s.queue.push({
+          kind: "pick",
+          player: pi,
+          mode: "recover",
+          uids: pool.map((c) => c.uid),
+          choosable: pool.map((c) => c.uid),
+          min: 1,
+          max: 1,
+          title: `Return a ${(e.tribes || []).join(" or ")} card to your hand`,
+          source: source?.id
+        });
         break;
       }
       case "lastPlayBuff":
@@ -1909,7 +1967,31 @@ ${def.text}`;
       if (inst) {
         p.hand.splice(p.hand.indexOf(inst), 1);
         log(s, `Shield Trigger! ${p.name} plays ${nm(inst)} for free.`);
+        inst.viaTrigger = true;
         putIntoPlay(s, pi, inst, a.target, a.modes);
+      }
+    }
+    nextFromQueue(s);
+  }
+  function doPick(s, pi, a) {
+    const q = s.queue.shift();
+    const p = s.players[pi];
+    const picked = new Set(a.uids);
+    if (q.mode === "keep") {
+      const seen = q.uids.map((uid) => p.reveal.find((c) => c.uid === uid)).filter(Boolean);
+      p.reveal = p.reveal.filter((c) => !seen.includes(c));
+      const keep = seen.filter((c) => picked.has(c.uid));
+      p.hand.push(...keep);
+      p.deck.push(...seen.filter((c) => !picked.has(c.uid)));
+      shuffle(s, p.deck);
+      log(s, `${p.name} keeps ${keep.length ? keep.map(nm).join(", ") : "nothing"} and shuffles the rest back.`);
+    } else if (q.mode === "recover") {
+      for (const uid of a.uids) {
+        const c = p.graveyard.find((x) => x.uid === uid);
+        if (!c) continue;
+        p.graveyard.splice(p.graveyard.indexOf(c), 1);
+        p.hand.push(c);
+        log(s, `${p.name} returns ${nm(c)} from the Graveyard to hand.`);
       }
     }
     nextFromQueue(s);
@@ -2043,6 +2125,7 @@ ${def.text}`;
     if (pd.kind === "priority") return { type: "pass" };
     if (pd.kind === "shieldTrigger") return acts.find((a) => a.use) || acts[0];
     if (pd.kind === "shieldify") return cheapestHand(s, pi, acts);
+    if (pd.kind === "pick") return bestPick(s, pd, acts);
     if (pd.kind === "mulligan") return { type: "mulligan", uids: [] };
     return acts[0];
   }
@@ -2061,6 +2144,17 @@ ${def.text}`;
     const trade = options.find((o) => power(s, o.u) === ap);
     if (trade && me.shields.length <= 2) return trade.a;
     return { type: "noBlock" };
+  }
+  function bestPick(s, pd, acts) {
+    if (pd.mode === "keep") return acts.reduce((a, b) => b.uids.length > a.uids.length ? b : a);
+    const cost = (uid) => {
+      for (const p of s.players) {
+        const c = p.graveyard.find((x) => x.uid === uid);
+        if (c) return getDef(c.id).cost;
+      }
+      return 0;
+    };
+    return acts.reduce((a, b) => cost(b.uids[0]) > cost(a.uids[0]) ? b : a);
   }
   function cheapestHand(s, pi, acts) {
     const p = s.players[pi];
@@ -2111,6 +2205,7 @@ ${def.text}`;
       return { type: "mulligan", uids: hand.filter((h) => h.cost >= 5).slice(0, 2).map((h) => h.uid) };
     }
     if (pd && pd.kind === "shieldify") return cheapestHand(s, pi, acts);
+    if (pd && pd.kind === "pick") return bestPick(s, pd, acts);
     const baseline = pd ? pd.kind === "priority" ? { type: "pass" } : pd.kind === "block" ? { type: "noBlock" } : acts[0] : null;
     const baseState = baseline ? simulate(s, pi, baseline) : s;
     let bestA = baseline || { type: "endPhase" };
@@ -2429,6 +2524,10 @@ ${def.text}`;
   // js/ui/play.js
   var HUMAN = 0;
   var AI = 1;
+  var ICON = {
+    skull: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C7 2 3.5 5.6 3.5 10.2c0 2.6 1.1 4.6 2.9 5.9V19c0 .8.7 1.5 1.5 1.5H9v-2h1.5v2h3v-2H15v2h1.1c.8 0 1.5-.7 1.5-1.5v-2.9c1.8-1.3 2.9-3.3 2.9-5.9C20.5 5.6 17 2 12 2zM8.6 13.6a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2zm6.8 0a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2zM12 14.2l1.3 2.3h-2.6z"/></svg>',
+    hammer: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M3.5 7.3 9.8 1l3.6 3.6-1.5 1.5 1.2 1.2 1.5-1.5 2.5 2.5-4.2 4.2-2.5-2.5 1.4-1.4-1.2-1.2-1.5 1.5zM12.6 13.1l2.8-2.8 7.4 7.4a2 2 0 0 1-2.8 2.8z"/></svg>'
+  };
   var AI_DELAY = 750;
   var G = null;
   function stopGame() {
@@ -2532,7 +2631,13 @@ ${def.text}`;
     const me = s.players[HUMAN], op = s.players[AI];
     const prev = app2.querySelector(".log");
     const keepScroll = prev ? prev.scrollHeight - prev.scrollTop - prev.clientHeight < 30 : true;
+    const oppPlays = (s.plays || []).filter((x) => x.player === AI).slice(-4).reverse();
+    const played = `<aside class="played-panel"><div class="pp-title">AI played</div>
+    ${oppPlays.map((x, i) => `<div class="pp-card ${i === 0 ? "newest" : ""} ${x.via === "shieldTrigger" ? "via-trigger" : ""}" data-cid="${x.id}">
+      ${x.via === "shieldTrigger" ? '<div class="pp-tag">SHIELD TRIGGER</div>' : ""}${cardHtml(getDef(x.id), { size: "md" })}
+      <div class="pp-turn">Turn ${x.turn}</div></div>`).join("") || '<p class="muted">Nothing yet.</p>'}</aside>`;
     app2.innerHTML = `<div class="game">
+    ${played}
     <section class="table">
       <div class="hand-row opp">${op.hand.map(() => cardBackHtml({ size: "sm" })).join("")}</div>
       ${playerRow(s, op, false, hl)}
@@ -2548,6 +2653,7 @@ ${def.text}`;
     </aside>
   </div>
   ${triggerOverlay(s, legal, ui)}
+  ${pickOverlay(s, legal, ui)}
   ${winnerOverlay(s)}`;
     const log2 = app2.querySelector(".log");
     if (keepScroll) log2.scrollTop = log2.scrollHeight;
@@ -2558,6 +2664,25 @@ ${def.text}`;
     const fresh = n > 0 ? s.log.slice(-n) : [];
     G.logLen = s.logTotal || 0;
     fresh.slice(-4).forEach((l, i) => setTimeout(() => soundForLog(l, s.players[HUMAN].name), i * 90));
+    let breaks = 0;
+    for (const l of fresh) {
+      const b = l.match(/^(.+?)'s shield breaks/);
+      if (b) {
+        const who = s.players.find((p) => p.name === b[1]);
+        if (who) setTimeout(() => shieldShatter(app2, who.idx), 60 + breaks++ * 260);
+      }
+      const t = l.match(/^Shield Trigger! (.+?) plays (.+?) for free\./);
+      if (t) {
+        const who = s.players.find((p) => p.name === t[1]);
+        if (who) setTimeout(() => shieldTriggerFx(app2, who.idx, t[2]), 200 + breaks * 260);
+      }
+    }
+    if (whoActs(s) === HUMAN && s.pending?.kind === "priority" && legal.length === 1 && legal[0].type === "pass" && !G.autoPass) {
+      G.autoPass = setTimeout(() => {
+        G.autoPass = null;
+        if (G && s.pending?.kind === "priority" && whoActs(s) === HUMAN) act({ type: "pass" });
+      }, 450);
+    }
     for (const l of fresh) {
       const m = l.match(/^(.+?) (casts|equips) (.+?)(?: →| \(on the stack\)|\.)/);
       if (!m) continue;
@@ -2582,6 +2707,7 @@ ${def.text}`;
           if (a.target.kind === "unit") h.targets.add(a.target.uid);
           else h.zoneTargets.add(a.target.kind);
         } else if (a.target) h.targets.add(a.target);
+        if (a.replace) h.targets.add(a.replace);
       }
       return h;
     }
@@ -2590,6 +2716,7 @@ ${def.text}`;
     else if (pd?.kind !== "mulligan") {
       for (const a of legal) {
         if (a.type === "play" || a.type === "activate") h.playable.add(a.uid);
+        if (a.type === "activate") (h.taps || (h.taps = /* @__PURE__ */ new Set())).add(a.uid);
         if (a.type === "attack") h.attackers.add(a.uid);
       }
     }
@@ -2603,7 +2730,8 @@ ${def.text}`;
     const mid = (n - 1) / 2;
     const step2 = Math.min(7, 44 / Math.max(n, 1));
     const off = i - mid;
-    return `--fr:${(off * step2).toFixed(2)}deg;--fy:${(off * off * Math.min(4.5, 26 / n)).toFixed(1)}px;--fz:${i + 1}`;
+    const k = Math.min(4.5, 26 / n);
+    return `--fr:${(off * step2).toFixed(2)}deg;--fy:${(off * off * k - mid * mid * k).toFixed(1)}px;--fz:${i + 1}`;
   }
   function unitCard(s, inst, hl, opts = {}) {
     const d = getDef(inst.id);
@@ -2617,8 +2745,16 @@ ${def.text}`;
     if (hl.attacking === inst.uid || hl.defending === inst.uid) cls.push("attacking");
     const pw = onBoard ? power(s, inst) : void 0;
     const cost = opts.inHand && inst.owner === HUMAN ? effectiveCost(s, inst.owner, d) : void 0;
-    const sick = onBoard && !canAttackNow(s, inst) && !inst.tapped && s.active === inst.owner ? '<div class="badge-sick">zZ</div>' : "";
-    const uses = inst.uses != null && !opts.inHand ? `<div class="badge-sick" style="top:auto;bottom:30%">${inst.uses} left</div>` : "";
+    const icons = [];
+    if (onBoard) {
+      if (hasKeyword(s, inst, "Deathtouch")) icons.push(`<i class="ui-ico ico-death" title="Deathtouch">${ICON.skull}</i>`);
+      if (hasKeyword(s, inst, "Party Breaker")) icons.push(`<i class="ui-ico ico-party" title="Party Breaker: can attack untapped Units">${ICON.hammer}</i>`);
+      if (!canAttackNow(s, inst) && !inst.tapped && s.active === inst.owner) icons.push('<i class="ui-ico ico-sick" title="Summoning sickness">zZz</i>');
+      if (hasKeyword(s, inst, "Defensive")) cls.push("is-def");
+    }
+    const iconCol = icons.length ? `<div class="ui-icons">${icons.join("")}</div>` : "";
+    const tapHint = hl.taps?.has(inst.uid) ? '<div class="tap-hint" title="Tap ability ready">\u21BB TAP</div>' : "";
+    const uses = inst.uses != null && !opts.inHand ? `<div class="badge-uses">${inst.uses} left</div>` : "";
     return cardHtml(d, {
       size: "sm",
       mini: !(opts.inHand && !opts.slot),
@@ -2627,7 +2763,7 @@ ${def.text}`;
       power: pw,
       cost,
       classes: cls.join(" "),
-      badges: sick + uses
+      badges: iconCol + tapHint + uses
     });
   }
   function playerRow(s, p, mine, hl) {
@@ -2651,8 +2787,8 @@ ${def.text}`;
     ${zone("Champion", p.championSlot ? unitCard(s, p.championSlot, hl, { slot: true, inHand: true }) : "", "", "played")}
     ${zone("Signature", p.signatureSlot ? unitCard(s, p.signatureSlot, hl, { slot: true, inHand: true }) : "", "", "played")}
     ${zone(`Gear ${p.gear.length}/${RULES.GEAR_SLOTS}`, p.gear.map((g) => unitCard(s, g, hl, { slot: true })).join(""), "", "empty")}
-    ${zone("Shields", shields, `data-zone="${mine ? "" : "shield"}"`, "").replace('class="zone', `class="zone zone-target ${shieldsTarget ? "targetable" : ""}`)}
-    ${zone("Deck", `<div class="stack-pile">${p.deck.length ? cardBackHtml({ size: "sm" }) : ""}<span class="count">${p.deck.length}</span></div>`)}
+    ${zone("Shields", shields, `data-zone="${mine ? "" : "shield"}" data-shields="${p.idx}"`, "").replace('class="zone', `class="zone zone-target ${shieldsTarget ? "targetable" : ""}`)}
+    ${zone("Deck", `${p.deck.length ? cardBackHtml({ size: "sm" }) : ""}<div class="stack-pile"><span class="count" style="position:static">${p.deck.length}</span></div>`)}
     ${zone("Graveyard", `<div class="stack-pile" data-grave="${p.idx}" style="cursor:pointer">${gy ? cardHtml(getDef(gy.id), { size: "sm", mini: true }) : `<div style="width:var(--cw)"></div>`}<span class="count">${p.graveyard.length}</span></div>`)}
   </div>`;
   }
@@ -2691,8 +2827,10 @@ ${def.text}`;
           seen.add(key);
           buttons += `<button class="primary" data-mode="${key}">${esc(a.modes.map((i) => d.modes[i].name).join(" + "))}</button>`;
         }
+      } else if (ui.sel.options.some((a) => a.replace)) {
+        prompt2 = `Both Gear slots are full: click the Gear that <b>${esc(d.name)}</b> replaces (it goes to the Graveyard).`;
       } else prompt2 = `Choose a target for <b>${esc(d.name)}</b>.`;
-      if (ui.sel.kind !== "mode" && ui.sel.options.some((a) => !a.target && a.type !== "attack")) buttons += btn("no-target", "Play without target");
+      if (ui.sel.kind !== "mode" && ui.sel.options.some((a) => !a.target && !a.replace && a.type !== "attack")) buttons += btn("no-target", "Play without target");
       buttons += btn("cancel", "Cancel", "ghost");
     } else if (pd?.kind === "mulligan") {
       prompt2 = `Mulligan: click up to ${RULES.MULLIGAN_MAX} cards to put on the bottom of your deck.`;
@@ -2707,6 +2845,8 @@ ${def.text}`;
       prompt2 = `<b>Shieldify</b>: choose a card from your hand to put into your Shield Zone (${pd.remaining} left).`;
     } else if (pd?.kind === "shieldTrigger") {
       prompt2 = "Shield Trigger!";
+    } else if (pd?.kind === "pick") {
+      prompt2 = "Make your choice.";
     } else if (s.phase === "play") {
       prompt2 = "Play phase \u2014 click a glowing card to play it (at least 1 rune must match its color).";
       buttons = btn("end", "To Combat \u2192", "primary");
@@ -2731,6 +2871,63 @@ ${def.text}`;
     <div class="row" style="justify-content:center">
       ${canUse ? '<button class="primary" data-btn="trig-use">Use it</button>' : '<span class="muted">No legal target.</span>'}
       <button data-btn="trig-skip">Keep in hand</button></div></div></div>`;
+  }
+  function pickOverlay(s, legal, ui) {
+    const pd = s.pending;
+    if (!pd || pd.kind !== "pick" || pd.player !== HUMAN || s.winner != null) return "";
+    const me = s.players[HUMAN];
+    if (!ui.pick || ui.pick.key !== pd.uids.join()) {
+      ui.pick = { key: pd.uids.join(), sel: new Set(pd.min === 1 && pd.choosable.length === 1 ? pd.choosable : []) };
+    }
+    const zoneCards = pd.mode === "keep" ? me.reveal : me.graveyard;
+    const cards = pd.uids.map((uid) => zoneCards.find((c) => c.uid === uid)).filter(Boolean);
+    const ok = ui.pick.sel.size >= pd.min && ui.pick.sel.size <= pd.max;
+    const src = pd.source ? getDef(pd.source).name : "";
+    const hint = pd.mode === "keep" ? pd.choosable.length ? `Click the <b>${esc(pd.tribe)}</b> cards you want to keep. The rest are shuffled back into your deck.` : `No ${esc(pd.tribe)} card among them; all go back into your deck.` : "Choose the card to return to your hand.";
+    return `<div class="overlay"><div class="box pick-box">
+    <h2>${esc(src || pd.title)}</h2><p>${hint}</p>
+    <div class="pick-row">${cards.map((c) => {
+      const can = pd.choosable.includes(c.uid);
+      return `<div class="pick-card ${can ? "can" : "cannot"} ${ui.pick.sel.has(c.uid) ? "on" : ""}" ${can ? `data-pick="${c.uid}"` : ""}>${cardHtml(getDef(c.id), { size: "md" })}</div>`;
+    }).join("")}</div>
+    <div class="row" style="justify-content:center;margin-top:12px">
+      <button class="primary" data-btn="pick-ok" ${ok ? "" : "disabled"}>${pd.mode === "keep" ? `Keep ${ui.pick.sel.size} card${ui.pick.sel.size === 1 ? "" : "s"}` : "Confirm choice"}</button></div>
+  </div></div>`;
+  }
+  function shieldShatter(app2, pi) {
+    const zone = app2.querySelector(`[data-shields="${pi}"]`);
+    if (!zone) return;
+    const r = zone.getBoundingClientRect();
+    const fx = document.createElement("div");
+    fx.className = "shatter-fx";
+    fx.style.left = r.left + r.width * 0.45 + "px";
+    fx.style.top = r.top + r.height / 2 + "px";
+    let shards = "";
+    for (let i = 0; i < 22; i++) {
+      const a = Math.random() * Math.PI * 2, d = 50 + Math.random() * 120;
+      const w = 6 + Math.random() * 14, h = 8 + Math.random() * 20;
+      shards += `<i style="--x:${(Math.cos(a) * d).toFixed(0)}px;--y:${(Math.sin(a) * d - 30).toFixed(0)}px;--r:${(Math.random() * 720 - 360).toFixed(0)}deg;width:${w.toFixed(0)}px;height:${h.toFixed(0)}px;clip-path:polygon(${[0, 1, 2].map(() => `${(Math.random() * 100).toFixed(0)}% ${(Math.random() * 100).toFixed(0)}%`).join(",")})"></i>`;
+    }
+    fx.innerHTML = `<div class="sh-flash"></div><div class="sh-crack"></div>${shards}<div class="sh-text">SHIELD BROKEN</div>`;
+    document.body.appendChild(fx);
+    zone.classList.add("shield-hit");
+    setTimeout(() => zone.classList.remove("shield-hit"), 600);
+    const table = app2.querySelector(".table");
+    table?.classList.add("quake");
+    setTimeout(() => table?.classList.remove("quake"), 420);
+    setTimeout(() => fx.remove(), 1300);
+  }
+  function shieldTriggerFx(app2, pi, name) {
+    const zone = app2.querySelector(`[data-shields="${pi}"]`);
+    if (!zone) return;
+    const r = zone.getBoundingClientRect();
+    const fx = document.createElement("div");
+    fx.className = "trigger-fx";
+    fx.style.left = r.left + r.width * 0.45 + "px";
+    fx.style.top = r.top + r.height / 2 + "px";
+    fx.innerHTML = `<div class="tr-ring"></div><div class="tr-ring r2"></div><div class="tr-text">SHIELD TRIGGER!<small>${esc(name)}</small></div>`;
+    document.body.appendChild(fx);
+    setTimeout(() => fx.remove(), 1800);
   }
   function winnerOverlay(s) {
     if (s.winner == null) return "";
@@ -3114,6 +3311,16 @@ ${def.text}`;
       ui.sel = { ...ui.sel, kind: ui.sel.after || "play", options: opts };
       return render();
     }
+    const pk = e.target.closest("[data-pick]");
+    if (pk && ui.pick && s.pending?.kind === "pick") {
+      const uid2 = pk.dataset.pick, sel = ui.pick.sel;
+      if (sel.has(uid2)) sel.delete(uid2);
+      else {
+        if (sel.size >= s.pending.max) sel.delete([...sel][0]);
+        sel.add(uid2);
+      }
+      return render();
+    }
     const gy = e.target.closest("[data-grave]");
     if (gy) return showGrave(+gy.dataset.grave);
     if (s.winner != null || whoActs(s) !== HUMAN) return;
@@ -3123,7 +3330,7 @@ ${def.text}`;
     const uid = uidEl?.dataset.uid;
     if (ui.sel) {
       let a = null;
-      if (uid) a = ui.sel.options.find((o) => o.type === "attack" ? o.target.uid === uid : o.target === uid);
+      if (uid) a = ui.sel.options.find((o) => o.type === "attack" ? o.target.uid === uid : o.target === uid || o.replace === uid);
       if (!a && zoneEl?.dataset.zone) a = ui.sel.options.find((o) => o.type === "attack" && o.target.kind === zoneEl.dataset.zone);
       if (a) return act(a);
       ui.sel = null;
@@ -3181,6 +3388,11 @@ ${def.text}`;
         return act(ui.sel.options.find((a) => a.target.kind === "player"));
       case "no-target":
         return act(ui.sel.options.find((a) => !a.target));
+      case "pick-ok": {
+        const uids = [...ui.pick?.sel || []];
+        ui.pick = null;
+        return act({ type: "pick", uids });
+      }
       case "trig-skip":
         return act({ type: "shieldTrigger", use: false });
       case "trig-use": {
@@ -3529,7 +3741,28 @@ ${def.text}`;
     }
     if (!t) hoverEl = null;
   });
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("sw.js").catch(() => {
+    });
+  }
+  function preloadThumbs() {
+    const srcs = [...new Set(allCards().filter((c) => c.image).map((c) => thumbOf(c.image)))];
+    let i = 0;
+    const next = () => {
+      for (let k = 0; k < 6 && i < srcs.length; k++, i++) {
+        const im = new Image();
+        im.decoding = "async";
+        im.src = srcs[i];
+      }
+      if (i < srcs.length) {
+        if (window.requestIdleCallback) requestIdleCallback(next, { timeout: 400 });
+        else setTimeout(next, 120);
+      }
+    };
+    next();
+  }
   loadData().then(() => {
+    setTimeout(preloadThumbs, 600);
     window.addEventListener("hashchange", route);
     route();
   }).catch((err) => {

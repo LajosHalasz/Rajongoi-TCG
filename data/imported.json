@@ -2108,5 +2108,95 @@
       "width": 55.21811154058533,
       "height": 138.10704407690022
     }
+  },
+  {
+    "id": "TKN-003",
+    "set": "TKN",
+    "number": "003",
+    "name": "Miniature",
+    "type": "token",
+    "colors": [],
+    "cost": 0,
+    "power": 1,
+    "keywords": [],
+    "effects": [],
+    "tribes": [
+      "Game"
+    ],
+    "text": "",
+    "flavor": "To arms, men!",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "Token 003",
+    "source": "riftcardmaker",
+    "token": true,
+    "recycle": 0,
+    "image": "data/img/TKN-003.jpg",
+    "imageCrop": {
+      "x": -6.493152360150697,
+      "y": 8.531061002704414,
+      "width": 111.35857461024501,
+      "height": 116.07200689576142
+    }
+  },
+  {
+    "id": "TKN-004",
+    "set": "TKN",
+    "number": "004",
+    "name": "Miniature",
+    "type": "token",
+    "colors": [],
+    "cost": 0,
+    "power": 5,
+    "keywords": [],
+    "effects": [],
+    "tribes": [
+      "Game"
+    ],
+    "text": "",
+    "flavor": "How dare you take my treasure?",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "Token 004",
+    "source": "riftcardmaker",
+    "token": true,
+    "recycle": 0,
+    "image": "data/img/TKN-004.jpg",
+    "imageCrop": {
+      "x": 0,
+      "y": 0,
+      "width": 100,
+      "height": 100
+    }
+  },
+  {
+    "id": "TKN-005",
+    "set": "TKN",
+    "number": "005",
+    "name": "Burst-Pouch",
+    "type": "token",
+    "colors": [],
+    "cost": 0,
+    "power": 1,
+    "keywords": [
+      "Deathtouch"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Deathtouch#94B131#000000}__(Whenever this Unit loses in a fight, destroy the Unit that killed it.)__",
+    "flavor": "19000 piece order came in today. Levi isn't happy.",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "Token 005",
+    "source": "riftcardmaker",
+    "token": true,
+    "recycle": 0,
+    "image": "data/img/TKN-005.jpg",
+    "imageCrop": {
+      "x": -3.980275274574705,
+      "y": 7.86555510998226,
+      "width": 111.358574610245,
+      "height": 116.0720068957614
+    }
   }
 ]

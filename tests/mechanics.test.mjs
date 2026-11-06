@@ -114,7 +114,7 @@ const tests = {
     const s = fresh(); const g = card(s, 0, 'OGN-189', 'gear');
     const runes = s.players[0].mana.filter(r => !r.tapped).length;
     step(s, { type: 'activate', uid: g.uid });
-    const t = s.players[0].battle.find(u => u.id === 'TKN-003');
+    const t = s.players[0].battle.find(u => u.id === 'TKN-004');
     assert(t && power(s, t) === 5 && t.sick);
     assert.equal(s.players[0].mana.filter(r => !r.tapped).length, runes - 3);
   },
@@ -122,7 +122,7 @@ const tests = {
     const s = fresh(); card(s, 0, 'OGN-188', 'battle'); const g = card(s, 0, 'OGN-189', 'gear');
     const runes = s.players[0].mana.filter(r => !r.tapped).length;
     step(s, { type: 'activate', uid: g.uid });
-    const t = s.players[0].battle.find(u => u.id === 'TKN-003');
+    const t = s.players[0].battle.find(u => u.id === 'TKN-004');
     assert(t && !t.sick, 'ready');
     assert.equal(s.players[0].mana.filter(r => !r.tapped).length, runes - 4);
   },
@@ -130,7 +130,7 @@ const tests = {
     const s = fresh(); const m = card(s, 0, 'OGN-176', 'battle');
     assert(hasKw(s, m, 'Defensive') && !hasKw(s, m, 'Deathtouch'));
     step(s, { type: 'activate', uid: m.uid });
-    const t = s.players[0].battle.find(u => u.id === 'TKN-004');
+    const t = s.players[0].battle.find(u => u.id === 'TKN-005');
     assert(t && hasKw(s, t, 'Deathtouch'));
   },
   'Parody Alchemist: copies a non-Mighty enemy unit with Haste, copy dies at end of turn'() {
@@ -184,7 +184,7 @@ const tests = {
   "3D Printer - Lui's Forge: [T][1] summons a 1 Might Miniature; Army Box gives Miniatures +1"() {
     const s = fresh(); const g = card(s, 0, 'OGN-179', 'gear');
     step(s, { type: 'activate', uid: g.uid });
-    const t = s.players[0].battle.find(u => u.id === 'TKN-005');
+    const t = s.players[0].battle.find(u => u.id === 'TKN-003');
     assert(t && power(s, t) === 1);
     const box = card(s, 0, 'OGN-175'); const hand = s.players[0].hand.length;
     play(s, box.uid);
@@ -194,7 +194,7 @@ const tests = {
   'Amateur Dungeon Master: draw 1 when a Miniature dies'() {
     const s = fresh(); card(s, 0, 'OGN-174', 'battle'); const g = card(s, 0, 'OGN-179', 'gear');
     step(s, { type: 'activate', uid: g.uid });
-    const t = s.players[0].battle.find(u => u.id === 'TKN-005');
+    const t = s.players[0].battle.find(u => u.id === 'TKN-003');
     const hand = s.players[0].hand.length;
     s.active = 1; const k = card(s, 1, 'OGN-022'); play(s, k.uid, { target: t.uid });
     assert(!s.players[0].battle.includes(t));
@@ -216,8 +216,14 @@ const tests = {
     const p = s.players[0];
     p.deck = ['OGN-184', 'OGN-016', 'OGN-180', 'OGN-022', 'OGN-003'].map((id, i) => ({ uid: 'd' + i, id, owner: 0, tapped: false, sick: false, mods: [], uses: null }));
     play(s, mn.uid);
-    assert.deepEqual(p.hand.map(c => c.id).sort(), ['OGN-180', 'OGN-184']);
-    assert.equal(p.deck.length, 3);
+    assert.equal(s.pending.kind, 'pick', 'shows the 4 cards');
+    assert.deepEqual(s.pending.uids.length, 4);
+    const choosable = s.pending.choosable.map(uid => p.reveal.find(c => c.uid === uid).id).sort();
+    assert.deepEqual(choosable, ['OGN-180', 'OGN-184'], 'only Movie cards can be picked');
+    step(s, { type: 'pick', uids: [p.reveal.find(c => c.id === 'OGN-184').uid] }); // keep just one of them
+    assert.deepEqual(p.hand.map(c => c.id), ['OGN-184']);
+    assert.equal(p.deck.length, 4);
+    assert.equal(p.reveal.length, 0);
   },
   'The Ultimate Flex: your units are Indestructible this turn and it cannot be countered'() {
     const s = fresh(); const u = card(s, 0, 'OGN-016', 'battle'); const f = card(s, 0, 'OGN-186');
@@ -238,13 +244,29 @@ const tests = {
     p.legend = { uid: 'leg', id: 'OGN-L-lui', owner: 0, tapped: false, sick: false, mods: [], uses: null };
     assert(!legalActions(s, 0).some(a => a.uid === 'leg'), 'nothing to return yet');
     p.graveyard.push({ uid: 'gy1', id: 'OGN-184', owner: 0, tapped: false, sick: false, mods: [], uses: null });
+    p.graveyard.push({ uid: 'gy2', id: 'OGN-016', owner: 0, tapped: false, sick: false, mods: [], uses: null }); // not Art/Movie
     step(s, { type: 'activate', uid: 'leg' });
+    assert.equal(s.pending.kind, 'pick', 'confirm popup even with a single choice');
+    assert.deepEqual(s.pending.choosable, ['gy1']);
+    step(s, { type: 'pick', uids: ['gy1'] });
     assert(p.hand.some(c => c.uid === 'gy1') && p.legend.tapped);
   },
   'Lui deck: real Legend, Miniature Painter in the Champion Slot, legal'() {
     const d = decks.find(x => x.owner === 'Lui');
     assert.equal(getDef(d.legend).name, 'Aspect of Entertainment');
     assert.equal(getDef(d.champion).name, 'Miniature Painter');
+  },
+  'Gear: with both slots full you choose which Gear is replaced'() {
+    const s = fresh(); const g1 = card(s, 0, 'OGN-185', 'gear'); const g2 = card(s, 0, 'OGN-189', 'gear'); const g3 = card(s, 0, 'OGN-175');
+    const opts = legalActions(s, 0).filter(a => a.uid === g3.uid);
+    assert.deepEqual(opts.map(a => a.replace).sort(), [g1.uid, g2.uid].sort());
+    play(s, g3.uid, { replace: g2.uid });
+    assert(s.players[0].gear.includes(g1) && !s.players[0].gear.includes(g2) && s.players[0].graveyard.includes(g2));
+  },
+  'Plays are recorded (with Shield Trigger marks) for the opponent sidebar'() {
+    const s = fresh(); const c = card(s, 0, 'OGN-016');
+    play(s, c.uid);
+    assert.deepEqual(s.plays.at(-1), { player: 0, id: 'OGN-016', via: 'play', turn: s.turn, n: s.plays.at(-1).n });
   },
 };
 let fail = 0;

@@ -1,6 +1,6 @@
 import { loadData } from './data.js';
 import { allCards, hasDef, getDef } from './engine/cards.js';
-import { cardHtml, installAutoFit } from './ui/card.js';
+import { cardHtml, installAutoFit, thumbOf } from './ui/card.js';
 import { renderCollection, renderDecks, renderBuilder } from './ui/collection.js';
 import { renderSetup, stopGame } from './ui/play.js';
 import { renderBoosters } from './ui/boosters.js';
@@ -78,7 +78,25 @@ document.addEventListener('mouseover', (e) => {
   if (t && t !== hoverEl) { hoverEl = t; if (t.matches('.hand-row.mine .card')) sfx.swish(0.5); else sfx.hover(); }
   if (!t) hoverEl = null;
 });
+// cache everything in the browser (only works over http(s), not when opened as a file)
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+/** Warm the image cache in the background so the Collection opens instantly. */
+function preloadThumbs() {
+  const srcs = [...new Set(allCards().filter(c => c.image).map(c => thumbOf(c.image)))];
+  let i = 0;
+  const next = () => {
+    for (let k = 0; k < 6 && i < srcs.length; k++, i++) { const im = new Image(); im.decoding = 'async'; im.src = srcs[i]; }
+    if (i < srcs.length) {
+      if (window.requestIdleCallback) requestIdleCallback(next, { timeout: 400 }); else setTimeout(next, 120);
+    }
+  };
+  next();
+}
+
 loadData().then(() => {
+  setTimeout(preloadThumbs, 600);
   window.addEventListener('hashchange', route);
   route();
 }).catch(err => {

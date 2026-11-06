@@ -12,6 +12,12 @@ It's a static site with no build step and no dependencies, so it works on GitHub
 
 `img/mascot.svg` (the watermelon smiley, a sharp vector redraw of `img/mascot-original.png`) is the epic home-page background, with spinning rays, a glow and floating seeds. It also appears faintly on every card back and on the booster packs. To change it, replace that file.
 
+## Loading speed
+
+- **Thumbnails:** `npm run build` (and both importers) make small WebP previews in `data/img/thumb/`. The grid, hand and board use these; only the big card view loads the full image.
+- **Service worker:** `sw.js` keeps the game, data and art in the browser cache. Repeat visits load instantly and also work offline, and changes are fetched in the background for the next visit. It only runs over http(s), not when `index.html` is opened as a file.
+- **Lazy rendering:** cards off screen are neither drawn nor text-fitted until they scroll into view.
+
 ## Sound
 
 All sound effects are generated live with the Web Audio API (`js/ui/sfx.js`): filtered noise, tuned oscillators, envelopes, a reverb and a compressor, so there are no audio files. They cover:
