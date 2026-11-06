@@ -1353,29 +1353,21 @@
   ],
   "cost": 5,
   "power": 0,
-  "recycle": 1,
+  "recycle": 0,
   "keywords": [
-   "Shield Trigger",
-   "Action"
+   "Shield Trigger"
   ],
-  "effects": [
-   {
-    "do": "destroy",
-    "target": "enemyUnit",
-    "maxPower": 5
-   }
-  ],
+  "effects": [],
   "tribes": [],
-  "text": "",
-  "flavor": "",
+  "text": "Shield Trigger(If you got this from your Shield Zone, you may play it immediately for 0 mana.) / Tap Tap all enemy Units. Your next [f] card costs 3 less.",
+  "flavor": "\" I was invited to friend's birthday at the Airport\" ~ Edino",
   "owners": [
    "Matyi",
    "Lui"
   ],
   "purpose": "Glass Cannon",
   "wip": false,
-  "rarity": "uncommon",
-  "provisionalEffect": true
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-013",
@@ -1389,7 +1381,7 @@
   ],
   "cost": 3,
   "power": 4,
-  "recycle": 0,
+  "recycle": 1,
   "keywords": [],
   "effects": [],
   "tribes": [],
@@ -6502,7 +6494,7 @@
   "set": "OGN",
   "number": "171",
   "setInfo": "OGN 171/300",
-  "name": "The Law of Staying up until 2.am",
+  "name": "The Law",
   "type": "spell",
   "colors": [
    "Order"
@@ -6510,28 +6502,20 @@
   "cost": 2,
   "power": 0,
   "recycle": 2,
-  "keywords": [
-   "Shield Trigger",
-   "Action"
+  "keywords": [],
+  "effects": [],
+  "tribes": [
+   "Movie"
   ],
-  "effects": [
-   {
-    "do": "destroy",
-    "target": "enemyUnit",
-    "maxPower": 2
-   }
-  ],
-  "tribes": [],
-  "text": "",
-  "flavor": "",
+  "text": "If this is the last card you played this turn, give a Unit +2 Might and Defensive(When an enemy Unit attacks, you may Tap this to redirect the attack to this Unit.)",
+  "flavor": "If we drank any beers tonight, we have to stay up until 2.am.",
   "owners": [
    "Lui",
    "Chris"
   ],
   "purpose": "Destroy Spell",
-  "wip": true,
-  "rarity": "common",
-  "provisionalEffect": true
+  "wip": false,
+  "rarity": "common"
  },
  {
   "id": "OGN-172",
@@ -6574,7 +6558,7 @@
   "set": "OGN",
   "number": "173",
   "setInfo": "OGN 173/300",
-  "name": "Movie night at Chris",
+  "name": "Movie Night at Chris",
   "type": "spell",
   "colors": [
    "Order"
@@ -6583,23 +6567,19 @@
   "power": 0,
   "recycle": 0,
   "keywords": [],
-  "effects": [
-   {
-    "do": "channel",
-    "amount": 1
-   }
+  "effects": [],
+  "tribes": [
+   "Movie"
   ],
-  "tribes": [],
-  "text": "",
-  "flavor": "",
+  "text": "Draw 4 cards. Reveal any MoVie cards drawn and keep them. Shuffle the rest back to your Deck.",
+  "flavor": "Where were we?",
   "owners": [
    "Lui",
    "Chris"
   ],
   "purpose": "Man recharge",
-  "wip": true,
-  "rarity": "common",
-  "provisionalEffect": true
+  "wip": false,
+  "rarity": "common"
  },
  {
   "id": "OGN-174",
@@ -6612,12 +6592,14 @@
    "Order"
   ],
   "cost": 1,
-  "power": 3,
+  "power": 2,
   "recycle": 2,
   "keywords": [],
   "effects": [],
-  "tribes": [],
-  "text": "",
+  "tribes": [
+   "Game"
+  ],
+  "text": "When a Miniature Token Unit dies, / Draw 1 card.",
   "flavor": "",
   "owners": [
    "Lui"
@@ -6631,18 +6613,20 @@
   "set": "OGN",
   "number": "175",
   "setInfo": "OGN 175/300",
-  "name": "Miniature Army",
-  "type": "unit",
+  "name": "Miniature Army Box",
+  "type": "gear",
   "colors": [
    "Order"
   ],
   "cost": 1,
-  "power": 1,
+  "power": 0,
   "recycle": 0,
   "keywords": [],
   "effects": [],
-  "tribes": [],
-  "text": "",
+  "tribes": [
+   "Game"
+  ],
+  "text": "Your Miniature Token Units have +1 Might. / When you play this Draw 1.",
   "flavor": "",
   "owners": [
    "Lui"
@@ -6656,34 +6640,27 @@
   "set": "OGN",
   "number": "176",
   "setInfo": "OGN 176/300",
-  "name": "Manyika",
-  "type": "gear",
+  "name": "Manyika Dreadnought",
+  "type": "unit",
   "colors": [
    "Fury"
   ],
   "cost": 3,
-  "power": 0,
-  "recycle": 3,
+  "power": 5,
+  "recycle": 2,
   "keywords": [],
-  "effects": [
-   {
-    "on": "activate",
-    "do": "channel",
-    "amount": 1,
-    "tapped": true
-   }
+  "effects": [],
+  "tribes": [
+   "Tech"
   ],
-  "tribes": [],
-  "text": "",
-  "flavor": "",
+  "text": "Defensive(When an enemy Unit attacks, you may Tap this to redirect the attack to this Unit.) / Tap + 2: Summon a Pouch Token Unit / with Deathtouch.",
+  "flavor": "Izo, klipszer, vízüveg! Hegesszél már báttya~!",
   "owners": [
    "Lui"
   ],
   "purpose": "Recycle",
-  "wip": true,
-  "rarity": "common",
-  "uses": 2,
-  "provisionalEffect": true
+  "wip": false,
+  "rarity": "common"
  },
  {
   "id": "OGN-177",
@@ -6726,7 +6703,7 @@
   "number": "178",
   "setInfo": "OGN 178/300",
   "name": "The Chronicler",
-  "type": "champion",
+  "type": "unit",
   "colors": [
    "Order"
   ],
@@ -6735,22 +6712,24 @@
   "recycle": 1,
   "keywords": [],
   "effects": [],
-  "tribes": [],
-  "text": "",
-  "flavor": "",
+  "tribes": [
+   "Art, Traveler"
+  ],
+  "text": "When you play this, your other Art cards cost 1 this turn, but any you play like this gets banished at the end of your turn.",
+  "flavor": "Goodbye.",
   "owners": [
    "Lui"
   ],
   "purpose": "",
-  "wip": true,
-  "rarity": "rare"
+  "wip": false,
+  "rarity": "common"
  },
  {
   "id": "OGN-179",
   "set": "OGN",
   "number": "179",
   "setInfo": "OGN 179/300",
-  "name": "Racist Instagram Reels",
+  "name": "3D Printer - Lui's Forge",
   "type": "gear",
   "colors": [
    "Fury"
@@ -6761,32 +6740,25 @@
   "keywords": [
    "Shield Trigger"
   ],
-  "effects": [
-   {
-    "on": "activate",
-    "do": "buff",
-    "target": "friendlyUnit",
-    "amount": 1,
-    "duration": "turn"
-   }
+  "effects": [],
+  "tribes": [
+   "Tech"
   ],
-  "tribes": [],
-  "text": "",
+  "text": "Shield Trigger(If you got this from you Shield Zone, you may play it immediately for 0 mana.) / Tap + 1: Summon a Miniature Token Unit / with 1 Might and Game",
   "flavor": "",
   "owners": [
    "Lui"
   ],
   "purpose": "Shield Trigger",
   "wip": false,
-  "rarity": "common",
-  "provisionalEffect": true
+  "rarity": "common"
  },
  {
   "id": "OGN-180",
   "set": "OGN",
   "number": "180",
   "setInfo": "OGN 180/300",
-  "name": "Lui | Parody Alchemyst",
+  "name": "Lui | Parody Alchemist",
   "type": "champion",
   "colors": [
    "Fury"
@@ -6796,14 +6768,16 @@
   "recycle": 0,
   "keywords": [],
   "effects": [],
-  "tribes": [],
-  "text": "",
-  "flavor": "",
+  "tribes": [
+   "Art, Movie"
+  ],
+  "text": "Tap: Copy a Non-Mighty Unit your opponent controls and summon it this turn. It has Haste(Can attack immediately) but it dies at the end of this turn.",
+  "flavor": "Na ez hatalmasat fog menni. Can't wait for showing it.",
   "owners": [
    "Lui"
   ],
   "purpose": "",
-  "wip": true,
+  "wip": false,
   "rarity": "rare"
  },
  {
@@ -6811,24 +6785,26 @@
   "set": "OGN",
   "number": "181",
   "setInfo": "OGN 181/300",
-  "name": "The Burning (Snow)man",
+  "name": "The Sluice Machine",
   "type": "unit",
   "colors": [
    "Fury"
   ],
   "cost": 8,
   "power": 8,
-  "recycle": 1,
+  "recycle": 0,
   "keywords": [],
   "effects": [],
-  "tribes": [],
+  "tribes": [
+   "Tech"
+  ],
   "text": "",
-  "flavor": "",
+  "flavor": "The only working and fully operational machine at the company - now powered by Claude Opus 5.5.",
   "owners": [
    "Lui"
   ],
   "purpose": "",
-  "wip": true,
+  "wip": false,
   "rarity": "uncommon"
  },
  {
@@ -6836,24 +6812,26 @@
   "set": "OGN",
   "number": "182",
   "setInfo": "OGN 182/300",
-  "name": "Lana the Solarboat",
+  "name": "The Solar Boat Team",
   "type": "unit",
   "colors": [
    "Order"
   ],
   "cost": 2,
   "power": 3,
-  "recycle": 0,
+  "recycle": 1,
   "keywords": [],
   "effects": [],
-  "tribes": [],
-  "text": "",
-  "flavor": "",
+  "tribes": [
+   "Tech"
+  ],
+  "text": "Defensive(When an enemy Unit attacks, you may Tap this to redirect the attack to this Unit.) / Shieldify 1(When you play this, put 1 card in your Shield Zone from your hand.)",
+  "flavor": "Lessons learned.",
   "owners": [
    "Lui"
   ],
   "purpose": "",
-  "wip": true,
+  "wip": false,
   "rarity": "common"
  },
  {
@@ -6868,17 +6846,17 @@
   ],
   "cost": 7,
   "power": 7,
-  "recycle": 3,
+  "recycle": 2,
   "keywords": [],
   "effects": [],
   "tribes": [],
-  "text": "",
-  "flavor": "",
+  "text": "Tap: Make a trade offer to your opponent. It can be ANYTHING. If your opponent accepts you both recieve what was offered. / If they don't, this gains +1 Might and this gains Indestructible until your next turn.",
+  "flavor": "Do we have a deal then? ~ Alastor, Radio Demon",
   "owners": [
    "Lui"
   ],
   "purpose": "Boss level",
-  "wip": true,
+  "wip": false,
   "rarity": "uncommon"
  },
  {
@@ -6892,18 +6870,20 @@
    "Fury"
   ],
   "cost": 4,
-  "power": 8,
-  "recycle": 3,
+  "power": 6,
+  "recycle": 4,
   "keywords": [],
   "effects": [],
-  "tribes": [],
-  "text": "",
-  "flavor": "",
+  "tribes": [
+   "Art, Movie"
+  ],
+  "text": "Defensive(When an enemy Unit attacks, you may Tap this to redirect the attack to this Unit.) / Can attack untapped Units.",
+  "flavor": "- Mikor szerzünk p****t végre?",
   "owners": [
    "Lui"
   ],
   "purpose": "",
-  "wip": true,
+  "wip": false,
   "rarity": "uncommon"
  },
  {
@@ -6911,7 +6891,7 @@
   "set": "OGN",
   "number": "185",
   "setInfo": "OGN 185/300",
-  "name": "EPIC The Ithaca Saga",
+  "name": "EPIC - The Ithaca Saga",
   "type": "gear",
   "colors": [
    "Fury"
@@ -6920,32 +6900,25 @@
   "power": 0,
   "recycle": 2,
   "keywords": [],
-  "effects": [
-   {
-    "on": "activate",
-    "do": "buff",
-    "target": "friendlyUnit",
-    "amount": 1,
-    "duration": "turn"
-   }
+  "effects": [],
+  "tribes": [
+   "Art"
   ],
-  "tribes": [],
-  "text": "",
+  "text": "Tap: Your Units have Vigilance this turn. (You may untap them at the end of your turn.)",
   "flavor": "",
   "owners": [
    "Lui"
   ],
   "purpose": "",
-  "wip": true,
-  "rarity": "uncommon",
-  "provisionalEffect": true
+  "wip": false,
+  "rarity": "uncommon"
  },
  {
   "id": "OGN-186",
   "set": "OGN",
   "number": "186",
   "setInfo": "OGN 186/300",
-  "name": "The Ultimate Flex",
+  "name": "Lui | The ULTIMATE FLEX",
   "type": "signature",
   "colors": [
    "Fury",
@@ -6955,27 +6928,21 @@
   "power": 0,
   "recycle": 4,
   "keywords": [
-   "Shield Trigger",
-   "Action"
+   "Shield Trigger"
   ],
-  "effects": [
-   {
-    "do": "destroy",
-    "target": "enemyUnit",
-    "maxPower": 11
-   }
+  "effects": [],
+  "tribes": [
+   "Art"
   ],
-  "tribes": [],
-  "text": "",
+  "text": "Shield Trigger(If you got this from you Shield Zone, you may play it immediately for 0 mana.) Reaction(Play any time, even before spells and abilities resolve.) / Your Units have Indestructible this turn. This can't be countered.",
   "flavor": "",
   "owners": [
    "Lui"
   ],
   "purpose": "Shield Trigger",
-  "wip": true,
+  "wip": false,
   "sigType": "spell",
   "rarity": "epic",
-  "provisionalEffect": true,
   "legend": "OGN-L-lui"
  },
  {
@@ -7026,12 +6993,14 @@
   ],
   "cost": 2,
   "power": 1,
-  "recycle": 1,
+  "recycle": 0,
   "keywords": [],
   "effects": [],
-  "tribes": [],
-  "text": "",
-  "flavor": "",
+  "tribes": [
+   "Art"
+  ],
+  "text": "Miniature Token Units you control have Accelerate 1(You may pay 1[P] as an additional cost to have me enter ready.)",
+  "flavor": "The Halasz-Law applies to creating these masterpieces.",
   "owners": [
    "Lui"
   ],
@@ -7044,7 +7013,7 @@
   "set": "OGN",
   "number": "189",
   "setInfo": "OGN 189/300",
-  "name": "3D Printer",
+  "name": "3D Printer - X Forge 2",
   "type": "gear",
   "colors": [
    "Order"
@@ -7052,28 +7021,19 @@
   "cost": 3,
   "power": 0,
   "recycle": 0,
-  "keywords": [
-   "Shield Trigger"
+  "keywords": [],
+  "effects": [],
+  "tribes": [
+   "Tech"
   ],
-  "effects": [
-   {
-    "on": "activate",
-    "do": "buff",
-    "target": "friendlyUnit",
-    "amount": 1,
-    "duration": "turn"
-   }
-  ],
-  "tribes": [],
-  "text": "",
+  "text": "Tap + 3: Summon a Miniature Token Unit / with 5 Might and Game",
   "flavor": "",
   "owners": [
    "Lui"
   ],
   "purpose": "Shieldify",
-  "wip": true,
-  "rarity": "common",
-  "provisionalEffect": true
+  "wip": false,
+  "rarity": "common"
  },
  {
   "id": "OGN-190",
@@ -7750,32 +7710,6 @@
    "Laci"
   ],
   "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Laci's deck is coming soon.)__",
-  "flavor": "",
-  "placeholder": true
- },
- {
-  "id": "OGN-L-lui",
-  "set": "OGN",
-  "number": "L-lui",
-  "setInfo": "OGN Legend",
-  "name": "Lui | Legend",
-  "type": "legend",
-  "colors": [
-   "Fury",
-   "Order"
-  ],
-  "cost": 0,
-  "power": 0,
-  "recycle": 0,
-  "keywords": [],
-  "effects": [],
-  "tribes": [
-   "Lui"
-  ],
-  "owners": [
-   "Lui"
-  ],
-  "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Lui's deck is coming soon.)__",
   "flavor": "",
   "placeholder": true
  },

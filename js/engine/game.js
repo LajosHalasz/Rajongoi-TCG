@@ -123,6 +123,8 @@ export function power(s, inst, opts = {}) {
       const f = e.filter || {};
       if (f.color && !d.colors.includes(f.color)) continue;
       if (f.keyword && !hasKeyword(s, inst, f.keyword)) continue;
+      if (f.name && d.name !== f.name) continue;
+      if (f.token && !d.token) continue;
       if (e.target === 'self' && src.uid !== inst.uid) continue;
       p += e.amount || 0;
     }
@@ -138,14 +140,24 @@ const canAttackWith = (s, u) => canAttackNow(s, u) && !hasKeyword(s, u, 'Immobil
 
 // ---------------------------------------------------------- cost ----
 /** Printed cost minus reductions (Flood, Whiskey…). */
-export function effectiveCost(s, pi, d) {
-  const r = d.costReduction;
-  if (!r) return d.cost;
+export const hasTribe = (d, t) => (d.tribes || []).some(x => String(x).toLowerCase() === String(t).toLowerCase());
+const isArt = (d) => hasTribe(d, 'art');
+/** The Chronicler: your other Art cards cost 1 this turn. */
+export function artDiscounted(s, pi, d) {
   const p = s.players[pi];
+  return p.artTurn === s.turn && isArt(d) && d.cost > 1 && kindOf(d) !== 'legend';
+}
+
+export function effectiveCost(s, pi, d) {
+  const p = s.players[pi];
+  let base = artDiscounted(s, pi, d) ? 1 : d.cost;
+  if (p.nextDiscount && d.colors.includes(p.nextDiscount.color)) base = Math.max(0, base - p.nextDiscount.amount);
+  const r = d.costReduction;
+  if (!r) return base;
   let n = 0;
   if (r.perRunePair) n += Math.min(...r.perRunePair.map(c => p.mana.filter(x => x.color === c).length));
   if (r.perGraveTribe) n += p.graveyard.filter(c => (getDef(c.id).tribes || []).includes(r.perGraveTribe)).length;
-  return Math.max(0, d.cost - n);
+  return Math.max(0, base - n);
 }
 
 // ----------------------------------------------------------------- mana ----
@@ -317,11 +329,12 @@ function withTargets(s, pi, d, base, required, trigger = 'play', modes = null) {
 function activateOptions(s, pi) {
   const p = s.players[pi];
   const acts = [];
-  for (const g of [...p.gear, ...p.battle]) {
+  for (const g of [...p.gear, ...p.battle, p.legend]) {
     const d = getDef(g.id);
     if (!(d.effects || []).some(e => e.on === 'activate')) continue;
     if (d.activateNoTap) { if (g.activatedTurn === s.turn) continue; }
     else if (g.tapped || (p.battle.includes(g) && !canAttackNow(s, g))) continue;
+    if (g === p.legend && !(d.effects || []).some(e => e.on === 'activate' && (!e.tribes || p.graveyard.some(c => e.tribes.some(t => hasTribe(getDef(c.id), t)))))) continue;
     if (!canAfford(p, d.activateCost || 0, null)) continue;
     acts.push(...withTargets(s, pi, d, { type: 'activate', uid: g.uid }, true, 'activate'));
   }
@@ -467,7 +480,7 @@ function setWinner(s, pi, reason) {
 // Units with 0 or less Might are destroyed.
 function checkDeaths(s) {
   for (const p of s.players) {
-    for (const u of [...p.battle]) if (p.battle.includes(u) && power(s, u) <= 0) {
+    for (const u of [...p.battle]) if (p.battle.includes(u) && power(s, u) <= 0 && !hasKeyword(s, u, 'Indestructible')) {
       log(s, `${nm(u)} has 0 Might and is destroyed.`);
       destroyUnit(s, u);
     }
@@ -521,6 +534,22 @@ function doEndPhase(s) {
     log(s, `${nm(c)} untaps (Vigilance).`);
   }
   ap.doubleNext = false;
+  ap.artTurn = null;
+  for (const L of ap.lawPending || []) {
+    const u = ap.battle.find(x => x.uid === L.uid);
+    if (L.turn === s.turn && L.index === ap.plays && u) {
+      u.mods.push({ power: L.amount }, { keyword: L.keyword });
+      log(s, `The Law: ${nm(u)} gets +${L.amount} Might and ${L.keyword}.`);
+    } else if (L.turn === s.turn) log(s, 'The Law fizzles (another card was played after it).');
+  }
+  ap.lawPending = [];
+  for (const p of s.players) {
+    for (const u of [...p.battle]) {
+      if (u.temp) { p.battle.splice(p.battle.indexOf(u), 1); log(s, `The copy of ${nm(u)} dies at end of turn.`); }
+      else if (u.banishEot) { p.battle.splice(p.battle.indexOf(u), 1); log(s, `${nm(u)} is banished.`); }
+    }
+    for (const g of [...p.gear]) if (g.banishEot) { p.gear.splice(p.gear.indexOf(g), 1); log(s, `${nm(g)} is banished.`); }
+  }
   for (const p of s.players) for (const u of p.battle) {
     u.mods = u.mods.filter(m => !(m.until === 'eot' || (m.untilTurn != null && m.untilTurn <= s.turn)));
   }
@@ -552,7 +581,14 @@ function doPlay(s, pi, a) {
   const p = s.players[pi];
   const inst = [...p.hand, p.championSlot, p.signatureSlot].find(c => c && c.uid === a.uid);
   const d = getDef(inst.id);
+  const viaArt = artDiscounted(s, pi, d);
+  p.plays = (p.playTurn === s.turn ? p.plays || 0 : 0) + 1; p.playTurn = s.turn;
   payCost(s, p, effectiveCost(s, pi, d), d.colors, d.recycle || 0);
+  if (p.nextDiscount && d.colors.includes(p.nextDiscount.color)) {
+    log(s, `${d.name} costs ${p.nextDiscount.amount} less (Strawberry Club).`);
+    p.nextDiscount = null;
+  }
+  if (viaArt) { inst.banishEot = true; log(s, `${d.name} is played for 1 (The Chronicler) and will be banished at end of turn.`); }
   removeFromSource(p, a.uid);
   const k = kindOf(d);
   if (k === 'spell' && s.pending && s.pending.kind === 'priority') {
@@ -620,6 +656,7 @@ function putIntoPlay(s, pi, inst, target, modes = null) {
 function finishSpell(p, inst, modes) {
   const d = getDef(inst.id);
   const after = (modes || []).map(i => d.modes?.[i]?.afterCast).find(Boolean) || d.afterCast;
+  if (inst.banishEot) { delete inst.banishEot; return; } // played via The Chronicler
   if (after === 'deckTop') p.deck.unshift(inst);
   else if (after === 'banish') { /* removed from the game */ }
   else p.graveyard.push(inst);
@@ -658,7 +695,7 @@ function consumeUse(s, pi, src) {
 
 function doActivate(s, pi, a) {
   const p = s.players[pi];
-  const g = p.gear.find(x => x.uid === a.uid) || p.battle.find(x => x.uid === a.uid);
+  const g = p.gear.find(x => x.uid === a.uid) || p.battle.find(x => x.uid === a.uid) || (p.legend.uid === a.uid ? p.legend : null);
   const d = getDef(g.id);
   payCost(s, p, d.activateCost || 0, null);
   if (d.activateNoTap) g.activatedTurn = s.turn; else g.tapped = true;
@@ -724,7 +761,7 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       for (let i = s.stack.length - 1; i >= 0; i--) {
         const it = s.stack[i];
         const cd = getDef(it.inst.id);
-        if (it.controller === pi || cd.cost > (e.maxCost ?? 99)) continue;
+        if (it.controller === pi || cd.cost > (e.maxCost ?? 99) || cd.uncounterable) continue;
         s.stack.splice(i, 1);
         s.players[it.controller].graveyard.push(it.inst);
         log(s, `${cd.name} is countered.`);
@@ -802,7 +839,54 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
         t.sick = true;
         me.battle.push(t);
         log(s, `${me.name} creates ${nm(t)}.`);
+        // Accelerate granted by e.g. Miniature Painter: pay 1 more rune to have it enter ready
+        const accel = me.battle.find(u => [e.tokenId, nm(t)].includes(getDef(u.id).tokenAccelerate));
+        if (accel && canAfford(me, 1, getDef(accel.id).colors)) {
+          payCost(s, me, 1, getDef(accel.id).colors, 0);
+          t.sick = false;
+          log(s, `${nm(t)} enters ready (Accelerate).`);
+        }
       }
+      break;
+    case 'copyUnit':
+      for (const u of targets) if (okPower(u)) {
+        const c = mk(s, u.id, pi);
+        c.temp = true; c.fast = true; c.sick = true;
+        me.battle.push(c);
+        log(s, `${me.name} copies ${nm(u)}; the copy has Haste and dies at end of turn.`);
+      }
+      break;
+    case 'drawKeepTribe': {
+      const seen = me.deck.splice(0, n);
+      const keep = seen.filter(c => hasTribe(getDef(c.id), e.tribe));
+      me.hand.push(...keep);
+      me.deck.push(...seen.filter(c => !keep.includes(c)));
+      shuffle(s, me.deck);
+      log(s, `${me.name} reveals ${seen.length} cards and keeps ${keep.length} ${e.tribe} card${keep.length === 1 ? '' : 's'}${keep.length ? ': ' + keep.map(nm).join(', ') : ''}.`);
+      break;
+    }
+    case 'recoverTribe': {
+      const pool = me.graveyard.filter(c => (e.tribes || []).some(t => hasTribe(getDef(c.id), t)))
+        .sort((a, b) => getDef(b.id).cost - getDef(a.id).cost);
+      if (!pool.length) { log(s, 'Nothing to return.'); break; }
+      me.graveyard.splice(me.graveyard.indexOf(pool[0]), 1);
+      me.hand.push(pool[0]);
+      log(s, `${me.name} returns ${nm(pool[0])} from the Graveyard to hand.`);
+      break;
+    }
+    case 'lastPlayBuff':
+      for (const u of targets) {
+        me.lawPending = [...(me.lawPending || []), { uid: u.uid, turn: s.turn, index: me.plays || 0, amount: n, keyword: e.keyword }];
+        log(s, `The Law targets ${nm(u)} — it applies if nothing else is played this turn.`);
+      }
+      break;
+    case 'artDiscount':
+      me.artTurn = s.turn;
+      log(s, `${me.name}'s other Art cards cost 1 this turn.`);
+      break;
+    case 'nextDiscount':
+      me.nextDiscount = { color: e.color, amount: n };
+      log(s, `${me.name}'s next ${e.color} card costs ${n} less.`);
       break;
   }
 }
@@ -813,6 +897,7 @@ function destroyUnit(s, u) {
   const owner = s.players[u.owner];
   const i = owner.battle.indexOf(u);
   if (i < 0) return;
+  if (hasKeyword(s, u, 'Indestructible')) { log(s, `${nm(u)} is Indestructible!`); return; }
   if (getDef(u.id).escapeOnce && !u.escaped) {
     u.escaped = true;
     u.mods.push({ power: 1 });
@@ -822,8 +907,12 @@ function destroyUnit(s, u) {
   owner.battle.splice(i, 1);
   resetInst(u);
   const d = getDef(u.id);
-  if (!d.token) owner.graveyard.push(u);
+  if (!d.token && !u.temp) owner.graveyard.push(u);
   log(s, `${d.name} is destroyed.`);
+  for (const src of [...owner.battle, ...owner.gear]) {
+    const effs = effectsOn(getDef(src.id), 'allyDied').filter(e => !e.ifName || e.ifName === d.name);
+    if (effs.length) { log(s, `${nm(src)} triggers.`); runEffects(s, owner.idx, src, effs); }
+  }
   runEffects(s, owner.idx, u, effectsOn(d, 'destroyed').filter(e => !SINGLE_TARGETS.has(e.target)));
 }
 

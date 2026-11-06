@@ -24,6 +24,7 @@ export function markup(text) {
   h = h.replace(/__(.+?)__/gs, '<i>$1</i>');
   h = h.replace(/\[([A-Za-z])#([0-9a-fA-F]{6})\]/g, (_, k, c) => `<span class="ico" style="background:#${c}">${k.toUpperCase()}</span>`);
   h = h.replace(/\[([TMR])\]/g, (_, k) => ICONS[k]);
+  h = h.replace(/\[U\]/g, '<span class="ico" title="Unit">⚔</span>');
   h = h.replace(/\[P\]/g, '<span class="ico" title="Power rune">P</span>');
   h = h.replace(/\[\+(\d+)M\]/g, '+$1 ' + ICONS.M);
   h = h.replace(/\[(\d+)M\]/g, '$1' + ICONS.M);
@@ -77,7 +78,9 @@ const recyclePill = (def) => (def.recycle
   : '');
 
 function rulesHtml(def) {
-  const rules = def.text ? markup(def.text) : `<p class="wip-text">Design in progress${def.purpose ? ` — ${esc(def.purpose)}` : ''}.</p>`;
+  const rules = def.text ? markup(def.text)
+    : def.image && !def.wip ? '' // finished card without rules text (vanilla)
+    : `<p class="wip-text">Design in progress${def.purpose ? ` — ${esc(def.purpose)}` : ''}.</p>`;
   return `<div class="textbox"><div class="rules">${rules}</div>${def.flavor ? `<div class="flavor">${esc(def.flavor)}</div>` : ''}</div>`;
 }
 

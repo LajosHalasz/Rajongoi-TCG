@@ -93,7 +93,13 @@ def mdb(*args):
 
 
 def read_table(db, table):
-    return list(csv.DictReader(io.StringIO(mdb('mdb-export', db, table))))
+    rows = list(csv.DictReader(io.StringIO(mdb('mdb-export', db, table))))
+    # mdbtools can also return the old, deleted version of a row that was edited
+    # (until the database is compacted in Access); the newest version comes last.
+    latest = {}
+    for r in rows:
+        latest[r.get('ID') or id(r)] = r
+    return list(latest.values())
 
 
 def to_int(v):
@@ -251,6 +257,15 @@ def base(name):
     return re.split(r'[|,]', name)[0].strip()
 
 
+def champ_keys(c):
+    """Names a Champion may share with its Legend: the part before "|" ("Lui | Miniature Painter")
+    and, on finished cards, the subname ("Miniature Painter" / "Lui")."""
+    keys = {base(c['name']).strip().lower()}
+    if c.get('subname'):
+        keys.add(c['subname'].strip().lower())
+    return keys
+
+
 def norm(name):
     import unicodedata
     n = unicodedata.normalize('NFD', re.split(r'[|,(]', name or '')[0])
@@ -274,7 +289,7 @@ def similar(a, b):
 def merged(db_card, imp):
     """Same rule as mergeSources() in js/engine/cards.js."""
     m = {**db_card, **imp}
-    if db_card.get('type') in ('signature', 'champion') and imp.get('type') in ('unit', 'spell', 'gear'):
+    if db_card.get('type') == 'signature' and imp.get('type') in ('unit', 'spell', 'gear'):
         m['type'] = db_card['type']
         if db_card.get('sigType'):
             m['sigType'] = db_card['sigType']
@@ -291,9 +306,23 @@ def renumber_collisions(cards, imported):
     used = defaultdict(set)
     for c in cards:
         used[c['set']].add(int(c['number']))
+    def flat(x):
+        return norm(x) if '|' not in (x or '') else re.sub(r'[^a-z0-9]', '', (x or '').lower())
+
+    def same_stats(db, imp):
+        fam = lambda t: 'unit' if t in ('unit', 'champion', 'token') else t
+        return fam(db['type']) == fam(imp['type']) and db['cost'] == imp.get('cost') and sorted(db['colors']) == sorted(imp.get('colors', []))
+
+    def same(db, imp):
+        a = {norm(db['name'])} | {re.sub(r'[^a-z0-9]', '', p.lower()) for p in db['name'].split('|')}
+        b = {norm(imp['name'])}
+        if imp.get('subname'):
+            b |= {re.sub(r'[^a-z0-9]', '', (imp['subname'] + imp['name']).lower())}
+        return any(similar(x, y) or (min(len(x), len(y)) >= 6 and (x.startswith(y) or y.startswith(x))) for x in a for y in b if x and y)
+
     for imp in imported:
         db = by_id.get(imp['id'])
-        if not db or similar(db['name'], imp['name']):
+        if not db or same(db, imp) or same_stats(db, imp):
             continue
         n = max(used[db['set']]) + 1
         used[db['set']].add(n)
@@ -330,15 +359,16 @@ def build_decks(cards, fillers, imported, overrides):
         real = real_legends.get(owner.lower())
         if real:
             lcolors = real['colors']
-            names = [base(real['name']).lower()] + [n.lower() for n in real.get('championNames', [])]
-            lbase = base(real['name'])
+            names = [base(real['name']).lower(), (real.get('subname') or '').lower()] + [n.lower() for n in real.get('championNames', [])]
+            names = [n for n in names if n]
+            lbase = real.get('subname') or base(real['name'])
             legend = {'id': real['id']}
-            ok_champ = lambda c, names=names: base(c['name']).lower() in names
+            ok_champ = lambda c, names=names: bool(champ_keys(c) & set(names))
         else:
-            match = next((c for c in champs if base(c['name']).lower() == owner.lower()), None)
+            match = next((c for c in champs if owner.lower() in champ_keys(c)), None)
             lead = match or (champs[0] if champs else None)
-            lbase = base(lead['name']) if lead else owner
-            ok_champ = lambda c, lbase=lbase: base(c['name']).lower() == lbase.lower()
+            lbase = (owner if match else base(lead['name'])) if lead else owner
+            ok_champ = lambda c, lbase=lbase: lbase.lower() in champ_keys(c)
         legend = legend if real else {
             'id': f'OGN-L-{slug(owner)}', 'set': 'OGN', 'number': f'L-{slug(owner)}', 'setInfo': f'OGN Legend',
             'name': f'{lbase} | Legend', 'type': 'legend', 'colors': lcolors, 'cost': 0, 'power': 0,

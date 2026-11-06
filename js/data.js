@@ -17,9 +17,9 @@ export async function loadData() {
   // data/data.js (classic script) works everywhere, including file://
   const pre = typeof window !== 'undefined' && window.RM_DATA;
   const [placeholders, imported, overrides, decks] = pre
-    ? [pre.cards, pre.imported, pre.effects, pre.decks]
+    ? [[...pre.cards, ...(pre.tokens || [])], pre.imported, pre.effects, pre.decks]
     : await Promise.all([
-      getJson('data/cards.json', []), getJson('data/imported.json', []),
+      Promise.all([getJson('data/cards.json', []), getJson('data/tokens.json', [])]).then(([a, b]) => [...a, ...b]), getJson('data/imported.json', []),
       getJson('data/effects.json', {}), getJson('data/decks.json', []),
     ]);
   setCardDb(mergeSources(placeholders, imported), overrides);

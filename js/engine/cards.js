@@ -23,7 +23,8 @@ export function mergeSources(dbCards, imported) {
   for (const c of imported) {
     const db = byId.get(c.id);
     const m = { ...(db || {}), ...c };
-    if (db && ['signature', 'champion'].includes(db.type) && ['unit', 'spell', 'gear'].includes(c.type)) {
+    // riftcardmaker can't mark a card as Signature, so that type comes from the database
+    if (db && db.type === 'signature' && ['unit', 'spell', 'gear'].includes(c.type)) {
       m.type = db.type;
       if (db.sigType) m.sigType = db.sigType;
     }
@@ -92,8 +93,9 @@ export function baseName(name) { return String(name || '').split(/[|,]/)[0].trim
 
 export function championMatchesLegend(champ, legend) {
   if (!champ || !legend) return false;
-  const names = [legend.name, ...(legend.championNames || [])].map(baseName);
-  return names.includes(baseName(champ.name));
+  const names = [legend.name, legend.subname, ...(legend.championNames || [])].filter(Boolean).map(baseName);
+  // finished cards carry the person in the subname ("Miniature Painter" / "Lui")
+  return names.includes(baseName(champ.name)) || (!!champ.subname && names.includes(baseName(champ.subname)));
 }
 export function signatureMatchesLegend(sig, legend) {
   if (!sig || !legend) return false;
@@ -168,6 +170,12 @@ export function describeEffect(e, def) {
     case 'discard': return `Your opponent discards ${n} random card${n > 1 ? 's' : ''}.`;
     case 'recover': return `Return a Unit from your Graveyard to your hand.`;
     case 'grantKeyword': return `Give ${t} ${e.keyword}${dur}.`;
+    case 'copyUnit': return `Copy ${t}${pw}; the copy has Haste and dies at the end of this turn.`;
+    case 'artDiscount': return 'Your other Art cards cost [1] this turn; any played this way are banished at the end of your turn.';
+    case 'nextDiscount': return `Your next ${e.color} card costs [${n}] less.`;
+    case 'drawKeepTribe': return `Draw [${n}] cards. Keep the ${e.tribe} cards, shuffle the rest back into your deck.`;
+    case 'recoverTribe': return `Return a ${(e.tribes || []).join(' or ')} card from your Graveyard to your hand.`;
+    case 'lastPlayBuff': return `If this is the last card you play this turn, give ${t} +${n} [M] and ${e.keyword}.`;
     case 'tutor': return `Search your deck for a ${e.kind === 'spell' ? 'Spell' : 'Unit'}${e.name ? ` named ${e.name}` : ''}, put it into your hand, then shuffle.`;
     case 'mightPerRune': return `Has [+${n}M] for each ${e.color} rune in your Mana Zone.`;
     case 'token': return `Create ${n > 1 ? n + ' ' : 'a '}${e.tokenName || 'token'}${n > 1 ? 's' : ''}.`;

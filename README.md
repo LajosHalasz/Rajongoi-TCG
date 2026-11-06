@@ -129,6 +129,28 @@ Gaps are filled so the game stays playable:
 - **Each deck gets a placeholder Legend** (OGN has no Legends yet) named after the owner's Champion, so the "same name" rule holds. The Legend's two colors are the deck's most common ones, and cards outside them are left out.
 - **Decks under 20 cards** are completed with neutral **Filler** cards following the Assembly Guide curve. **Decks over 20** are trimmed, keeping fully designed cards first.
 
+### Writing finished cards back into the Access database
+
+`mdbtools` can only read Access files. To write changes back, there is a small Java tool built on Jackcess, which needs Java 17+ and Maven:
+
+```bash
+node tools/cards-to-access.mjs updates.json OGN 171 173 174
+```
+
+This turns the finished cards with those numbers into row updates. It fills in Name, Type, Color 1/2, Tag, Shield Trigger, FLAG, Mana, Might, Recycle, Description and Flavour Text.
+
+```bash
+(cd tools/access-writer && mvn -q package)
+```
+
+This builds the tool once.
+
+```bash
+java -cp "tools/access-writer/target/acc-writer-1.jar:tools/access-writer/target/lib/*" Update RajongoiTCG.accdb "OGN 2026-01  (300)" updates.json
+```
+
+This applies the updates in place and prints every changed value. Work on a copy of the database. The `Check` class in the same jar lists row counts and looks for duplicate IDs. After editing, run *Compact & Repair* in Access once. Until then, `mdb-export` may still list the old, replaced row versions; the database importer ignores them.
+
 ### Playable premade decks
 
 Only the decks of the owners in `PLAYABLE_OWNERS` (in `tools/import_accdb.py`, currently Lui and Balu) can be played in **Play vs AI**. The others are listed as *Coming soon*: neither you nor the AI can pick them, and they can't be copied. To unlock a deck, add its owner to the list and re-run the database import.
@@ -139,7 +161,7 @@ Only the decks of the owners in `PLAYABLE_OWNERS` (in `tools/import_accdb.py`, c
 node tools/import-riftcardmaker.mjs ~/Downloads/*.json
 ```
 
-Use `--fresh` to rebuild `imported.json` from only the given files. When several exports of the same card are passed, the last one wins.
+Exports from riftcardmaker v9+ (numeric type/colour/rarity codes and `tags` instead of `tribes`) are decoded automatically. The rendered `.png` files that come with an export are not needed, because the game draws its own frame. Use `--fresh` to rebuild `imported.json` from only the given files. When several exports of the same card are passed, the last one wins.
 
 A card is matched to its database row by name and type, so a typo'd printed number still lands on the right card. Example: *Darkest Dungeoneers* is printed 179, but it is ID 45 in the database. A new card printed with a number the database already uses (*Lutheria*, DND 002/003) keeps that number, and the next database import moves the old row to a free number. Exports also work for:
 - **Legends**: they replace the deck's placeholder Legend.
@@ -174,6 +196,8 @@ An effect is `{ "on": <trigger>, "do": <action>, "target": <target>, ...params }
 
 - **on**: `play` (default), `attack`, `destroyed`, `turnStart`, `unitPlayed`, `spellCast`, `static` (Legend/Gear/Unit passives), `activate` (Gear: tap, plus optional `activateCost` on the card).
 - **do**: `draw {amount, who?:"opponent"}` · `destroy {maxPower?, filter?}` · `tutor {kind, name?}` · `mightPerRune {color}` (static) · `buff {amount, duration:"turn"|"permanent", filter?:{color, keyword}}` (negative amounts lower Might) · `tap` · `untap` · `bounce` · `breakShield {amount}` · `addShield {amount}` · `shieldify {amount}` · `channel {amount, tapped?}` · `discard {amount}` · `recover` · `grantKeyword {keyword}` · `token {tokenId, amount}`.
+- Package 2 effects: `drawKeepTribe {amount, tribe}`, `recoverTribe {tribes}` (also usable as a Legend tap ability), `lastPlayBuff` (The Law, resolved at end of turn), trigger `allyDied {ifName}`, static filter `{name, token}`, card flag `uncounterable`.
+- Package 1 effects: `copyUnit` (temporary Haste copy that dies at end of turn), `artDiscount` (The Chronicler), `nextDiscount {color, amount}`; card field `tokenAccelerate` (Miniature Painter); keyword `Indestructible`. Token definitions live in `data/tokens.json`.
 - More effects: `ready` · `morph {power}` · `sacrificeSelf` · `breakOwnShield` · `lockShields` · `sealTriggers` · `doubleNext` · `counter {maxCost}` · `splitDestroy {amount}` · `summonNamed {name, from, ready}`. Any effect can take `limit`, `minPower` and `ifInPlay`. `duration` can be `"nextTurn"`.
 - Card fields: `modes` + `chooseModes` / `opponentChooses` · `costReduction {perRunePair | perGraveTribe}` · `attackBonus` / `defendBonus` · `escapeOnce` · `surviveRoll` · `activateNoTap` · `unstoppableIfTribe` · `requiresStack` · Legend `championNames`.
 - New triggers: `enemyAttack`. `unitPlayed` can take `ifSubjectMighty` and `tapSource`.

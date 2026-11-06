@@ -121,10 +121,18 @@
   ]
  },
  "OGN-012": {
+  "keywords": [
+   "Shield Trigger"
+  ],
   "effects": [
    {
     "do": "tap",
     "target": "allEnemyUnits"
+   },
+   {
+    "do": "nextDiscount",
+    "color": "Fury",
+    "amount": 3
    }
   ]
  },
@@ -506,6 +514,205 @@
     "on": "enemyAttack",
     "do": "draw",
     "amount": 1
+   }
+  ]
+ },
+ "OGN-176": {
+  "keywords": [
+   "Defensive"
+  ],
+  "activateCost": 2,
+  "effects": [
+   {
+    "on": "activate",
+    "do": "token",
+    "tokenId": "TKN-004",
+    "tokenName": "Pouch"
+   }
+  ]
+ },
+ "OGN-178": {
+  "keywords": [],
+  "effects": [
+   {
+    "do": "artDiscount"
+   }
+  ]
+ },
+ "OGN-180": {
+  "keywords": [],
+  "effects": [
+   {
+    "on": "activate",
+    "do": "copyUnit",
+    "target": "enemyUnit",
+    "maxPower": 4
+   }
+  ]
+ },
+ "OGN-181": {
+  "keywords": [],
+  "effects": []
+ },
+ "OGN-183": {
+  "keywords": [],
+  "effects": [
+   {
+    "on": "activate",
+    "do": "buff",
+    "target": "self",
+    "amount": 1,
+    "duration": "permanent"
+   },
+   {
+    "on": "activate",
+    "do": "grantKeyword",
+    "target": "self",
+    "keyword": "Indestructible",
+    "duration": "nextTurn"
+   }
+  ],
+  "digitalNote": "In the digital game the opponent always refuses the deal."
+ },
+ "OGN-184": {
+  "keywords": [
+   "Defensive",
+   "Party Breaker"
+  ],
+  "effects": []
+ },
+ "OGN-185": {
+  "keywords": [],
+  "effects": [
+   {
+    "on": "activate",
+    "do": "grantKeyword",
+    "target": "allFriendlyUnits",
+    "keyword": "Vigilance",
+    "duration": "turn"
+   }
+  ]
+ },
+ "OGN-188": {
+  "keywords": [],
+  "effects": [],
+  "tokenAccelerate": "Miniature"
+ },
+ "OGN-189": {
+  "keywords": [],
+  "activateCost": 3,
+  "effects": [
+   {
+    "on": "activate",
+    "do": "token",
+    "tokenId": "TKN-003",
+    "tokenName": "Miniature"
+   }
+  ]
+ },
+ "OGN-179": {
+  "keywords": [
+   "Shield Trigger"
+  ],
+  "activateCost": 1,
+  "effects": [
+   {
+    "on": "activate",
+    "do": "token",
+    "tokenId": "TKN-005",
+    "tokenName": "Miniature"
+   }
+  ]
+ },
+ "OGN-171": {
+  "keywords": [],
+  "effects": [
+   {
+    "do": "lastPlayBuff",
+    "target": "friendlyUnit",
+    "amount": 2,
+    "keyword": "Defensive"
+   }
+  ]
+ },
+ "OGN-186": {
+  "keywords": [
+   "Shield Trigger",
+   "Reaction"
+  ],
+  "uncounterable": true,
+  "effects": [
+   {
+    "do": "grantKeyword",
+    "target": "allFriendlyUnits",
+    "keyword": "Indestructible",
+    "duration": "turn"
+   }
+  ]
+ },
+ "OGN-173": {
+  "keywords": [],
+  "effects": [
+   {
+    "do": "drawKeepTribe",
+    "amount": 4,
+    "tribe": "Movie"
+   }
+  ]
+ },
+ "OGN-182": {
+  "keywords": [
+   "Defensive",
+   "Shieldify"
+  ],
+  "effects": [
+   {
+    "do": "shieldify",
+    "amount": 1
+   }
+  ]
+ },
+ "OGN-174": {
+  "keywords": [],
+  "effects": [
+   {
+    "on": "allyDied",
+    "do": "draw",
+    "amount": 1,
+    "ifName": "Miniature"
+   }
+  ]
+ },
+ "OGN-175": {
+  "keywords": [],
+  "effects": [
+   {
+    "do": "draw",
+    "amount": 1
+   },
+   {
+    "on": "static",
+    "do": "buff",
+    "target": "allFriendlyUnits",
+    "amount": 1,
+    "filter": {
+     "name": "Miniature",
+     "token": true
+    }
+   }
+  ]
+ },
+ "OGN-L-lui": {
+  "keywords": [],
+  "activateCost": 2,
+  "effects": [
+   {
+    "on": "activate",
+    "do": "recoverTribe",
+    "tribes": [
+     "Movie",
+     "Art"
+    ]
    }
   ]
  }

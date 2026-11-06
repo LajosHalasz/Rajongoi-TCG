@@ -57,6 +57,7 @@
     "Breaker": { hex: "#B03A2E", reminder: "Breaks 2 shields instead of 1." },
     "Party Breaker": { hex: "#CE356B", reminder: "Can attack untapped Units." },
     "Slow Start": { hex: "#6D6E6B", reminder: "Enters tapped." },
+    "Indestructible": { hex: "#21705B", reminder: "Can't be destroyed." },
     "Unstoppable": { hex: "#6D6E6B", reminder: "This Unit's attacks can't be redirected." },
     "Action": { hex: "#6D5BD0", reminder: "Can also be played during combat." },
     "Reaction": { hex: "#2E8B9A", reminder: "Can be played during combat, even in response to another spell." }
@@ -77,7 +78,7 @@
     for (const c of imported) {
       const db = byId.get(c.id);
       const m = { ...db || {}, ...c };
-      if (db && ["signature", "champion"].includes(db.type) && ["unit", "spell", "gear"].includes(c.type)) {
+      if (db && db.type === "signature" && ["unit", "spell", "gear"].includes(c.type)) {
         m.type = db.type;
         if (db.sigType) m.sigType = db.sigType;
       }
@@ -158,8 +159,8 @@ ${def.text}`;
   }
   function championMatchesLegend(champ, legend) {
     if (!champ || !legend) return false;
-    const names = [legend.name, ...legend.championNames || []].map(baseName);
-    return names.includes(baseName(champ.name));
+    const names = [legend.name, legend.subname, ...legend.championNames || []].filter(Boolean).map(baseName);
+    return names.includes(baseName(champ.name)) || !!champ.subname && names.includes(baseName(champ.subname));
   }
   function signatureMatchesLegend(sig, legend) {
     if (!sig || !legend) return false;
@@ -233,6 +234,18 @@ ${def.text}`;
         return `Return a Unit from your Graveyard to your hand.`;
       case "grantKeyword":
         return `Give ${t} ${e.keyword}${dur}.`;
+      case "copyUnit":
+        return `Copy ${t}${pw}; the copy has Haste and dies at the end of this turn.`;
+      case "artDiscount":
+        return "Your other Art cards cost [1] this turn; any played this way are banished at the end of your turn.";
+      case "nextDiscount":
+        return `Your next ${e.color} card costs [${n}] less.`;
+      case "drawKeepTribe":
+        return `Draw [${n}] cards. Keep the ${e.tribe} cards, shuffle the rest back into your deck.`;
+      case "recoverTribe":
+        return `Return a ${(e.tribes || []).join(" or ")} card from your Graveyard to your hand.`;
+      case "lastPlayBuff":
+        return `If this is the last card you play this turn, give ${t} +${n} [M] and ${e.keyword}.`;
       case "tutor":
         return `Search your deck for a ${e.kind === "spell" ? "Spell" : "Unit"}${e.name ? ` named ${e.name}` : ""}, put it into your hand, then shuffle.`;
       case "mightPerRune":
@@ -342,8 +355,8 @@ ${def.text}`;
   }
   async function loadData() {
     const pre = typeof window !== "undefined" && window.RM_DATA;
-    const [placeholders, imported, overrides, decks] = pre ? [pre.cards, pre.imported, pre.effects, pre.decks] : await Promise.all([
-      getJson("data/cards.json", []),
+    const [placeholders, imported, overrides, decks] = pre ? [[...pre.cards, ...pre.tokens || []], pre.imported, pre.effects, pre.decks] : await Promise.all([
+      Promise.all([getJson("data/cards.json", []), getJson("data/tokens.json", [])]).then(([a, b]) => [...a, ...b]),
       getJson("data/imported.json", []),
       getJson("data/effects.json", {}),
       getJson("data/decks.json", [])
@@ -394,6 +407,7 @@ ${def.text}`;
     h = h.replace(/__(.+?)__/gs, "<i>$1</i>");
     h = h.replace(/\[([A-Za-z])#([0-9a-fA-F]{6})\]/g, (_, k, c) => `<span class="ico" style="background:#${c}">${k.toUpperCase()}</span>`);
     h = h.replace(/\[([TMR])\]/g, (_, k) => ICONS[k]);
+    h = h.replace(/\[U\]/g, '<span class="ico" title="Unit">\u2694</span>');
     h = h.replace(/\[P\]/g, '<span class="ico" title="Power rune">P</span>');
     h = h.replace(/\[\+(\d+)M\]/g, "+$1 " + ICONS.M);
     h = h.replace(/\[(\d+)M\]/g, "$1" + ICONS.M);
@@ -434,7 +448,7 @@ ${def.text}`;
   }
   var recyclePill = (def) => def.recycle ? `<div class="rpill" title="Recycle ${def.recycle} rune(s) of this color">${Array.from({ length: def.recycle }, () => "<span></span>").join("")}</div>` : "";
   function rulesHtml(def) {
-    const rules = def.text ? markup(def.text) : `<p class="wip-text">Design in progress${def.purpose ? ` \u2014 ${esc(def.purpose)}` : ""}.</p>`;
+    const rules = def.text ? markup(def.text) : def.image && !def.wip ? "" : `<p class="wip-text">Design in progress${def.purpose ? ` \u2014 ${esc(def.purpose)}` : ""}.</p>`;
     return `<div class="textbox"><div class="rules">${rules}</div>${def.flavor ? `<div class="flavor">${esc(def.flavor)}</div>` : ""}</div>`;
   }
   function runeHtml(def, opts) {
@@ -988,6 +1002,8 @@ ${def.text}`;
         const f = e.filter || {};
         if (f.color && !d.colors.includes(f.color)) continue;
         if (f.keyword && !hasKeyword(s, inst, f.keyword)) continue;
+        if (f.name && d.name !== f.name) continue;
+        if (f.token && !d.token) continue;
         if (e.target === "self" && src.uid !== inst.uid) continue;
         p += e.amount || 0;
       }
@@ -1001,14 +1017,22 @@ ${def.text}`;
     return !inst.tapped && (!inst.sick || inst.fast || hasKeyword(s, inst, "Haste"));
   }
   var canAttackWith = (s, u) => canAttackNow(s, u) && !hasKeyword(s, u, "Immobile");
-  function effectiveCost(s, pi, d) {
-    const r = d.costReduction;
-    if (!r) return d.cost;
+  var hasTribe = (d, t) => (d.tribes || []).some((x) => String(x).toLowerCase() === String(t).toLowerCase());
+  var isArt = (d) => hasTribe(d, "art");
+  function artDiscounted(s, pi, d) {
     const p = s.players[pi];
+    return p.artTurn === s.turn && isArt(d) && d.cost > 1 && kindOf(d) !== "legend";
+  }
+  function effectiveCost(s, pi, d) {
+    const p = s.players[pi];
+    let base = artDiscounted(s, pi, d) ? 1 : d.cost;
+    if (p.nextDiscount && d.colors.includes(p.nextDiscount.color)) base = Math.max(0, base - p.nextDiscount.amount);
+    const r = d.costReduction;
+    if (!r) return base;
     let n = 0;
     if (r.perRunePair) n += Math.min(...r.perRunePair.map((c) => p.mana.filter((x) => x.color === c).length));
     if (r.perGraveTribe) n += p.graveyard.filter((c) => (getDef(c.id).tribes || []).includes(r.perGraveTribe)).length;
-    return Math.max(0, d.cost - n);
+    return Math.max(0, base - n);
   }
   function untappedRunes(p) {
     return p.mana.filter((r) => !r.tapped);
@@ -1177,12 +1201,13 @@ ${def.text}`;
   function activateOptions(s, pi) {
     const p = s.players[pi];
     const acts = [];
-    for (const g of [...p.gear, ...p.battle]) {
+    for (const g of [...p.gear, ...p.battle, p.legend]) {
       const d = getDef(g.id);
       if (!(d.effects || []).some((e) => e.on === "activate")) continue;
       if (d.activateNoTap) {
         if (g.activatedTurn === s.turn) continue;
       } else if (g.tapped || p.battle.includes(g) && !canAttackNow(s, g)) continue;
+      if (g === p.legend && !(d.effects || []).some((e) => e.on === "activate" && (!e.tribes || p.graveyard.some((c) => e.tribes.some((t) => hasTribe(getDef(c.id), t)))))) continue;
       if (!canAfford(p, d.activateCost || 0, null)) continue;
       acts.push(...withTargets(s, pi, d, { type: "activate", uid: g.uid }, true, "activate"));
     }
@@ -1343,7 +1368,7 @@ ${def.text}`;
   }
   function checkDeaths(s) {
     for (const p of s.players) {
-      for (const u of [...p.battle]) if (p.battle.includes(u) && power(s, u) <= 0) {
+      for (const u of [...p.battle]) if (p.battle.includes(u) && power(s, u) <= 0 && !hasKeyword(s, u, "Indestructible")) {
         log(s, `${nm(u)} has 0 Might and is destroyed.`);
         destroyUnit(s, u);
       }
@@ -1402,6 +1427,30 @@ ${def.text}`;
       log(s, `${nm(c)} untaps (Vigilance).`);
     }
     ap.doubleNext = false;
+    ap.artTurn = null;
+    for (const L of ap.lawPending || []) {
+      const u = ap.battle.find((x) => x.uid === L.uid);
+      if (L.turn === s.turn && L.index === ap.plays && u) {
+        u.mods.push({ power: L.amount }, { keyword: L.keyword });
+        log(s, `The Law: ${nm(u)} gets +${L.amount} Might and ${L.keyword}.`);
+      } else if (L.turn === s.turn) log(s, "The Law fizzles (another card was played after it).");
+    }
+    ap.lawPending = [];
+    for (const p of s.players) {
+      for (const u of [...p.battle]) {
+        if (u.temp) {
+          p.battle.splice(p.battle.indexOf(u), 1);
+          log(s, `The copy of ${nm(u)} dies at end of turn.`);
+        } else if (u.banishEot) {
+          p.battle.splice(p.battle.indexOf(u), 1);
+          log(s, `${nm(u)} is banished.`);
+        }
+      }
+      for (const g of [...p.gear]) if (g.banishEot) {
+        p.gear.splice(p.gear.indexOf(g), 1);
+        log(s, `${nm(g)} is banished.`);
+      }
+    }
     for (const p of s.players) for (const u of p.battle) {
       u.mods = u.mods.filter((m) => !(m.until === "eot" || m.untilTurn != null && m.untilTurn <= s.turn));
     }
@@ -1439,7 +1488,18 @@ ${def.text}`;
     const p = s.players[pi];
     const inst = [...p.hand, p.championSlot, p.signatureSlot].find((c) => c && c.uid === a.uid);
     const d = getDef(inst.id);
+    const viaArt = artDiscounted(s, pi, d);
+    p.plays = (p.playTurn === s.turn ? p.plays || 0 : 0) + 1;
+    p.playTurn = s.turn;
     payCost(s, p, effectiveCost(s, pi, d), d.colors, d.recycle || 0);
+    if (p.nextDiscount && d.colors.includes(p.nextDiscount.color)) {
+      log(s, `${d.name} costs ${p.nextDiscount.amount} less (Strawberry Club).`);
+      p.nextDiscount = null;
+    }
+    if (viaArt) {
+      inst.banishEot = true;
+      log(s, `${d.name} is played for 1 (The Chronicler) and will be banished at end of turn.`);
+    }
     removeFromSource(p, a.uid);
     const k = kindOf(d);
     if (k === "spell" && s.pending && s.pending.kind === "priority") {
@@ -1505,6 +1565,10 @@ ${def.text}`;
   function finishSpell(p, inst, modes) {
     const d = getDef(inst.id);
     const after = (modes || []).map((i) => d.modes?.[i]?.afterCast).find(Boolean) || d.afterCast;
+    if (inst.banishEot) {
+      delete inst.banishEot;
+      return;
+    }
     if (after === "deckTop") p.deck.unshift(inst);
     else if (after === "banish") {
     } else p.graveyard.push(inst);
@@ -1541,7 +1605,7 @@ ${def.text}`;
   }
   function doActivate(s, pi, a) {
     const p = s.players[pi];
-    const g = p.gear.find((x) => x.uid === a.uid) || p.battle.find((x) => x.uid === a.uid);
+    const g = p.gear.find((x) => x.uid === a.uid) || p.battle.find((x) => x.uid === a.uid) || (p.legend.uid === a.uid ? p.legend : null);
     const d = getDef(g.id);
     payCost(s, p, d.activateCost || 0, null);
     if (d.activateNoTap) g.activatedTurn = s.turn;
@@ -1617,7 +1681,7 @@ ${def.text}`;
         for (let i = s.stack.length - 1; i >= 0; i--) {
           const it = s.stack[i];
           const cd = getDef(it.inst.id);
-          if (it.controller === pi || cd.cost > (e.maxCost ?? 99)) continue;
+          if (it.controller === pi || cd.cost > (e.maxCost ?? 99) || cd.uncounterable) continue;
           s.stack.splice(i, 1);
           s.players[it.controller].graveyard.push(it.inst);
           log(s, `${cd.name} is countered.`);
@@ -1724,7 +1788,57 @@ ${def.text}`;
           t.sick = true;
           me.battle.push(t);
           log(s, `${me.name} creates ${nm(t)}.`);
+          const accel = me.battle.find((u) => [e.tokenId, nm(t)].includes(getDef(u.id).tokenAccelerate));
+          if (accel && canAfford(me, 1, getDef(accel.id).colors)) {
+            payCost(s, me, 1, getDef(accel.id).colors, 0);
+            t.sick = false;
+            log(s, `${nm(t)} enters ready (Accelerate).`);
+          }
         }
+        break;
+      case "copyUnit":
+        for (const u of targets) if (okPower(u)) {
+          const c = mk(s, u.id, pi);
+          c.temp = true;
+          c.fast = true;
+          c.sick = true;
+          me.battle.push(c);
+          log(s, `${me.name} copies ${nm(u)}; the copy has Haste and dies at end of turn.`);
+        }
+        break;
+      case "drawKeepTribe": {
+        const seen = me.deck.splice(0, n);
+        const keep = seen.filter((c) => hasTribe(getDef(c.id), e.tribe));
+        me.hand.push(...keep);
+        me.deck.push(...seen.filter((c) => !keep.includes(c)));
+        shuffle(s, me.deck);
+        log(s, `${me.name} reveals ${seen.length} cards and keeps ${keep.length} ${e.tribe} card${keep.length === 1 ? "" : "s"}${keep.length ? ": " + keep.map(nm).join(", ") : ""}.`);
+        break;
+      }
+      case "recoverTribe": {
+        const pool = me.graveyard.filter((c) => (e.tribes || []).some((t) => hasTribe(getDef(c.id), t))).sort((a, b) => getDef(b.id).cost - getDef(a.id).cost);
+        if (!pool.length) {
+          log(s, "Nothing to return.");
+          break;
+        }
+        me.graveyard.splice(me.graveyard.indexOf(pool[0]), 1);
+        me.hand.push(pool[0]);
+        log(s, `${me.name} returns ${nm(pool[0])} from the Graveyard to hand.`);
+        break;
+      }
+      case "lastPlayBuff":
+        for (const u of targets) {
+          me.lawPending = [...me.lawPending || [], { uid: u.uid, turn: s.turn, index: me.plays || 0, amount: n, keyword: e.keyword }];
+          log(s, `The Law targets ${nm(u)} \u2014 it applies if nothing else is played this turn.`);
+        }
+        break;
+      case "artDiscount":
+        me.artTurn = s.turn;
+        log(s, `${me.name}'s other Art cards cost 1 this turn.`);
+        break;
+      case "nextDiscount":
+        me.nextDiscount = { color: e.color, amount: n };
+        log(s, `${me.name}'s next ${e.color} card costs ${n} less.`);
         break;
     }
   }
@@ -1740,6 +1854,10 @@ ${def.text}`;
     const owner = s.players[u.owner];
     const i = owner.battle.indexOf(u);
     if (i < 0) return;
+    if (hasKeyword(s, u, "Indestructible")) {
+      log(s, `${nm(u)} is Indestructible!`);
+      return;
+    }
     if (getDef(u.id).escapeOnce && !u.escaped) {
       u.escaped = true;
       u.mods.push({ power: 1 });
@@ -1749,8 +1867,15 @@ ${def.text}`;
     owner.battle.splice(i, 1);
     resetInst(u);
     const d = getDef(u.id);
-    if (!d.token) owner.graveyard.push(u);
+    if (!d.token && !u.temp) owner.graveyard.push(u);
     log(s, `${d.name} is destroyed.`);
+    for (const src of [...owner.battle, ...owner.gear]) {
+      const effs = effectsOn(getDef(src.id), "allyDied").filter((e) => !e.ifName || e.ifName === d.name);
+      if (effs.length) {
+        log(s, `${nm(src)} triggers.`);
+        runEffects(s, owner.idx, src, effs);
+      }
+    }
     runEffects(s, owner.idx, u, effectsOn(d, "destroyed").filter((e) => !SINGLE_TARGETS.has(e.target)));
   }
   function destroyGear(s, g) {

@@ -38,14 +38,35 @@ function lev(a, b) {
     d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
   return d[a.length][b.length];
 }
-const similar = (a, b) => { a = norm(a); b = norm(b); return !!a && !!b && (a === b || 1 - lev(a, b) / Math.max(a.length, b.length) >= 0.75); };
+const similar1 = (a, b) => !!a && !!b && (a === b || 1 - lev(a, b) / Math.max(a.length, b.length) >= 0.75);
+// renamed with a suffix ("Manyika" -> "Manyika Dreadnought"), compared on base names only
+const prefixed = (a, b) => { a = norm(a.name ?? a); b = norm(b.name ?? b); return Math.min(a.length, b.length) >= 6 && (a.startsWith(b) || b.startsWith(a)); };
+const flat = (n) => String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const variants = (c) => {
+  const v = new Set([norm(c.name), flat(c.name)]);
+  for (const part of String(c.name || '').split('|')) v.add(flat(part));
+  if (c.subname) { v.add(flat(c.subname + c.name)); v.add(flat(c.name + c.subname)); }
+  v.delete('');
+  return [...v];
+};
+const similar = (a, b) => {
+  const A = typeof a === 'string' ? [norm(a), flat(a)] : variants(a), B = typeof b === 'string' ? [norm(b), flat(b)] : variants(b);
+  return A.some(x => B.some(y => similar1(x, y)));
+};
 const family = (t) => (['unit', 'champion', 'token'].includes(t) ? 'unit' : t);
 const sameFamily = (a, b) => family(a.type) === family(b.type) || a.type === 'signature' || b.type === 'signature';
 function reconcile(card) {
   if (card.set === 'TKN' || card.set === 'RUN') return card;
   const atId = dbCards.find(c => c.id === card.id);
-  if (atId && similar(atId.name, card.name) && (sameFamily(atId, card) || norm(atId.name) === norm(card.name))) return card;
-  const byName = dbCards.find(c => c.set === card.set && similar(c.name, card.name) && sameFamily(c, card));
+  // same printed number + similar name: same card, even if it was redesigned to another type
+  if (atId && (similar(atId, card) || prefixed(atId, card))) return card;
+  // same number, same kind of card, same colours and cost: a renamed redesign of that row
+  if (atId && family(atId.type) === family(card.type) && atId.cost === card.cost
+      && [...atId.colors].sort().join() === [...card.colors].sort().join()) {
+    console.log(`  note: ${card.id} "${card.name}" replaces database card "${atId.name}" (same number, type, colour and cost)`);
+    return card;
+  }
+  const byName = dbCards.find(c => c.set === card.set && similar(c, card) && sameFamily(c, card));
   if (byName) {
     console.log(`  note: ${card.id} "${card.name}" matches database card ${byName.id} "${byName.name}" -> using ${byName.id}`);
     if (card.image) {
@@ -80,7 +101,15 @@ function writeLayer(im, base) {
   return tmp;
 }
 
+// riftcardmaker export v9+ stores type / colour / rarity as numeric codes
+const TYPE_CODES = { 1: 'legend', 2: 'champion', 3: 'unit', 4: 'spell', 5: 'gear', 6: 'rune', 7: 'token' };
+const COLOR_CODES = { 1: 'fury', 2: 'calm', 3: 'mind', 4: 'body', 5: 'chaos', 6: 'order' };
+const RARITY_CODES = { 1: 'common', 2: 'common', 3: 'common', 4: 'uncommon', 5: 'rare', 6: 'epic', 7: 'epic' };
+const decode = (v, map) => (v != null && /^\d+$/.test(String(v)) ? map[+v] : v);
+
 function convert(j) {
+  j = { ...j, type: decode(j.type, TYPE_CODES), color: decode(j.color, COLOR_CODES), secondColor: decode(j.secondColor, COLOR_CODES),
+    rarity: decode(j.rarity, RARITY_CODES), tribes: j.tribes || j.tags };
   let { set, number } = parseSetInfo(j.setInfo);
   let type = String(j.type || 'unit').toLowerCase();
   if (set === 'TKN') type = 'token';
@@ -92,7 +121,10 @@ function convert(j) {
   let id = `${set}-${number}`;
   if (type === 'legend') {
     // Legends are keyed by their owner so they replace that deck's placeholder Legend
-    const owner = baseName(j.name) || j.illustrator;
+    // the deck owner is in the name ("Matyi | Always on time") or, on newer exports, in the subname ("Lui")
+    const knownOwners = new Set(dbCards.flatMap(c => c.owners || []).map(o => o.toLowerCase()));
+    const sub = (j.subname || '').trim();
+    const owner = (sub && knownOwners.has(sub.toLowerCase()) ? sub : '') || baseName(j.name) || j.illustrator;
     owners = [owner];
     set = (j.setInfo || 'OGN').trim().slice(0, 3).toUpperCase();
     number = 'L-' + slug(owner);

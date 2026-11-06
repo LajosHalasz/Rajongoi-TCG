@@ -229,6 +229,12 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
 .card.rareart.mini .art, .card.rareart.mini .art-shade { clip-path: inset(2.6% round 1cqw); }
 .card.rareart.mini .frame { inset: 2.6%; }
 
+/* finished standard cards: like riftcardmaker, the art continues faintly behind the text box */
+.card.standard .art-window:has(.card-img) { clip-path: inset(4% 5.5% 7.4% 5.5%); }
+.card.standard:has(.card-img) .textbox { background: linear-gradient(180deg, rgba(251,250,248,.84), rgba(238,236,232,.92)); }
+.card.standard:has(.card-img) .flavor { background: rgba(229,217,200,.85); }
+.card.standard.mini .art-window:has(.card-img) { clip-path: inset(3% 3% 28% 3%); }
+
 /* ---------------------------------------------- epic: full-art frame */
 .card.fullart { background: #0d1220; }
 .card.fullart .frame { inset: 3.6% 4% 6.5% 4%; border-width: .55cqw; border-radius: .6cqw; box-shadow: 0 0 0 .35cqw rgba(0,0,0,.25), inset 0 0 0 .35cqw rgba(0,0,0,.2); }

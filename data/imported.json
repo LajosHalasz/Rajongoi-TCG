@@ -478,7 +478,7 @@
     ],
     "effects": [],
     "tribes": [],
-    "text": "{Shield Trigger#CE356B}__(If you got this from your Shield Zone, you may play it immediately for [0] mana.)__\nTap [T] all enemy Units.",
+    "text": "{Shield Trigger#CE356B}__(If you got this from your Shield Zone, you may play it immediately for [0] mana.)__\nTap [T] all enemy Units. Your next [f#d70d1b] card costs [3] less.",
     "flavor": "\" I was invited to friend's birthday at the Airport\" ~ Edino",
     "rarity": "common",
     "illustrator": "Lui",
@@ -1212,6 +1212,39 @@
     }
   },
   {
+    "id": "OGN-171",
+    "set": "OGN",
+    "number": "171",
+    "name": "The Law",
+    "type": "spell",
+    "colors": [
+      "Order"
+    ],
+    "cost": 2,
+    "power": 0,
+    "keywords": [
+      "Defensive"
+    ],
+    "effects": [],
+    "tribes": [
+      "Movie"
+    ],
+    "text": "If this is the last card you played this turn, give a Unit +2[M] and {Defensive#CE356B}__(When an enemy Unit attacks, you may [T] this to redirect the attack to this Unit.)__",
+    "flavor": "If we drank any beers tonight, we have to stay up until 2.am. ",
+    "rarity": "epic",
+    "illustrator": "Lui",
+    "setInfo": "OGN 171/300",
+    "source": "riftcardmaker",
+    "recycle": 2,
+    "image": "data/img/OGN-171.jpg",
+    "imageCrop": {
+      "x": 8.122958459475814,
+      "y": 3.5440918404402035,
+      "width": 90.74410163339384,
+      "height": 94.58499291505784
+    }
+  },
+  {
     "id": "OGN-172",
     "set": "OGN",
     "number": "172",
@@ -1246,6 +1279,135 @@
       "y": 17.204646587781152,
       "width": 84.99542163026533,
       "height": 66.22399637557116
+    }
+  },
+  {
+    "id": "OGN-173",
+    "set": "OGN",
+    "number": "173",
+    "name": "Movie Night at Chris",
+    "type": "spell",
+    "colors": [
+      "Order"
+    ],
+    "cost": 2,
+    "power": 0,
+    "keywords": [
+      "MoVie"
+    ],
+    "effects": [],
+    "tribes": [
+      "Movie"
+    ],
+    "text": "Draw [4] cards. Reveal any {MoVie#6D6E6B} cards drawn and keep them. Shuffle the rest back to your Deck.",
+    "flavor": "Where were we?",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "OGN 173/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-173.jpg",
+    "imageCrop": {
+      "x": 0.35714285714285715,
+      "y": -7.12830434187098,
+      "width": 100,
+      "height": 186.960690316395
+    }
+  },
+  {
+    "id": "OGN-174",
+    "set": "OGN",
+    "number": "174",
+    "name": "Amateur Dungeon Master",
+    "type": "unit",
+    "colors": [
+      "Order"
+    ],
+    "cost": 1,
+    "power": 2,
+    "keywords": [],
+    "effects": [],
+    "tribes": [
+      "Game"
+    ],
+    "text": "When a Miniature Token Unit[U] dies, \nDraw [1] card.",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "OGN 174/300",
+    "source": "riftcardmaker",
+    "recycle": 2,
+    "image": "data/img/OGN-174.jpg",
+    "imageCrop": {
+      "x": 0.35714285714285715,
+      "y": -4.258406382687308,
+      "width": 100,
+      "height": 186.960690316395
+    }
+  },
+  {
+    "id": "OGN-175",
+    "set": "OGN",
+    "number": "175",
+    "name": "Miniature Army Box",
+    "type": "gear",
+    "colors": [
+      "Order"
+    ],
+    "cost": 1,
+    "power": 0,
+    "keywords": [],
+    "effects": [],
+    "tribes": [
+      "Game"
+    ],
+    "text": "Your Miniature Token Units[U] have +1[M].\nWhen you play this Draw [1].",
+    "flavor": "",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "OGN 175/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-175.jpg",
+    "imageCrop": {
+      "x": 1.4285714285714286,
+      "y": -8.084936994932205,
+      "width": 100,
+      "height": 186.960690316395
+    }
+  },
+  {
+    "id": "OGN-176",
+    "set": "OGN",
+    "number": "176",
+    "name": "Manyika Dreadnought",
+    "type": "unit",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 3,
+    "power": 5,
+    "keywords": [
+      "Defensive",
+      "Deathtouch"
+    ],
+    "effects": [],
+    "tribes": [
+      "Tech"
+    ],
+    "text": "{Defensive#CE356B}__(When an enemy Unit attacks, you may [T] this to redirect the attack to this Unit.)__\n[T][2]: Summon a Pouch Token Unit[U]\n with {Deathtouch#94B131#000000}.",
+    "flavor": "Izo, klipszer, vízüveg! Hegesszél már báttya~!",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "OGN 176/300",
+    "source": "riftcardmaker",
+    "recycle": 2,
+    "image": "data/img/OGN-176.jpg",
+    "imageCrop": {
+      "x": 1.7551652546144079,
+      "y": -3.408997000406188,
+      "width": 95.14747859181732,
+      "height": 177.8883827939058
     }
   },
   {
@@ -1290,11 +1452,16 @@
     ],
     "cost": 3,
     "power": 4,
-    "keywords": [],
+    "keywords": [
+      "Art"
+    ],
     "effects": [],
-    "tribes": [],
-    "text": "",
-    "flavor": "",
+    "tribes": [
+      "art",
+      "traveler"
+    ],
+    "text": "When you play this, your other {Art#6D6E6B} cards cost [1] this turn, but any you play like this gets banished at the end of your turn.",
+    "flavor": "Goodbye.",
     "rarity": "uncommon",
     "illustrator": "Lui",
     "setInfo": "OGN 178/300",
@@ -1309,6 +1476,146 @@
     }
   },
   {
+    "id": "OGN-179",
+    "set": "OGN",
+    "number": "179",
+    "name": "3D Printer - Lui's Forge",
+    "type": "gear",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 1,
+    "power": 0,
+    "keywords": [
+      "Shield Trigger",
+      "Game"
+    ],
+    "effects": [],
+    "tribes": [
+      "Tech"
+    ],
+    "text": "{Shield Trigger#CE356B}__(If you got this from you Shield Zone, you may play it immediately for [0] mana.)__\n[T][1]: Summon a Miniature Token Unit[U]\n with 1[M] and {Game#6D6E6B}",
+    "flavor": "",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "OGN 179/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-179.jpg",
+    "imageCrop": {
+      "x": 7.015121758624194,
+      "y": -6.901479864151107,
+      "width": 95.14747859181732,
+      "height": 177.8883827939058
+    }
+  },
+  {
+    "id": "OGN-180",
+    "set": "OGN",
+    "number": "180",
+    "name": "Parody Alchemist",
+    "type": "champion",
+    "subname": "Lui",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 4,
+    "power": 5,
+    "keywords": [
+      "Haste"
+    ],
+    "effects": [],
+    "tribes": [
+      "Art",
+      "Movie"
+    ],
+    "text": "[T]: Copy a Non-Mighty Unit[U] your opponent controls and summon it this turn. It has {Haste#21705B}__(Can attack immediately)__ but it dies at the end of this turn.",
+    "flavor": "Na ez hatalmasat fog menni. Can't wait for showing it.",
+    "rarity": "rare",
+    "illustrator": "Lui",
+    "setInfo": "OGN180/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-180.jpg",
+    "imageCrop": {
+      "x": 17.35918392892165,
+      "y": 30.89969472096094,
+      "width": 60.13229104028866,
+      "height": 62.67748778857113
+    }
+  },
+  {
+    "id": "OGN-181",
+    "set": "OGN",
+    "number": "181",
+    "name": "The Sluice Machine",
+    "type": "unit",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 8,
+    "power": 8,
+    "keywords": [],
+    "effects": [],
+    "tribes": [
+      "Tech"
+    ],
+    "text": "",
+    "flavor": "The only working and fully operational machine at the company - now powered by Claude Opus 5.5.",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "OGN 181/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-181.jpg",
+    "imageCrop": {
+      "x": 4.642857142857143,
+      "y": -7.12830434187098,
+      "width": 100,
+      "height": 186.960690316395
+    }
+  },
+  {
+    "id": "OGN-182",
+    "set": "OGN",
+    "number": "182",
+    "name": "The Solar Boat Team",
+    "type": "unit",
+    "colors": [
+      "Order"
+    ],
+    "cost": 2,
+    "power": 3,
+    "keywords": [
+      "Defensive",
+      "Shieldify"
+    ],
+    "effects": [
+      {
+        "on": "play",
+        "do": "shieldify",
+        "amount": 1
+      }
+    ],
+    "tribes": [
+      "Tech"
+    ],
+    "text": "{Defensive#CE356B}__(When an enemy Unit attacks, you may [T] this to redirect the attack to this Unit.)__\n{Shieldify 1#21705B}__(When you play this, put [1] card in your Shield Zone from your hand.)__",
+    "flavor": "Lessons learned. ",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "OGN 182/300",
+    "source": "riftcardmaker",
+    "recycle": 1,
+    "image": "data/img/OGN-182.jpg",
+    "imageCrop": {
+      "x": 2.142857142857143,
+      "y": -7.606620668401594,
+      "width": 100,
+      "height": 186.960690316395
+    }
+  },
+  {
     "id": "OGN-183",
     "set": "OGN",
     "number": "183",
@@ -1319,11 +1626,13 @@
     ],
     "cost": 7,
     "power": 7,
-    "keywords": [],
+    "keywords": [
+      "Indestructible"
+    ],
     "effects": [],
     "tribes": [],
-    "text": "",
-    "flavor": "",
+    "text": "[T]: Make a trade offer to your opponent. It can be ANYTHING. If your opponent accepts you both recieve what was offered. \nIf they don't, this gains +1 [M] and this gains {Indestructible#21705B} until your next turn.\n",
+    "flavor": "Do we have a deal then? ~ Alastor, Radio Demon",
     "rarity": "epic",
     "illustrator": "Lui",
     "setInfo": "OGN 183/300",
@@ -1335,6 +1644,110 @@
       "y": 10.784172119169611,
       "width": 98.27188871493153,
       "height": 76.5683265904383
+    }
+  },
+  {
+    "id": "OGN-184",
+    "set": "OGN",
+    "number": "184",
+    "name": "Aronverse of Madness",
+    "type": "unit",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 4,
+    "power": 6,
+    "keywords": [
+      "Defensive"
+    ],
+    "effects": [],
+    "tribes": [
+      "Art",
+      "Movie"
+    ],
+    "text": "{Defensive#CE356B}__(When an enemy Unit attacks, you may [T] this to redirect the attack to this Unit.)__\nCan attack untapped Units.[U]",
+    "flavor": "- Mikor szerzünk p****t végre?",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "OGN184/300",
+    "source": "riftcardmaker",
+    "recycle": 4,
+    "image": "data/img/OGN-184.jpg",
+    "imageCrop": {
+      "x": 13.616037498715558,
+      "y": -7.70730102744601,
+      "width": 56.657223796034025,
+      "height": 189.00151061392847
+    }
+  },
+  {
+    "id": "OGN-185",
+    "set": "OGN",
+    "number": "185",
+    "name": "EPIC - The Ithaca Saga",
+    "type": "gear",
+    "colors": [
+      "Fury"
+    ],
+    "cost": 9,
+    "power": 0,
+    "keywords": [
+      "Vigilance"
+    ],
+    "effects": [],
+    "tribes": [
+      "Art"
+    ],
+    "text": "[T]: Your Units[U] have {Vigilance#21705B} this turn. __(You may untap them at the end of your turn.)__",
+    "flavor": "",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "OGN 185/300",
+    "source": "riftcardmaker",
+    "recycle": 2,
+    "image": "data/img/OGN-185.jpg",
+    "imageCrop": {
+      "x": -1.6899835968899573,
+      "y": 4.978296990466094,
+      "width": 105.37407797681772,
+      "height": 147.09938402132943
+    }
+  },
+  {
+    "id": "OGN-186",
+    "set": "OGN",
+    "number": "186",
+    "name": "The ULTIMATE FLEX",
+    "type": "spell",
+    "subname": "Lui",
+    "colors": [
+      "Fury",
+      "Order"
+    ],
+    "cost": 10,
+    "power": 0,
+    "keywords": [
+      "Shield Trigger",
+      "Reaction",
+      "Indestructible"
+    ],
+    "effects": [],
+    "tribes": [
+      "ART"
+    ],
+    "text": "{Shield Trigger#CE356B}__(If you got this from you Shield Zone, you may play it immediately for [0] mana.){Reaction#21705B}__(Play any time, even before spells and abilities resolve.)__\nYour Units have {Indestructible#CE356B} this turn. This can't be countered.",
+    "flavor": "",
+    "rarity": "epic",
+    "illustrator": "Lui",
+    "setInfo": "OGN 186/300",
+    "source": "riftcardmaker",
+    "recycle": 4,
+    "image": "data/img/OGN-186.jpg",
+    "imageCrop": {
+      "x": 1.603438136373911,
+      "y": 4.004383457757268,
+      "width": 98.27396623667875,
+      "height": 76.56994528695182
     }
   },
   {
@@ -1366,6 +1779,110 @@
       "y": 21.044901172613418,
       "width": 94.57854580818024,
       "height": 73.6906665638264
+    }
+  },
+  {
+    "id": "OGN-188",
+    "set": "OGN",
+    "number": "188",
+    "name": "Miniature Painter",
+    "type": "champion",
+    "subname": "Lui",
+    "colors": [
+      "Order"
+    ],
+    "cost": 2,
+    "power": 1,
+    "keywords": [
+      "Accelerate 1"
+    ],
+    "effects": [],
+    "tribes": [
+      "Art"
+    ],
+    "text": "Miniature Token Units[U] you control have  {Accelerate 1#21705B}__(You may pay [1][P] as an additional cost to have me enter ready.)__ ",
+    "flavor": "The Halasz-Law applies to creating these masterpieces.",
+    "rarity": "rare",
+    "illustrator": "Lui",
+    "setInfo": "OGN188/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-188.jpg",
+    "imageCrop": {
+      "x": 18.907595926940953,
+      "y": -2.621547080837523,
+      "width": 58.34305717619606,
+      "height": 109.07858244830518
+    }
+  },
+  {
+    "id": "OGN-189",
+    "set": "OGN",
+    "number": "189",
+    "name": "3D Printer - X Forge 2",
+    "type": "gear",
+    "colors": [
+      "Order"
+    ],
+    "cost": 3,
+    "power": 0,
+    "keywords": [
+      "Game"
+    ],
+    "effects": [],
+    "tribes": [
+      "Tech"
+    ],
+    "text": "[T][3]: Summon a Miniature Token Unit[U]\n with 5[M] and {Game#6D6E6B}",
+    "flavor": "",
+    "rarity": "uncommon",
+    "illustrator": "Lui",
+    "setInfo": "OGN 189/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-189.jpg",
+    "imageCrop": {
+      "x": 0.3281510041231784,
+      "y": -5.327741688945854,
+      "width": 100.00000000000001,
+      "height": 186.96069031639502
+    }
+  },
+  {
+    "id": "OGN-L-lui",
+    "set": "OGN",
+    "number": "L-lui",
+    "name": "Aspect of Entertainment",
+    "type": "legend",
+    "subname": "Lui",
+    "owners": [
+      "Lui"
+    ],
+    "colors": [
+      "Fury",
+      "Order"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Movie",
+      "Art"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "[T][2]: Take a {Movie#6D6E6B} or an {Art#6D6E6B} card from your Grave and add it top your hand.",
+    "flavor": "",
+    "rarity": "rare",
+    "illustrator": "Lui",
+    "setInfo": "OGN L02/300",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-L-lui.jpg",
+    "imageCrop": {
+      "x": 10.518851160869303,
+      "y": 9.154242294099186,
+      "width": 84.99734927658275,
+      "height": 66.22549829697223
     }
   },
   {
