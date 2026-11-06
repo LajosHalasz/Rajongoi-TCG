@@ -666,7 +666,8 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
 .pp-card { position: relative; }
 .pp-card .card { --w: 168px; }
 .pp-card:not(.newest) { opacity: .55; transform: scale(.92); transform-origin: top left; }
-.pp-card.newest .card { animation: pp-in .5s cubic-bezier(.2,.9,.3,1.2) both; box-shadow: 0 0 0 2px var(--copper-hi), 0 0 22px rgba(224,164,99,.55); }
+.pp-card.enter .card { animation: pp-in .5s cubic-bezier(.2,.9,.3,1.2) both; }
+.pp-card.newest .card { box-shadow: 0 0 0 2px var(--copper-hi), 0 0 22px rgba(224,164,99,.55); }
 @keyframes pp-in { from { transform: translateX(-40px) scale(.8); opacity: 0; } }
 .pp-card.via-trigger .card { box-shadow: 0 0 0 3px #ff4fa3, 0 0 26px rgba(255,79,163,.8); }
 .pp-tag { position: absolute; z-index: 5; left: 50%; top: -6px; transform: translateX(-50%); white-space: nowrap; background: #CE356B; color: #fff; font-weight: 800; font-size: 12px; letter-spacing: .06em; padding: 2px 8px; border-radius: 99px; animation: pulse 0.8s infinite alternate; }

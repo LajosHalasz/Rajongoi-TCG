@@ -126,8 +126,13 @@ function render() {
   const keepScroll = prev ? prev.scrollHeight - prev.scrollTop - prev.clientHeight < 30 : true;
 
   const oppPlays = (s.plays || []).filter(x => x.player === AI).slice(-4).reverse();
-  const played = `<aside class="played-panel"><div class="pp-title">AI played</div>
-    ${oppPlays.map((x, i) => `<div class="pp-card ${i === 0 ? 'newest' : ''} ${x.via === 'shieldTrigger' ? 'via-trigger' : ''}" data-cid="${x.id}">
+  // The panel is kept between renders (only rebuilt when the AI plays something new),
+  // so the newest card's entry animation plays once instead of on every re-render.
+  const ppKey = oppPlays.map(x => x.n).join(',');
+  const oldPanel = app.querySelector('.played-panel');
+  const keepPanel = oldPanel && oldPanel.dataset.key === ppKey ? oldPanel : null;
+  const played = `<aside class="played-panel" data-key="${ppKey}"><div class="pp-title">AI played</div>
+    ${oppPlays.map((x, i) => `<div class="pp-card ${i === 0 ? 'newest' : ''} ${i === 0 && x.n !== G.ppAnimated ? 'enter' : ''} ${x.via === 'shieldTrigger' ? 'via-trigger' : ''}" data-cid="${x.id}">
       ${x.via === 'shieldTrigger' ? '<div class="pp-tag">SHIELD TRIGGER</div>' : ''}${cardHtml(getDef(x.id), { size: 'md' })}
       <div class="pp-turn">Turn ${x.turn}</div></div>`).join('') || '<p class="muted">Nothing yet.</p>'}</aside>`;
   app.innerHTML = `<div class="game">
@@ -150,6 +155,11 @@ function render() {
   ${pickOverlay(s, legal, ui)}
   ${winnerOverlay(s)}`;
 
+  if (keepPanel) { // re-inserting a node restarts CSS animations, so drop the entry one first
+    keepPanel.querySelectorAll('.pp-card.enter').forEach(e => e.classList.remove('enter'));
+    app.querySelector('.played-panel').replaceWith(keepPanel);
+  }
+  if (oppPlays[0]) G.ppAnimated = oppPlays[0].n;
   const log = app.querySelector('.log');
   if (keepScroll) log.scrollTop = log.scrollHeight;
   animateArrivals(s, app);
