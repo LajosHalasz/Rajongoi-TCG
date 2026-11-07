@@ -18,6 +18,9 @@ The **Achievements** tab lists 12 achievements. They are unlocked in Play vs AI 
 
 The engine emits structured events (`play`, `kill`, `banish`, `shieldify`, `gearReplace`, `accelerate`, `finalBlow`, `win`). `js/engine/achievements.js` checks them; each achievement is a small `check()` function, so new ones are easy to add. *Art of the Deal* can't be unlocked yet, because the AI never accepts a Dealmaker deal; it will work with online play.
 
+## Rules page and languages
+The **Rules** tab (`js/ui/rules.js`) is a short summary of the game in Hungarian (default) and English, with a Magyar / English switch. The same switch sits above the deck tips on the Play vs AI page. The choice is saved in the browser (`rajongoi.lang`). Deck strategy notes live in `data/deck-guides.json` as `{ "hu": …, "en": … }` per deck id; card and keyword names stay in English.
+
 ## Collection sorting
 
 The Collection can be sorted by card number, mana, color, rarity or deck order. When a deck owner is selected, the default (Auto) is deck order: Legend, Champions, Signatures, then everything else by mana.

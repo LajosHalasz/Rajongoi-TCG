@@ -39,5 +39,5 @@ export function allDecks() { return [...premade, ...customDecks()]; }
 export function playableDecks() { return allDecks().filter(d => !d.comingSoon && !validateDeck(d).errors.length); }
 export function comingSoonDecks() { return allDecks().filter(d => d.comingSoon); }
 /** Hand-written strategy notes for a premade deck (data/deck-guides.json), if any. */
-export function deckGuide(id) { return guides[id] || null; }
+export function deckGuide(id, lang = 'hu') { const g = guides[id]; return g ? (g[lang] || g.en || g.hu || g) : null; }
 export function findDeck(id) { return allDecks().find(d => d.id === id); }

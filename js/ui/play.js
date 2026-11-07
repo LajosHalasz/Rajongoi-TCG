@@ -10,6 +10,7 @@ import { sfx, soundForLog } from './sfx.js';
 import { checkAchievements } from '../engine/achievements.js';
 import { unlock, unlockedMap } from './achievements.js';
 import { deckInfoHtml } from './deckinfo.js';
+import { langToggleHtml, bindLangToggle } from './lang.js';
 
 const HUMAN = 0, AI = 1;
 const ICON = {
@@ -75,12 +76,14 @@ export function renderSetup(app) {
       <div class="vs">VS</div>
       ${dropdown('ai', 'Opponent (AI) deck')}
     </div>
+    <div class="row di-langrow"><span class="spacer"></span>${langToggleHtml()}</div>
     <div class="versus deck-infos">
       ${deckInfoHtml(findDeck(pick.me), pick.ai === 'random' ? null : findDeck(pick.ai), 'me')}
       <div></div>
       ${deckInfoHtml(pick.ai === 'random' ? null : findDeck(pick.ai), findDeck(pick.me), 'ai')}
     </div>
   </div>`;
+  bindLangToggle(app, () => renderSetup(app));
   app.querySelectorAll('[data-di-cid]').forEach(el => el.onclick = (e) => { e.stopPropagation(); showCardModal(getDef(el.dataset.diCid)); });
 
   const closeAll = () => app.querySelectorAll('.dd-list').forEach(l => (l.hidden = true));

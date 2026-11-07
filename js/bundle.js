@@ -165,7 +165,7 @@ ${def.text}`;
   function signatureMatchesLegend(sig, legend) {
     if (!sig || !legend) return false;
     if (sig.legend) return sig.legend === legend.id;
-    return (sig.tribes || []).some((t) => baseName(t) === baseName(legend.name));
+    return (sig.tribes || []).some((t2) => baseName(t2) === baseName(legend.name));
   }
   function keywordMarkup(kw2, n) {
     const k = KEYWORDS[kw2];
@@ -197,7 +197,7 @@ ${def.text}`;
     activate: (d) => `[T]${d.activateCost ? ` + [${d.activateCost}]` : ""}: `
   };
   function describeEffect(e, def) {
-    const t = TARGET_TEXT[e.target] || "target Unit";
+    const t2 = TARGET_TEXT[e.target] || "target Unit";
     const n = e.amount ?? 1;
     const f = e.filter || {};
     const pw = (e.maxPower != null ? ` with [M]${e.maxPower} or less` : "") + (f.notType ? ` (not ${f.notType === "champion" ? "a Champion" : f.notType})` : "") + (f.color ? ` (${f.color} only)` : "") + (f.notColor ? ` (non-${f.notColor})` : "");
@@ -206,20 +206,20 @@ ${def.text}`;
       case "draw":
         return e.who === "opponent" ? `Your opponent draws ${n}.` : `Draw ${n}.`;
       case "destroy":
-        return `Destroy ${t}${pw}.`;
+        return `Destroy ${t2}${pw}.`;
       case "buff": {
         if (e.on === "static") {
           const who = `Your ${f.color ? f.color + " " : ""}Units${f.keyword ? " with " + f.keyword : ""}`;
           return `${who} have ${n >= 0 ? "+" : ""}${n} [M].`;
         }
-        return n >= 0 ? `Give ${t} +${n} [M]${dur}.` : `Reduce ${t}'s [M]Might by [${-n}]${dur === " this turn" ? " until the end of this turn" : ""}.`;
+        return n >= 0 ? `Give ${t2} +${n} [M]${dur}.` : `Reduce ${t2}'s [M]Might by [${-n}]${dur === " this turn" ? " until the end of this turn" : ""}.`;
       }
       case "tap":
-        return `Tap [T] ${t}${pw}.`;
+        return `Tap [T] ${t2}${pw}.`;
       case "untap":
-        return `Ready ${t}.`;
+        return `Ready ${t2}.`;
       case "bounce":
-        return `Return ${t}${pw} to its owner's hand.`;
+        return `Return ${t2}${pw} to its owner's hand.`;
       case "breakShield":
         return `Break ${n} of your opponent's shields.`;
       case "addShield":
@@ -235,9 +235,9 @@ ${def.text}`;
       case "cantLose":
         return "You can't lose the game this turn.";
       case "grantKeyword":
-        return `Give ${t} ${e.keyword}${dur}.`;
+        return `Give ${t2} ${e.keyword}${dur}.`;
       case "copyUnit":
-        return `Copy ${t}${pw}; the copy has Haste and dies at the end of this turn.`;
+        return `Copy ${t2}${pw}; the copy has Haste and dies at the end of this turn.`;
       case "artDiscount":
         return "Your other Art cards cost [1] this turn; any played this way are banished at the end of your turn.";
       case "nextDiscount":
@@ -247,7 +247,7 @@ ${def.text}`;
       case "recoverTribe":
         return `Return a ${(e.tribes || []).join(" or ")} card from your Graveyard to your hand.`;
       case "lastPlayBuff":
-        return `If this is the last card you play this turn, give ${t} +${n} [M] and ${e.keyword}.`;
+        return `If this is the last card you play this turn, give ${t2} +${n} [M] and ${e.keyword}.`;
       case "tutor":
         return `Search your deck for a ${e.kind === "spell" ? "Spell" : "Unit"}${e.name ? ` named ${e.name}` : ""}, put it into your hand, then shuffle.`;
       case "mightPerRune":
@@ -392,8 +392,9 @@ ${def.text}`;
   function comingSoonDecks() {
     return allDecks().filter((d) => d.comingSoon);
   }
-  function deckGuide(id) {
-    return guides[id] || null;
+  function deckGuide(id, lang = "hu") {
+    const g = guides[id];
+    return g ? g[lang] || g.en || g.hu || g : null;
   }
   function findDeck(id) {
     return allDecks().find((d) => d.id === id);
@@ -439,8 +440,8 @@ ${def.text}`;
     const c = def.imageCrop;
     if (!c || !c.width || !c.height) return `<img class="card-img" src="${esc(src)}" alt="" decoding="async" style="width:100%;height:100%;object-fit:cover">`;
     const w = 1e4 / c.width, h = 1e4 / c.height;
-    const l = -c.x / c.width * 100, t = -c.y / c.height * 100;
-    return `<img class="card-img" src="${esc(src)}" alt="" decoding="async" style="width:${w.toFixed(2)}%;height:${h.toFixed(2)}%;left:${l.toFixed(2)}%;top:${t.toFixed(2)}%">`;
+    const l = -c.x / c.width * 100, t2 = -c.y / c.height * 100;
+    return `<img class="card-img" src="${esc(src)}" alt="" decoding="async" style="width:${w.toFixed(2)}%;height:${h.toFixed(2)}%;left:${l.toFixed(2)}%;top:${t2.toFixed(2)}%">`;
   }
   function placeholderArt(def) {
     const initials = def.name.replace(/[^A-Za-zÀ-ž ]/g, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
@@ -509,7 +510,7 @@ ${def.text}`;
     const cost = legend || def.type === "rune" || def.type === "token" ? "" : `<div class="cost ${prov.includes("cost") ? "prov" : ""}" title="${prov.includes("cost") ? "Provisional cost" : "Cost"}"><span>${opts.cost ?? def.cost}</span></div>`;
     const domainsTopLeft = full && legend ? `<div class="fa-domains">${def.colors.map((c) => `<span style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join("")}</div>` : "";
     const mightHtml = showMight ? `<div class="might ${mightCls} ${prov.includes("might") ? "prov" : ""}"><span class="might-ico"><i></i></span><span class="might-val">${might}</span></div>` : "";
-    const typeline = full ? `<div class="typeline gold"><span>${[typeLabel(def), ...tribes].map(esc).join(" <i>\u25C6</i> ")}</span></div>` : `<div class="typeline"><span class="domains">${def.colors.map((c) => `<span class="domain" style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join("")}</span><span class="type-badge">${esc(typeLabel(def))}</span>${tribes.map((t) => `<span class="tribe">${esc(t)}</span>`).join("")}</div>`;
+    const typeline = full ? `<div class="typeline gold"><span>${[typeLabel(def), ...tribes].map(esc).join(" <i>\u25C6</i> ")}</span></div>` : `<div class="typeline"><span class="domains">${def.colors.map((c) => `<span class="domain" style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join("")}</span><span class="type-badge">${esc(typeLabel(def))}</span>${tribes.map((t2) => `<span class="tribe">${esc(t2)}</span>`).join("")}</div>`;
     return `<div class="${cls}" ${data} style="${style};${opts.style || ""}">
     ${art}
     ${full || rare ? '<div class="art-shade"></div>' : ""}
@@ -660,7 +661,7 @@ ${def.text}`;
     const sets = [...new Set(cards.map((c) => c.set))].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
     if (!sets.includes(set)) set = sets[0];
     const inSet = cards.filter((c) => c.set === set).sort(sortCards);
-    const types = TYPE_ORDER.filter((t) => inSet.some((c) => c.type === t));
+    const types = TYPE_ORDER.filter((t2) => inSet.some((c) => c.type === t2));
     const owners = [...new Set(inSet.flatMap((c) => c.owners || []))].sort((a, b) => a.localeCompare(b));
     if (filt.owner && !owners.includes(filt.owner)) filt.owner = "";
     const status = (c) => c.image ? "art" : c.wip || c.placeholder ? "wip" : "designed";
@@ -672,7 +673,7 @@ ${def.text}`;
       app2.innerHTML = `<div class="page">
       <div class="tabs">${sets.map((s) => `<button class="${s === set ? "active" : ""}" data-set="${s}">${esc(SET_NAMES[s] || s)} <span class="muted">(${cards.filter((c) => c.set === s).length})</span></button>`).join("")}</div>
       <div class="filters">
-        ${types.map((t) => `<span class="chip ${filt.types.has(t) ? "on" : ""}" data-type="${t}"><span class="dot" style="background:${TYPE_INFO[t]?.hex || "#777"}"></span>${TYPE_INFO[t]?.label || "Token"}</span>`).join("")}
+        ${types.map((t2) => `<span class="chip ${filt.types.has(t2) ? "on" : ""}" data-type="${t2}"><span class="dot" style="background:${TYPE_INFO[t2]?.hex || "#777"}"></span>${TYPE_INFO[t2]?.label || "Token"}</span>`).join("")}
         <span style="width:10px"></span>
         ${Object.entries(COLORS).map(([k, v]) => `<span class="chip ${filt.colors.has(k) ? "on" : ""}" data-color="${k}"><span class="dot" style="background:${v.hex}"></span>${k}</span>`).join("")}
         ${owners.length ? `<select id="owner"><option value="">Every deck</option>${owners.map((o) => `<option ${o === filt.owner ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>` : ""}
@@ -794,51 +795,51 @@ ${def.text}`;
     const bf = { set: "ALL", type: "ALL", q: "" };
     const pool = () => {
       if (!draft.legend) return [];
-      const L = getDef(draft.legend);
+      const L2 = getDef(draft.legend);
       return allCards().filter((c) => {
         if (c.type === "legend" || c.type === "token" || c.type === "rune") return false;
-        if (c.type === "signature" && !signatureMatchesLegend(c, L)) return false;
-        return c.colors.every((x) => L.colors.includes(x));
+        if (c.type === "signature" && !signatureMatchesLegend(c, L2)) return false;
+        return c.colors.every((x) => L2.colors.includes(x));
       }).sort((a, b) => a.cost - b.cost || sortCards(a, b));
     };
     const setLegend = (id) => {
       draft.legend = id || null;
       if (!id) return;
-      const L = getDef(id);
+      const L2 = getDef(id);
       const ok = new Set(pool().map((c) => c.id));
       for (const k of Object.keys(draft.cards)) if (!ok.has(k)) delete draft.cards[k];
       const half = RULES.RUNE_DECK_SIZE / 2;
-      draft.runes = L.colors.length > 1 ? { [L.colors[0]]: half, [L.colors[1]]: RULES.RUNE_DECK_SIZE - half } : { [L.colors[0]]: RULES.RUNE_DECK_SIZE };
+      draft.runes = L2.colors.length > 1 ? { [L2.colors[0]]: half, [L2.colors[1]]: RULES.RUNE_DECK_SIZE - half } : { [L2.colors[0]]: RULES.RUNE_DECK_SIZE };
       fixSlots();
     };
     const fixSlots = () => {
-      const L = draft.legend ? getDef(draft.legend) : null;
+      const L2 = draft.legend ? getDef(draft.legend) : null;
       const ids = Object.keys(draft.cards);
-      const champs = ids.map(getDef).filter((d) => d.type === "champion" && championMatchesLegend(d, L));
+      const champs = ids.map(getDef).filter((d) => d.type === "champion" && championMatchesLegend(d, L2));
       if (!ids.includes(draft.champion) || !champs.some((c) => c.id === draft.champion)) draft.champion = champs[0]?.id || null;
       const sigs = ids.map(getDef).filter((d) => d.type === "signature");
       if (!ids.includes(draft.signature)) draft.signature = sigs[0]?.id || null;
     };
     const draw = () => {
-      const L = draft.legend ? getDef(draft.legend) : null;
+      const L2 = draft.legend ? getDef(draft.legend) : null;
       const v = validateDeck(draft);
       const st = v.stats;
       const shown = pool().filter((c) => (bf.set === "ALL" || c.set === bf.set) && (bf.type === "ALL" || c.type === bf.type) && (!bf.q || (c.name + " " + c.text).toLowerCase().includes(bf.q.toLowerCase())));
       const inDeck = Object.keys(draft.cards).map(getDef).sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || a.cost - b.cost);
-      const groups = TYPE_ORDER.map((t) => [t, inDeck.filter((d) => d.type === t)]).filter(([, l]) => l.length);
-      const champs = inDeck.filter((d) => d.type === "champion" && championMatchesLegend(d, L));
+      const groups = TYPE_ORDER.map((t2) => [t2, inDeck.filter((d) => d.type === t2)]).filter(([, l]) => l.length);
+      const champs = inDeck.filter((d) => d.type === "champion" && championMatchesLegend(d, L2));
       const sigs = inDeck.filter((d) => d.type === "signature");
       const maxBar = Math.max(4, ...Object.values(st.curve), ...Object.values(GUIDE.curve));
       const sets = [...new Set(pool().map((c) => c.set))].sort();
-      const runeA = L?.colors[0], runeB = L?.colors[1];
+      const runeA = L2?.colors[0], runeB = L2?.colors[1];
       app2.innerHTML = `<div class="page"><div class="builder">
       <div>
         <div class="row" style="margin-bottom:10px"><button class="ghost" id="back">\u2190 Decks</button><h2 style="margin:0">Deck builder</h2></div>
-        ${!L ? '<p class="muted">Pick a Legend on the right to see the cards you can use.</p>' : `
+        ${!L2 ? '<p class="muted">Pick a Legend on the right to see the cards you can use.</p>' : `
         <div class="filters">
           ${["ALL", ...sets].map((s) => `<span class="chip ${bf.set === s ? "on" : ""}" data-bset="${s}">${s === "ALL" ? "All sets" : s}</span>`).join("")}
           <span style="width:8px"></span>
-          ${["ALL", "champion", "unit", "spell", "gear", "signature"].map((t) => `<span class="chip ${bf.type === t ? "on" : ""}" data-btype="${t}">${t === "ALL" ? "All types" : TYPE_INFO[t].label}</span>`).join("")}
+          ${["ALL", "champion", "unit", "spell", "gear", "signature"].map((t2) => `<span class="chip ${bf.type === t2 ? "on" : ""}" data-btype="${t2}">${t2 === "ALL" ? "All types" : TYPE_INFO[t2].label}</span>`).join("")}
           <input type="search" id="bq" placeholder="Search\u2026" value="${esc(bf.q)}">
         </div>
         <p class="muted" style="margin-top:0">Click a card to add or remove it (singleton).</p>
@@ -848,7 +849,7 @@ ${def.text}`;
         <div class="field"><label>Deck name</label><input type="text" id="dname" value="${esc(draft.name)}"></div>
         <div class="field"><label>Legend</label><select id="legend"><option value="">\u2014 choose \u2014</option>
           ${legends.map((l) => `<option value="${l.id}" ${l.id === draft.legend ? "selected" : ""}>${esc(l.name)} (${l.colors.join("/")})</option>`).join("")}</select></div>
-        ${L ? `
+        ${L2 ? `
         <div class="field"><label>Champion Slot (starts on the table)</label><select id="champ">
           ${champs.length ? champs.map((c) => `<option value="${c.id}" ${c.id === draft.champion ? "selected" : ""}>${esc(c.name)}</option>`).join("") : '<option value="">add a matching Champion</option>'}</select></div>
         <div class="field"><label>Signature Slot (starts on the table)</label><select id="sig">
@@ -864,7 +865,7 @@ ${def.text}`;
         ${v.errors.map((e) => `<div class="msg err">\u2717 ${esc(e)}</div>`).join("")}
         ${v.warnings.map((e) => `<div class="msg warn">! ${esc(e)}</div>`).join("")}
         ${!v.errors.length ? '<div class="msg ok">\u2713 Deck is legal</div>' : ""}
-        <ul class="decklist">${groups.map(([t, l]) => `<li class="grp">${TYPE_INFO[t]?.label || t} (${l.length})</li>` + l.map((d) => `<li data-rm="${d.id}" data-cid="${d.id}"><span class="c">${d.cost}</span>${esc(d.name)}</li>`).join("")).join("")}</ul>` : ""}
+        <ul class="decklist">${groups.map(([t2, l]) => `<li class="grp">${TYPE_INFO[t2]?.label || t2} (${l.length})</li>` + l.map((d) => `<li data-rm="${d.id}" data-cid="${d.id}"><span class="c">${d.cost}</span>${esc(d.name)}</li>`).join("")).join("")}</ul>` : ""}
         <div class="row"><button class="primary" id="save">Save deck</button><button class="ghost" id="cancel">Cancel</button></div>
       </aside></div></div>`;
       const $ = (s) => app2.querySelector(s);
@@ -874,7 +875,7 @@ ${def.text}`;
         setLegend(e.target.value);
         draw();
       };
-      if (L) {
+      if (L2) {
         $("#champ").onchange = (e) => {
           draft.champion = e.target.value;
           draw();
@@ -933,10 +934,10 @@ ${def.text}`;
   var clockHour = () => (/* @__PURE__ */ new Date()).getHours();
   function rand(s) {
     s.seed = s.seed + 1831565813 | 0;
-    let t = s.seed;
-    t = Math.imul(t ^ t >>> 15, t | 1);
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    let t2 = s.seed;
+    t2 = Math.imul(t2 ^ t2 >>> 15, t2 | 1);
+    t2 ^= t2 + Math.imul(t2 ^ t2 >>> 7, t2 | 61);
+    return ((t2 ^ t2 >>> 14) >>> 0) / 4294967296;
   }
   function shuffle(s, arr) {
     for (let i = arr.length - 1; i > 0; i--) {
@@ -1072,7 +1073,7 @@ ${def.text}`;
     return !inst.tapped && (!inst.sick || inst.fast || hasKeyword(s, inst, "Haste"));
   }
   var canAttackWith = (s, u) => canAttackNow(s, u) && !hasKeyword(s, u, "Immobile");
-  var hasTribe = (d, t) => (d.tribes || []).some((x) => String(x).toLowerCase() === String(t).toLowerCase());
+  var hasTribe = (d, t2) => (d.tribes || []).some((x) => String(x).toLowerCase() === String(t2).toLowerCase());
   var isArt = (d) => hasTribe(d, "art");
   function artDiscounted(s, pi, d) {
     const p = s.players[pi];
@@ -1253,7 +1254,7 @@ ${def.text}`;
     if (!spec) return [base];
     const ts = listTargets(s, pi, spec);
     if (!ts.length) return required ? [] : [base];
-    return ts.map((t) => ({ ...base, target: t }));
+    return ts.map((t2) => ({ ...base, target: t2 }));
   }
   function activateOptions(s, pi) {
     const p = s.players[pi];
@@ -1264,7 +1265,7 @@ ${def.text}`;
       if (d.activateNoTap) {
         if (g.activatedTurn === s.turn) continue;
       } else if (g.tapped || p.battle.includes(g) && !canAttackNow(s, g)) continue;
-      if (g === p.legend && !(d.effects || []).some((e) => e.on === "activate" && (!e.tribes || p.graveyard.some((c) => e.tribes.some((t) => hasTribe(getDef(c.id), t)))))) continue;
+      if (g === p.legend && !(d.effects || []).some((e) => e.on === "activate" && (!e.tribes || p.graveyard.some((c) => e.tribes.some((t2) => hasTribe(getDef(c.id), t2)))))) continue;
       if (!canAfford(p, d.activateCost || 0, null)) continue;
       acts.push(...withTargets(s, pi, d, { type: "activate", uid: g.uid }, true, "activate"));
     }
@@ -1277,7 +1278,7 @@ ${def.text}`;
       if (!canAttackWith(s, u)) continue;
       acts.push({ type: "attack", uid: u.uid, target: { kind: op.shields.length ? "shield" : "player" } });
       const party = hasKeyword(s, u, "Party Breaker");
-      for (const t of op.battle) if (t.tapped || party) acts.push({ type: "attack", uid: u.uid, target: { kind: "unit", uid: t.uid } });
+      for (const t2 of op.battle) if (t2.tapped || party) acts.push({ type: "attack", uid: u.uid, target: { kind: "unit", uid: t2.uid } });
     }
     return acts;
   }
@@ -1499,12 +1500,12 @@ ${def.text}`;
     }
     ap.doubleNext = false;
     ap.artTurn = null;
-    for (const L of ap.lawPending || []) {
-      const u = ap.battle.find((x) => x.uid === L.uid);
-      if (L.turn === s.turn && L.index === ap.plays && u) {
-        u.mods.push({ power: L.amount }, { keyword: L.keyword });
-        log(s, `The Law: ${nm(u)} gets +${L.amount} Might and ${L.keyword}.`);
-      } else if (L.turn === s.turn) log(s, "The Law fizzles (another card was played after it).");
+    for (const L2 of ap.lawPending || []) {
+      const u = ap.battle.find((x) => x.uid === L2.uid);
+      if (L2.turn === s.turn && L2.index === ap.plays && u) {
+        u.mods.push({ power: L2.amount }, { keyword: L2.keyword });
+        log(s, `The Law: ${nm(u)} gets +${L2.amount} Might and ${L2.keyword}.`);
+      } else if (L2.turn === s.turn) log(s, "The Law fizzles (another card was played after it).");
     }
     ap.lawPending = [];
     for (const p of s.players) {
@@ -1871,16 +1872,16 @@ ${def.text}`;
       }
       case "token":
         for (let i = 0; i < n; i++) {
-          const t = mk(s, e.tokenId, pi);
-          t.sick = true;
-          me.battle.push(t);
-          log(s, `${me.name} creates ${nm(t)}.`);
-          const accel = me.battle.find((u) => [e.tokenId, nm(t)].includes(getDef(u.id).tokenAccelerate));
+          const t2 = mk(s, e.tokenId, pi);
+          t2.sick = true;
+          me.battle.push(t2);
+          log(s, `${me.name} creates ${nm(t2)}.`);
+          const accel = me.battle.find((u) => [e.tokenId, nm(t2)].includes(getDef(u.id).tokenAccelerate));
           if (accel && canAfford(me, 1, getDef(accel.id).colors)) {
             payCost(s, me, 1, getDef(accel.id).colors, 0);
-            t.sick = false;
-            log(s, `${nm(t)} enters ready (Accelerate).`);
-            emit(s, "accelerate", { player: pi, id: t.id });
+            t2.sick = false;
+            log(s, `${nm(t2)} enters ready (Accelerate).`);
+            emit(s, "accelerate", { player: pi, id: t2.id });
           }
         }
         break;
@@ -1914,7 +1915,7 @@ ${def.text}`;
         break;
       }
       case "recoverTribe": {
-        const pool = me.graveyard.filter((c) => (e.tribes || []).some((t) => hasTribe(getDef(c.id), t)));
+        const pool = me.graveyard.filter((c) => (e.tribes || []).some((t2) => hasTribe(getDef(c.id), t2)));
         if (!pool.length) {
           log(s, "Nothing to return.");
           break;
@@ -2352,12 +2353,12 @@ ${def.text}`;
     }
     return b;
   }
-  function env(t, { attack = 4e-3, dur = 0.2, gain = 0.3, rev = 0.15, curve = "exp" }) {
+  function env(t2, { attack = 4e-3, dur = 0.2, gain = 0.3, rev = 0.15, curve = "exp" }) {
     const g = ctx.createGain();
-    g.gain.setValueAtTime(1e-4, t);
-    g.gain.linearRampToValueAtTime(gain, t + attack);
-    if (curve === "exp") g.gain.exponentialRampToValueAtTime(1e-4, t + attack + dur);
-    else g.gain.linearRampToValueAtTime(1e-4, t + attack + dur);
+    g.gain.setValueAtTime(1e-4, t2);
+    g.gain.linearRampToValueAtTime(gain, t2 + attack);
+    if (curve === "exp") g.gain.exponentialRampToValueAtTime(1e-4, t2 + attack + dur);
+    else g.gain.linearRampToValueAtTime(1e-4, t2 + attack + dur);
     g.connect(master);
     if (rev > 0) {
       const s = ctx.createGain();
@@ -2368,30 +2369,30 @@ ${def.text}`;
     return g;
   }
   function tone({ freq = 440, to, type = "sine", dur = 0.2, gain = 0.2, attack = 4e-3, rev = 0.15, delay = 0, detune = 0, glide }) {
-    const t = ctx.currentTime + delay;
+    const t2 = ctx.currentTime + delay;
     const o = ctx.createOscillator();
     o.type = type;
-    o.frequency.setValueAtTime(freq, t);
+    o.frequency.setValueAtTime(freq, t2);
     o.detune.value = detune;
-    if (to) o.frequency.exponentialRampToValueAtTime(to, t + (glide ?? dur));
-    o.connect(env(t, { attack, dur, gain, rev }));
-    o.start(t);
-    o.stop(t + attack + dur + 0.05);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t2 + (glide ?? dur));
+    o.connect(env(t2, { attack, dur, gain, rev }));
+    o.start(t2);
+    o.stop(t2 + attack + dur + 0.05);
   }
   function noise({ filter = "bandpass", freq = 1e3, to, q = 1, dur = 0.2, gain = 0.2, attack = 4e-3, rev = 0.15, delay = 0, curve }) {
-    const t = ctx.currentTime + delay;
+    const t2 = ctx.currentTime + delay;
     const src = ctx.createBufferSource();
     src.buffer = noiseBuf;
     src.loop = true;
     const f = ctx.createBiquadFilter();
     f.type = filter;
     f.Q.value = q;
-    f.frequency.setValueAtTime(freq, t);
-    if (to) f.frequency.exponentialRampToValueAtTime(to, t + dur);
+    f.frequency.setValueAtTime(freq, t2);
+    if (to) f.frequency.exponentialRampToValueAtTime(to, t2 + dur);
     src.connect(f);
-    f.connect(env(t, { attack, dur, gain, rev, curve }));
-    src.start(t, Math.random());
-    src.stop(t + attack + dur + 0.05);
+    f.connect(env(t2, { attack, dur, gain, rev, curve }));
+    src.start(t2, Math.random());
+    src.stop(t2 + attack + dur + 0.05);
   }
   function bell(freq, { gain = 0.12, dur = 1.2, delay = 0, rev = 0.5 } = {}) {
     [[1, 1], [2.01, 0.45], [3.02, 0.22], [4.17, 0.12]].forEach(([m, g]) => tone({ freq: freq * m, type: "sine", dur: dur / (m * 0.7), gain: gain * g, rev, delay }));
@@ -2586,7 +2587,7 @@ ${def.text}`;
   };
   var makesTokens = (ids) => [...ids].filter((id) => JSON.stringify(defOf(id)?.effects || []).includes('"do":"token"'));
   var withKw = (ids, kw2) => [...ids].filter((id) => (defOf(id)?.keywords || []).includes(kw2));
-  var withTribe = (ids, t) => [...ids].filter((id) => (defOf(id)?.tribes || []).some((x) => x.toLowerCase() === t.toLowerCase()));
+  var withTribe = (ids, t2) => [...ids].filter((id) => (defOf(id)?.tribes || []).some((x) => x.toLowerCase() === t2.toLowerCase()));
   var names = (ids) => ids.map((id) => defOf(id)?.name || id).join(", ");
   var playedThisTurn = (events, ev, me, id) => events.some((e) => e.type === "play" && e.player === me && e.id === id && e.turn === ev.turn);
   var ACHIEVEMENTS = [
@@ -2597,9 +2598,15 @@ ${def.text}`;
       desc: "Destroy your opponent with a copy of a token creature they created, using the Parody Alchemist.",
       hint: ({ mine, theirs }) => {
         if (!mine.has("OGN-180")) return null;
-        if (!theirs) return "Possible if the AI's deck makes tokens: copy one with Parody Alchemist and land the final blow with it.";
-        const t = makesTokens(theirs);
-        return t.length ? `They make tokens (${names(t)}) \u2014 copy one with Parody Alchemist and deliver the final direct attack with the copy.` : null;
+        if (!theirs) return {
+          hu: "Akkor siker\xFClhet, ha az AI paklija tokeneket csin\xE1l: m\xE1sold le az egyiket a Parody Alchemisttel, \xE9s azzal m\xE9rd a d\xF6nt\u0151 csap\xE1st.",
+          en: "Possible if the AI's deck makes tokens: copy one with Parody Alchemist and land the final blow with it."
+        };
+        const t2 = makesTokens(theirs);
+        return t2.length ? {
+          hu: `Az ellenf\xE9l tokeneket csin\xE1l (${names(t2)}). M\xE1sold le az egyiket a Parody Alchemisttel, \xE9s a m\xE1solattal vidd be a gy\u0151ztes Direct Attackot.`,
+          en: `They make tokens (${names(t2)}) \u2014 copy one with Parody Alchemist and deliver the final direct attack with the copy.`
+        } : null;
       },
       check: ({ ev, me }) => ev.type === "finalBlow" && ev.player === me && ev.copy && ev.token
     },
@@ -2608,7 +2615,10 @@ ${def.text}`;
       name: "Unexpected FLEX",
       icon: "\u{1F4AA}",
       desc: "Play The Ultimate Flex from a triggered shield.",
-      hint: ({ mine }) => mine.has("OGN-186") ? `You run The ULTIMATE FLEX${mine.has("OGN-182") ? " \u2014 Shieldify it with The Solar Boat Team so it can trigger from your shields" : " \u2014 hope it lands in your shields"}.` : null,
+      hint: ({ mine }) => !mine.has("OGN-186") ? null : mine.has("OGN-182") ? {
+        hu: "Tedd a The ULTIMATE FLEX-et Shieldbe a The Solar Boat Team Shieldify-j\xE1val, hogy Shield Triggerk\xE9nt els\xFClhessen.",
+        en: "Shieldify The ULTIMATE FLEX with The Solar Boat Team so it can trigger from your shields."
+      } : { hu: "Benne van a pakliban a The ULTIMATE FLEX. Rem\xE9ld, hogy Shieldbe ker\xFCl.", en: "You run The ULTIMATE FLEX \u2014 hope it lands in your shields." },
       check: ({ ev, me }) => ev.type === "play" && ev.player === me && ev.id === "OGN-186" && ev.via === "shieldTrigger"
     },
     {
@@ -2616,7 +2626,10 @@ ${def.text}`;
       name: "Speed Painting",
       icon: "\u{1F58C}\uFE0F",
       desc: "Accelerate 3 Miniatures with the Miniature Painter in a single turn.",
-      hint: ({ mine }) => mine.has("OGN-188") && (mine.has("OGN-179") || mine.has("OGN-189")) ? "Untap the 3D Printers over a few turns, then make and accelerate 3 Miniatures in one big turn (Painter on the field)." : null,
+      hint: ({ mine }) => mine.has("OGN-188") && (mine.has("OGN-179") || mine.has("OGN-189")) ? {
+        hu: "Egy nagy k\xF6rben k\xE9sz\xEDts \xE9s gyors\xEDts (Accelerate) 3 Miniature-t a 3D Printerekkel, mik\xF6zben a Painter lent van.",
+        en: "In one big turn make and accelerate 3 Miniatures with your 3D Printers while the Painter is on the field."
+      } : null,
       check: ({ ev, me, events }) => ev.type === "accelerate" && ev.player === me && sameTurn(events, ev, (e) => e.type === "accelerate" && e.player === me).length >= 3
     },
     {
@@ -2626,9 +2639,18 @@ ${def.text}`;
       desc: "Watch a Manyika Dreadnought die from a Burst-Pouch (either of you may control them).",
       hint: ({ mine, theirs }) => {
         const a = mine.has("OGN-176"), b = theirs?.has("OGN-176");
-        if (a && b) return "Both decks run Manyika Dreadnought \u2014 attack theirs with your Burst-Pouch, or let theirs run into yours.";
-        if (a && !theirs) return "Needs a Manyika on both sides \u2014 possible if the AI also picks a deck with Manyika Dreadnought.";
-        if ((a || b) && (mine.has("OGN-180") || theirs?.has("OGN-180"))) return "Copy a Burst-Pouch with Parody Alchemist and attack into a Manyika Dreadnought.";
+        if (a && b) return {
+          hu: "Mindk\xE9t pakliban van Manyika Dreadnought. T\xE1madd meg az \xF6v\xE9t a Burst-Pouchoddal, vagy hagyd, hogy az \xF6v\xE9 belefusson a ti\xE9dbe.",
+          en: "Both decks run Manyika Dreadnought \u2014 attack theirs with your Burst-Pouch, or let theirs run into yours."
+        };
+        if (a && !theirs) return {
+          hu: "Mindk\xE9t oldalon kell egy Manyika. Akkor siker\xFClhet, ha az AI is Manyika Dreadnought-os paklit v\xE1laszt.",
+          en: "Needs a Manyika on both sides \u2014 possible if the AI also picks a deck with Manyika Dreadnought."
+        };
+        if ((a || b) && (mine.has("OGN-180") || theirs?.has("OGN-180"))) return {
+          hu: "M\xE1solj le egy Burst-Pouchot a Parody Alchemisttel, \xE9s t\xE1madj vele egy Manyika Dreadnoughtra.",
+          en: "Copy a Burst-Pouch with Parody Alchemist and attack into a Manyika Dreadnought."
+        };
         return null;
       },
       check: ({ ev }) => ev.type === "kill" && ev.victim === "OGN-176" && ev.killer === "TKN-005"
@@ -2640,8 +2662,11 @@ ${def.text}`;
       desc: "Banish 5 cards in a turn with The Chronicler.",
       hint: ({ mine }) => {
         if (!mine.has("OGN-178")) return null;
-        const art = withTribe(mine, "Art").filter((id) => id !== "OGN-178");
-        return art.length >= 5 ? `Hold 5 Art cards, play The Chronicler, then cast them all for 1 (${art.length} Art cards in your deck).` : null;
+        const n = withTribe(mine, "Art").filter((id) => id !== "OGN-178").length;
+        return n >= 5 ? {
+          hu: `Gy\u0171jts \xF6ssze 5 Art lapot a kezedben, j\xE1tszd ki a The Chroniclert, majd mindet 1-\xE9rt (${n} Art lap van a pakliban).`,
+          en: `Hold 5 Art cards, play The Chronicler, then cast them all for 1 (${n} Art cards in your deck).`
+        } : null;
       },
       check: ({ ev, me, events }) => ev.type === "banish" && ev.player === me && sameTurn(events, ev, (e) => e.type === "banish" && e.player === me).length >= 5
     },
@@ -2652,7 +2677,10 @@ ${def.text}`;
       desc: "Shieldify a Shield Trigger card.",
       hint: ({ mine }) => {
         const sh = withKw(mine, "Shieldify"), st = withKw(mine, "Shield Trigger");
-        return sh.length && st.length ? `Play ${names(sh)} with a Shield Trigger card in hand (${names(st)}).` : null;
+        return sh.length && st.length ? {
+          hu: `J\xE1tszd ki ezt: ${names(sh)}, mik\xF6zben egy Shield Trigger lap van a kezedben (${names(st)}), \xE9s azt tedd a Shieldek k\xF6z\xE9.`,
+          en: `Play ${names(sh)} with a Shield Trigger card in hand (${names(st)}).`
+        } : null;
       },
       check: ({ ev, me }) => ev.type === "shieldify" && ev.player === me && (getDef(ev.id).keywords || []).includes("Shield Trigger")
     },
@@ -2669,7 +2697,10 @@ ${def.text}`;
       name: "Join the Strawberry Club",
       icon: "\u{1F353}",
       desc: "Have your opponent play Welcome to the Strawberry Club! against you as a Shield Trigger.",
-      hint: ({ theirs }) => !theirs ? "Possible if the AI's deck runs Welcome to the Strawberry Club!." : theirs.has("OGN-012") ? "The AI runs Welcome to the Strawberry Club! \u2014 keep breaking shields and it may trigger." : null,
+      hint: ({ theirs }) => !theirs ? { hu: "Akkor siker\xFClhet, ha az AI paklij\xE1ban van Welcome to the Strawberry Club!.", en: "Possible if the AI's deck runs Welcome to the Strawberry Club!." } : theirs.has("OGN-012") ? {
+        hu: "Az AI-n\xE1l van Welcome to the Strawberry Club!. T\xF6rd a Shieldjeit, \xE9s egyszer els\xFClhet.",
+        en: "The AI runs Welcome to the Strawberry Club! \u2014 keep breaking shields and it may trigger."
+      } : null,
       check: ({ ev, op }) => ev.type === "play" && ev.player === op && ev.id === "OGN-012" && ev.via === "shieldTrigger"
     },
     {
@@ -2677,7 +2708,7 @@ ${def.text}`;
       name: "Quality Movie Night",
       icon: "\u{1F3AC}",
       desc: "Play Movie Night at Chris and The Law on the same turn.",
-      hint: ({ mine }) => mine.has("OGN-173") && mine.has("OGN-171") ? "Cast Movie Night at Chris, then The Law as your last card that turn (4 mana)." : null,
+      hint: ({ mine }) => mine.has("OGN-173") && mine.has("OGN-171") ? { hu: "Movie Night at Chris, majd a The Law legyen az utols\xF3 lapod abban a k\xF6rben (4 mana).", en: "Cast Movie Night at Chris, then The Law as your last card that turn (4 mana)." } : null,
       check: ({ ev, me, events }) => ev.type === "play" && ev.player === me && ["OGN-173", "OGN-171"].includes(ev.id) && playedThisTurn(events, ev, me, "OGN-173") && playedThisTurn(events, ev, me, "OGN-171")
     },
     {
@@ -2685,7 +2716,7 @@ ${def.text}`;
       name: "Finale",
       icon: "\u{1F404}",
       desc: "Play Cowtrix and GOLDEN on the same turn.",
-      hint: ({ mine }) => mine.has("OGN-172") && mine.has("OGN-177") ? "Play Cowtrix choosing Rumi (draws GOLDEN), then cast GOLDEN the same turn." : null,
+      hint: ({ mine }) => mine.has("OGN-172") && mine.has("OGN-177") ? { hu: "J\xE1tszd ki a Cowtrixot Rumival (felh\xFAzza a GOLDEN-t), \xE9s m\xE9g ugyanabban a k\xF6rben a GOLDEN-t.", en: "Play Cowtrix choosing Rumi (draws GOLDEN), then cast GOLDEN the same turn." } : null,
       check: ({ ev, me, events }) => ev.type === "play" && ev.player === me && ["OGN-172", "OGN-177"].includes(ev.id) && playedThisTurn(events, ev, me, "OGN-172") && playedThisTurn(events, ev, me, "OGN-177")
     },
     {
@@ -2693,7 +2724,10 @@ ${def.text}`;
       name: "Printer Upgrade",
       icon: "\u{1F5A8}\uFE0F",
       desc: "Replace 3D Printer - Lui's Forge with 3D Printer - X Forge 2.",
-      hint: ({ mine }) => mine.has("OGN-179") && mine.has("OGN-189") ? "With both Gear slots full (one of them Lui's Forge), play X Forge 2 and choose to replace Lui's Forge." : null,
+      hint: ({ mine }) => mine.has("OGN-179") && mine.has("OGN-189") ? {
+        hu: "Ha mindk\xE9t Gear Slot foglalt (az egyikben a Lui's Forge), j\xE1tszd ki az X Forge 2-t, \xE9s v\xE1laszd a Lui's Forge cser\xE9j\xE9t.",
+        en: "With both Gear slots full (one of them Lui's Forge), play X Forge 2 and choose to replace Lui's Forge."
+      } : null,
       check: ({ ev, me }) => ev.type === "gearReplace" && ev.player === me && ev.oldId === "OGN-179" && ev.newId === "OGN-189"
     },
     {
@@ -2701,7 +2735,10 @@ ${def.text}`;
       name: "Dungeon Survivors",
       icon: "\u{1F3F0}",
       desc: "Win the game with Darkest Dungeoneers tapped on your side of the battlefield.",
-      hint: ({ mine }) => mine.has("OGN-045") ? "Use Darkest Dungeoneers' Defensive (it taps) or attack with it on your winning turn." : null,
+      hint: ({ mine }) => mine.has("OGN-045") ? {
+        hu: "A gy\u0151ztes k\xF6r\xF6dben a Darkest Dungeoneers legyen leford\xEDtva: v\xE9dekezzen (Defensive) vagy t\xE1madjon.",
+        en: "Have Darkest Dungeoneers tapped on your winning turn: use its Defensive or attack with it."
+      } : null,
       check: ({ ev, me, s }) => ev.type === "win" && ev.player === me && s.players[me].battle.some((u) => u.id === "OGN-045" && u.tapped)
     }
   ];
@@ -2787,7 +2824,51 @@ ${def.text}`;
   </div>`;
   }
 
+  // js/ui/lang.js
+  var LS3 = "rajongoi.lang";
+  function getLang() {
+    try {
+      return localStorage.getItem(LS3) === "en" ? "en" : "hu";
+    } catch {
+      return "hu";
+    }
+  }
+  function setLang(l) {
+    try {
+      localStorage.setItem(LS3, l);
+    } catch {
+    }
+  }
+  function langToggleHtml() {
+    const l = getLang();
+    return `<div class="lang-toggle" role="group" aria-label="Language">
+    <button type="button" data-lang="hu" class="${l === "hu" ? "on" : ""}">Magyar</button>
+    <button type="button" data-lang="en" class="${l === "en" ? "on" : ""}">English</button></div>`;
+  }
+  function bindLangToggle(root, rerender) {
+    root.querySelectorAll(".lang-toggle [data-lang]").forEach((b) => b.onclick = (e) => {
+      e.stopPropagation();
+      if (b.dataset.lang === getLang()) return;
+      setLang(b.dataset.lang);
+      rerender();
+    });
+  }
+
   // js/ui/deckinfo.js
+  var T = {
+    noGuide: ["Ehhez a paklihoz m\xE9g nincs le\xEDr\xE1s.", "No strategy notes for this deck yet."],
+    plan: ["J\xE1t\xE9kterv", "Game plan"],
+    combos: ["Komb\xF3k", "Combos"],
+    random: ["Az AI v\xE9letlenszer\u0171en v\xE1laszt a j\xE1tszhat\xF3 paklik k\xF6z\xFCl.", "The AI will pick one of the playable decks at random."],
+    aiPlan: ["Az AI teljes j\xE1t\xE9kterve", "The AI's full game plan"],
+    howTo: ["\xCDgy j\xE1tszd ezt a paklit", "How to play this deck"],
+    matchup: ["Tippek az ellenf\xE9l ellen", "Matchup tips"],
+    achs: ["Megszerezhet\u0151 achievementek", "Achievements you can go for"],
+    achsRandom: [" (v\xE9letlen ellenf\xE9llel)", " (opponent random)"],
+    unlocked: ["\u2713 megvan", "\u2713 unlocked"]
+  };
+  var t = (k) => T[k][getLang() === "hu" ? 0 : 1];
+  var L = (hu, en) => getLang() === "hu" ? hu : en;
   var deckIds = (d) => new Set([d.legend, d.champion, ...Object.keys(d.cards || {})].filter((id) => id && hasDef(id)));
   var defs = (ids) => [...ids].map(getDef);
   var kw = (d, k) => (d.keywords || []).includes(k);
@@ -2802,60 +2883,67 @@ ${def.text}`;
     ].filter((x) => hasDef(x.id));
   }
   function matchupTips(mine, theirs) {
-    const M = defs(mine), T = defs(theirs);
+    const M = defs(mine), T2 = defs(theirs);
     const tips = [];
-    const triggers = T.filter((d) => kw(d, "Shield Trigger"));
+    const triggers = T2.filter((d) => kw(d, "Shield Trigger"));
     if (triggers.length) {
-      tips.push(`They run ${triggers.length} Shield Trigger${triggers.length > 1 ? "s" : ""} (${nameList(triggers)}). ` + (mine.has("OGN-177") ? "Cast <b>GOLDEN</b> before your big attack so none of them can fire." : "Don't over-commit into their shields."));
+      tips.push(L(
+        `${triggers.length} Shield Trigger van a paklij\xE1ban (${nameList(triggers)}). ` + (mine.has("OGN-177") ? "A nagy t\xE1mad\xE1s el\u0151tt j\xE1tszd ki a <b>GOLDEN</b>-t, hogy egyik se s\xFClj\xF6n el." : "Ne t\xE1madj t\xFAl sok lappal egyszerre a Shieldjeire."),
+        `They run ${triggers.length} Shield Trigger${triggers.length > 1 ? "s" : ""} (${nameList(triggers)}). ` + (mine.has("OGN-177") ? "Cast <b>GOLDEN</b> before your big attack so none of them can fire." : "Don't over-commit into their shields.")
+      ));
     }
-    const walls = T.filter((d) => kw(d, "Defensive"));
+    const walls = T2.filter((d) => kw(d, "Defensive"));
     if (walls.length) {
       const pb = M.filter((d) => kw(d, "Party Breaker"));
-      tips.push(`Their Defensive units (${nameList(walls)}) can redirect your attacks.` + (pb.length ? ` ${nameList(pb)} can attack untapped units \u2014 use it to clear them first.` : " Tap or remove them before going for shields."));
+      tips.push(L(
+        `A Defensive Unitjai (${nameList(walls)}) magukra ir\xE1ny\xEDthatj\xE1k a t\xE1mad\xE1saidat.` + (pb.length ? ` ${nameList(pb)} \xE1ll\xF3 Unitokat is t\xE1madhat, ezzel takar\xEDtsd el \u0151ket el\u0151bb.` : " Ford\xEDtsd le vagy t\xE1vol\xEDtsd el \u0151ket, miel\u0151tt a Shieldekre m\xE9sz."),
+        `Their Defensive units (${nameList(walls)}) can redirect your attacks.` + (pb.length ? ` ${nameList(pb)} can attack untapped units \u2014 use it to clear them first.` : " Tap or remove them before going for shields.")
+      ));
     }
-    const chaos = T.filter((d) => (d.colors || []).includes("Chaos") && d.type !== "legend" && (d.power ?? 0) < 5);
-    if (chaos.length && mine.has("OGN-172")) tips.push(`<b>Cowtrix</b> destroys their non-Mighty Chaos cards when it enters (${chaos.length} in their deck).`);
-    const big = T.filter((d) => (d.cost || 0) >= 7 && ["unit", "champion"].includes(d.type));
-    if (big.length) tips.push(`Their top end: ${nameList(big)}. Keep a Defensive unit back once they reach that much mana.`);
-    const deathtouch = T.filter((d) => JSON.stringify(d.effects || []).includes("TKN-005") || kw(d, "Deathtouch"));
-    if (deathtouch.length) tips.push(`Watch out for Deathtouch (${nameList(deathtouch)}): attack it with tokens, not with your best unit.`);
-    if (theirs.has("OGN-186")) tips.push("They also run <b>The ULTIMATE FLEX</b>: when it resolves they can't lose that turn, so don't waste a lethal swing into it.");
+    const chaos = T2.filter((d) => (d.colors || []).includes("Chaos") && d.type !== "legend" && (d.power ?? 0) < 5);
+    if (chaos.length && mine.has("OGN-172")) tips.push(L(`A <b>Cowtrix</b> \xE9rkez\xE9skor elpuszt\xEDtja a nem Mighty Chaos lapjait (${chaos.length} van a paklij\xE1ban).`, `<b>Cowtrix</b> destroys their non-Mighty Chaos cards when it enters (${chaos.length} in their deck).`));
+    const big = T2.filter((d) => (d.cost || 0) >= 7 && ["unit", "champion"].includes(d.type));
+    if (big.length) tips.push(L(`A leger\u0151sebb lapjai: ${nameList(big)}. Ha m\xE1r van r\xE1juk man\xE1ja, tarts vissza egy Defensive Unitot.`, `Their top end: ${nameList(big)}. Keep a Defensive unit back once they reach that much mana.`));
+    const deathtouch = T2.filter((d) => JSON.stringify(d.effects || []).includes("TKN-005") || kw(d, "Deathtouch"));
+    if (deathtouch.length) tips.push(L(`Vigy\xE1zz a Deathtouch-ra (${nameList(deathtouch)}): tokennel t\xE1madd, ne a legjobb Unitoddal.`, `Watch out for Deathtouch (${nameList(deathtouch)}): attack it with tokens, not with your best unit.`));
+    if (theirs.has("OGN-186")) tips.push(L("N\xE1la is van <b>The ULTIMATE FLEX</b>: ha els\xFCl, abban a k\xF6rben nem vesz\xEDthet, \xFAgyhogy ne pazarold bele a gy\u0151ztes t\xE1mad\xE1st.", "They also run <b>The ULTIMATE FLEX</b>: when it resolves they can't lose that turn, so don't waste a lethal swing into it."));
     return tips;
   }
   function cardRow(d) {
     return `<div class="di-cards">${startingCards(d).map((x) => `<div class="di-card" data-di-cid="${x.id}">
     ${cardHtml(getDef(x.id), { size: "sm" })}<span class="di-role">${x.role}</span></div>`).join("")}</div>`;
   }
-  function guideHtml(d) {
-    const g = deckGuide(d.id);
-    if (!g) return '<p class="muted">No strategy notes for this deck yet.</p>';
+  function guideHtml(d, withStyle = true) {
+    const g = deckGuide(d.id, getLang());
+    if (!g) return `<p class="muted">${t("noGuide")}</p>`;
     const chips = (ids) => ids.filter(hasDef).map((id) => `<span class="di-chip" data-di-cid="${id}">${esc(getDef(id).name)}</span>`).join("");
-    return `<div class="di-style"><span class="di-arch">${esc(g.archetype || "")}</span>${esc(g.style || "")}</div>
-    ${g.plan?.length ? `<h4>Game plan</h4><ol class="di-plan">${g.plan.map((p) => `<li>${esc(p)}</li>`).join("")}</ol>` : ""}
+    return `${withStyle ? styleHtml(g) : ""}
+    ${g.plan?.length ? `<h4>${t("plan")}</h4><ol class="di-plan">${g.plan.map((p) => `<li>${esc(p)}</li>`).join("")}</ol>` : ""}
     ${g.mulligan ? `<p class="di-mull"><b>Mulligan:</b> ${esc(g.mulligan)}</p>` : ""}
-    ${g.combos?.length ? `<h4>Combos</h4><div class="di-combos">${g.combos.map((c) => `<div class="di-combo"><div class="di-chips">${chips(c.cards)}</div>${esc(c.text)}</div>`).join("")}</div>` : ""}`;
+    ${g.combos?.length ? `<h4>${t("combos")}</h4><div class="di-combos">${g.combos.map((c) => `<div class="di-combo"><div class="di-chips">${chips(c.cards)}</div>${esc(c.text)}</div>`).join("")}</div>` : ""}`;
   }
+  var styleHtml = (g) => `<div class="di-style"><span class="di-arch">${esc(g.archetype || "")}</span>${esc(g.style || "")}</div>`;
   function deckInfoHtml(deck, other2, side2) {
     if (!deck) {
-      return `<div class="deck-info"><p class="muted">The AI will pick one of the playable decks at random.</p></div>`;
+      return `<div class="deck-info"><p class="muted">${t("random")}</p></div>`;
     }
     const mine = deckIds(deck), theirs = other2 ? deckIds(other2) : null;
     if (side2 === "ai") {
-      const g = deckGuide(deck.id);
+      const g = deckGuide(deck.id, getLang());
       return `<div class="deck-info">${cardRow(deck)}
-      ${g ? `<div class="di-style"><span class="di-arch">${esc(g.archetype || "")}</span>${esc(g.style || "")}</div>` : ""}
-      <details class="di-sec"><summary>The AI's full game plan</summary>${guideHtml(deck)}</details>
+      ${g ? styleHtml(g) : ""}
+      <details class="di-sec"><summary>${t("aiPlan")}</summary>${guideHtml(deck, false)}</details>
     </div>`;
     }
     const tips = theirs ? matchupTips(mine, theirs) : [];
     const got = unlockedMap();
     const hints = achievementHints(mine, theirs).sort((a, b) => !!got[a.id] - !!got[b.id]);
     return `<div class="deck-info">${cardRow(deck)}
-    <details class="di-sec" open><summary>How to play this deck</summary>${guideHtml(deck)}</details>
-    ${tips.length ? `<details class="di-sec" open><summary>Matchup tips</summary><ul class="di-tips">${tips.map((t) => `<li>${t}</li>`).join("")}</ul></details>` : ""}
-    ${hints.length ? `<details class="di-sec" open><summary>Achievements you can go for${theirs ? "" : " (opponent random)"}</summary>
+    <details class="di-sec" open><summary>${t("howTo")}</summary>${guideHtml(deck)}</details>
+    ${tips.length ? `<details class="di-sec" open><summary>${t("matchup")}</summary><ul class="di-tips">${tips.map((t2) => `<li>${t2}</li>`).join("")}</ul></details>` : ""}
+    ${hints.length ? `<details class="di-sec" open><summary>${t("achs")}${theirs ? "" : t("achsRandom")}</summary>
       <div class="di-achs">${hints.map((a) => `<div class="di-ach ${got[a.id] ? "got" : ""}"><span class="ach-ico">${a.icon}</span>
-        <div><b>${esc(a.name)}</b>${got[a.id] ? ' <span class="di-done">\u2713 unlocked</span>' : ""}<div class="muted">${esc(a.tip)}</div></div></div>`).join("")}</div></details>` : ""}
+        <div><b>${esc(a.name)}</b>${got[a.id] ? ` <span class="di-done">${t("unlocked")}</span>` : ""}<div class="muted">${esc(L(a.tip.hu, a.tip.en))}</div></div></div>`).join("")}</div></details>` : ""}
   </div>`;
   }
 
@@ -2886,9 +2974,9 @@ ${def.text}`;
     const thumb = (d) => d ? cardHtml(getDef(d.legend), { size: "xs" }) : cardBackHtml({ size: "xs" });
     const meta = (d) => {
       if (!d) return "Surprise me";
-      const L = getDef(d.legend);
+      const L2 = getDef(d.legend);
       const v = validateDeck(d);
-      return `${L.colors.join(" / ")} \xB7 avg cost ${v.stats.avgCost.toFixed(1)} \xB7 ${d.premade ? "premade" : "custom"}${d.fillers ? ` \xB7 ${d.fillers} filler` : ""}`;
+      return `${L2.colors.join(" / ")} \xB7 avg cost ${v.stats.avgCost.toFixed(1)} \xB7 ${d.premade ? "premade" : "custom"}${d.fillers ? ` \xB7 ${d.fillers} filler` : ""}`;
     };
     const option = (who, d, locked = false) => {
       const id = d ? d.id : "random";
@@ -2919,12 +3007,14 @@ ${def.text}`;
       <div class="vs">VS</div>
       ${dropdown("ai", "Opponent (AI) deck")}
     </div>
+    <div class="row di-langrow"><span class="spacer"></span>${langToggleHtml()}</div>
     <div class="versus deck-infos">
       ${deckInfoHtml(findDeck(pick.me), pick.ai === "random" ? null : findDeck(pick.ai), "me")}
       <div></div>
       ${deckInfoHtml(pick.ai === "random" ? null : findDeck(pick.ai), findDeck(pick.me), "ai")}
     </div>
   </div>`;
+    bindLangToggle(app2, () => renderSetup(app2));
     app2.querySelectorAll("[data-di-cid]").forEach((el) => el.onclick = (e) => {
       e.stopPropagation();
       showCardModal(getDef(el.dataset.diCid));
@@ -3029,10 +3119,10 @@ ${def.text}`;
         const who = s.players.find((p) => p.name === b[1]);
         if (who) setTimeout(() => shieldShatter(app2, who.idx), 60 + breaks++ * 260);
       }
-      const t = l.match(/^Shield Trigger! (.+?) plays (.+?) for free\./);
-      if (t) {
-        const who = s.players.find((p) => p.name === t[1]);
-        if (who) setTimeout(() => shieldTriggerFx(app2, who.idx, t[2]), 200 + breaks * 260);
+      const t2 = l.match(/^Shield Trigger! (.+?) plays (.+?) for free\./);
+      if (t2) {
+        const who = s.players.find((p) => p.name === t2[1]);
+        if (who) setTimeout(() => shieldTriggerFx(app2, who.idx, t2[2]), 200 + breaks * 260);
       }
     }
     if (whoActs(s) === HUMAN && s.pending?.kind === "priority" && legal.length === 1 && legal[0].type === "pass" && !G.autoPass) {
@@ -3162,8 +3252,8 @@ ${def.text}`;
     const stack = s.stack.length ? `<div class="stackview"><span class="muted">Stack:</span>${s.stack.map((it) => cardHtml(getDef(it.inst.id), { size: "xs", mini: true })).join("")}</div>` : "";
     const combat = s.combat ? (() => {
       const A = findInst(s, s.combat.attacker)?.inst;
-      const t = s.combat.target;
-      const tname = t.kind === "unit" ? getDef(findInst(s, t.uid)?.inst.id ?? "").name : t.kind === "shield" ? "a shield" : "the player";
+      const t2 = s.combat.target;
+      const tname = t2.kind === "unit" ? getDef(findInst(s, t2.uid)?.inst.id ?? "").name : t2.kind === "shield" ? "a shield" : "the player";
       return A ? `<b>${esc(getDef(A.id).name)}</b> (${power(s, A)}) \u2192 ${esc(tname)}. ` : "";
     })() : "";
     if (s.winner != null) prompt2 = "Game over.";
@@ -3423,14 +3513,14 @@ ${def.text}`;
       const segs = [];
       const add = (pts, width, alpha, t0, t1, level) => {
         for (let i = 0; i < pts.length - 1; i++) {
-          const t = t0 + (t1 - t0) * (i / (pts.length - 1));
-          segs.push({ a: pts[i], b: pts[i + 1], w: width, al: alpha, t });
+          const t2 = t0 + (t1 - t0) * (i / (pts.length - 1));
+          segs.push({ a: pts[i], b: pts[i + 1], w: width, al: alpha, t: t2 });
           if (level < 2 && Math.random() < (level ? 0.03 : 0.045) && i > 4 && i < pts.length - 8) {
             const [bx, by] = pts[i];
             const ang = Math.PI / 2 + (Math.random() < 0.5 ? -1 : 1) * (0.35 + Math.random() * 0.65);
-            const L = (ey - by) * (0.25 + Math.random() * 0.35) / (level + 1);
-            const br = fractal(bx, by, bx + Math.cos(ang) * L, by + Math.sin(ang) * L, L * 0.45, 5);
-            add(br, width * 0.55, alpha * 0.6, t, Math.min(1, t + 0.25), level + 1);
+            const L2 = (ey - by) * (0.25 + Math.random() * 0.35) / (level + 1);
+            const br = fractal(bx, by, bx + Math.cos(ang) * L2, by + Math.sin(ang) * L2, L2 * 0.45, 5);
+            add(br, width * 0.55, alpha * 0.6, t2, Math.min(1, t2 + 0.25), level + 1);
           }
         }
       };
@@ -3455,9 +3545,9 @@ ${def.text}`;
       }
     };
     const LEADER = 150, END = 1150;
-    const flicker = (t) => {
-      if (t < LEADER) return 0.35;
-      const k = t - LEADER;
+    const flicker = (t2) => {
+      if (t2 < LEADER) return 0.35;
+      const k = t2 - LEADER;
       const keys = [[0, 1], [95, 1], [125, 0.25], [150, 1], [230, 0.9], [260, 0.3], [290, 0.85], [420, 0.55], [END - LEADER, 0]];
       for (let i = 0; i < keys.length - 1; i++) {
         const [t0, v0] = keys[i], [t1, v1] = keys[i + 1];
@@ -3500,31 +3590,31 @@ ${def.text}`;
       g.shadowBlur = 0;
     }
     function frame(now) {
-      const t = now - start;
+      const t2 = now - start;
       g.clearRect(0, 0, W, H);
       g.globalCompositeOperation = "lighter";
       g.lineCap = "round";
       g.lineJoin = "round";
-      const inten = flicker(t);
-      if (!struck && t >= LEADER) {
+      const inten = flicker(t2);
+      if (!struck && t2 >= LEADER) {
         struck = true;
         burst2(42);
       }
-      if (!restruck && t >= LEADER + 125) {
+      if (!restruck && t2 >= LEADER + 125) {
         restruck = true;
         spawn();
         burst2(18);
       }
-      const progress = Math.min(1, t / LEADER);
-      if (t >= LEADER) {
+      const progress = Math.min(1, t2 / LEADER);
+      if (t2 >= LEADER) {
         const [cr, cg, cb] = bolts[0].col;
         g.fillStyle = `rgba(${cr},${cg},${cb},${0.3 * inten})`;
         g.fillRect(0, 0, W, H);
         g.fillStyle = `rgba(255,255,255,${0.12 * inten})`;
         g.fillRect(0, 0, W, H);
       }
-      for (const bolt of bolts) drawBolt(bolt, progress, t < LEADER ? 0.55 : inten);
-      if (t >= LEADER) {
+      for (const bolt of bolts) drawBolt(bolt, progress, t2 < LEADER ? 0.55 : inten);
+      if (t2 >= LEADER) {
         const [cr, cg, cb] = bolts[bolts.length - 1].col;
         const rad = r.width * (1.6 + inten);
         const gr = g.createRadialGradient(tx, ty + r.height * 0.2, 0, tx, ty + r.height * 0.2, rad);
@@ -3553,7 +3643,7 @@ ${def.text}`;
         g.fillRect(p.x - 1, p.y - 1, 2, 2);
       }
       if (opts.freezeAt != null) return;
-      if (t < END || sparks.some((p) => p.life > 0)) requestAnimationFrame(frame);
+      if (t2 < END || sparks.some((p) => p.life > 0)) requestAnimationFrame(frame);
       else cv.remove();
     }
     if (opts.freezeAt != null) {
@@ -3575,9 +3665,9 @@ ${def.text}`;
       const len = c * (0.55 + Math.random() * 0.45);
       let x = c, y = c, pts = `M${c} ${c}`;
       for (let k = 1; k <= 5; k++) {
-        const t = len * k / 5;
-        x = c + Math.cos(a) * t + (Math.random() - 0.5) * size * 0.06;
-        y = c + Math.sin(a) * t * 0.55 + (Math.random() - 0.5) * size * 0.035;
+        const t2 = len * k / 5;
+        x = c + Math.cos(a) * t2 + (Math.random() - 0.5) * size * 0.06;
+        y = c + Math.sin(a) * t2 * 0.55 + (Math.random() - 0.5) * size * 0.035;
         pts += ` L${x.toFixed(1)} ${y.toFixed(1)}`;
         if (k === 2 || k === 3) {
           const br = a + (Math.random() < 0.5 ? -1 : 1) * (0.5 + Math.random() * 0.5);
@@ -3641,11 +3731,11 @@ ${def.text}`;
     render();
   }
   function toast2(msg) {
-    const t = document.createElement("div");
-    t.className = "toast";
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2200);
+    const t2 = document.createElement("div");
+    t2.className = "toast";
+    t2.textContent = msg;
+    document.body.appendChild(t2);
+    setTimeout(() => t2.remove(), 2200);
   }
   function onHover(e) {
     if (!G) return;
@@ -3944,8 +4034,8 @@ ${def.text}`;
   }
   function drawReveal(app2, sets) {
     const cards = state.pack.map((e, i) => {
-      const t = tier(e);
-      return `<div class="flip t-${t}" data-i="${i}" style="--d:${i * 55}ms">
+      const t2 = tier(e);
+      return `<div class="flip t-${t2}" data-i="${i}" style="--d:${i * 55}ms">
       <div class="flip-inner">
         <div class="flip-face flip-back"><div class="pack-back"><span>RAJONGOI<br>TCG</span></div></div>
         <div class="flip-face flip-front">${cardHtml(e.def, { size: "md" })}${e.isNew ? '<span class="new-badge">NEW</span>' : ""}</div>
@@ -3970,13 +4060,13 @@ ${def.text}`;
       }
       state.revealed.add(i);
       el.classList.add("flipped");
-      const t = tier(state.pack[i]);
+      const t2 = tier(state.pack[i]);
       sfx.flip();
-      if (t !== "common") setTimeout(() => sfx.reveal(t), 200);
-      if (["rare", "epic", "hit", "legend"].includes(t)) {
+      if (t2 !== "common") setTimeout(() => sfx.reveal(t2), 200);
+      if (["rare", "epic", "hit", "legend"].includes(t2)) {
         setTimeout(() => {
-          burst(el, t === "hit" || t === "epic" ? ["#ff5fd2", "#6be3ff", "#ffe36b", "#8dff7a"] : ["#ffd36b", "#fff2b8", "#e6ad3c"], t === "rare" ? 18 : 34);
-          if (t !== "rare") app2.querySelector(".booster-page").classList.add("quake");
+          burst(el, t2 === "hit" || t2 === "epic" ? ["#ff5fd2", "#6be3ff", "#ffe36b", "#8dff7a"] : ["#ffd36b", "#fff2b8", "#e6ad3c"], t2 === "rare" ? 18 : 34);
+          if (t2 !== "rare") app2.querySelector(".booster-page").classList.add("quake");
           setTimeout(() => app2.querySelector(".booster-page")?.classList.remove("quake"), 450);
         }, 260);
       }
@@ -4011,6 +4101,152 @@ ${def.text}`;
     }
     document.body.appendChild(layer);
     setTimeout(() => layer.remove(), 1100);
+  }
+
+  // js/ui/rules.js
+  var R = RULES;
+  var SECTIONS = [
+    {
+      icon: "\u{1F3C6}",
+      hu: { t: "A j\xE1t\xE9k c\xE9lja", b: `<p>T\xF6rd \xE1t az ellenf\xE9l <b>${R.SHIELDS} Shieldj\xE9t</b>, majd t\xE1madd meg \u0151t k\xF6zvetlen\xFCl (<b>Direct Attack</b>). Ha ez siker\xFCl, nyert\xE9l.</p>
+      <p>Akkor is vesz\xEDtesz, ha h\xFAznod kellene, de m\xE1r se paklid, se Shieldod nincs.</p>` },
+      en: { t: "Goal of the game", b: `<p>Break all <b>${R.SHIELDS} of your opponent's Shields</b>, then hit them with a <b>Direct Attack</b>. If it lands, you win.</p>
+      <p>You also lose if you have to draw but have no deck and no Shields left.</p>` }
+    },
+    {
+      icon: "\u{1F0CF}",
+      hu: { t: "A pakli", b: `<ul>
+      <li><b>${R.DECK_SIZE} lap</b>, mindegyikb\u0151l csak <b>1</b> p\xE9ld\xE1ny.</li>
+      <li><b>1 Legend</b>: a passz\xEDv k\xE9pess\xE9ge mindig \xE9l, \xE9s a 2 sz\xEDne hat\xE1rozza meg, milyen lapok mehetnek a pakliba.</li>
+      <li><b>${R.MIN_CHAMPIONS}\u2013${R.MAX_CHAMPIONS} Champion</b>, ebb\u0151l legal\xE1bb egynek a neve egyezik a Legend\xE9vel. \u0150 kezd a Champion Slotban.</li>
+      <li>Legfeljebb <b>${R.MAX_SIGNATURES} Signature</b> lap. Ezek k\xE9tsz\xEDn\u0171, er\u0151s lapok, \xE9s csak a saj\xE1t Legendj\xFCkkel haszn\xE1lhat\xF3k.</li>
+      <li>K\xFCl\xF6n <b>Mana Deck</b>: ${R.RUNE_DECK_SIZE} Rune a Legend k\xE9t sz\xEDn\xE9ben.</li>
+      <li>Aj\xE1nlott: \xE1tlagosan kb. 4-es mana k\xF6lts\xE9g, sok olcs\xF3 lap \xE9s n\xE9h\xE1ny dr\xE1ga finisher.</li></ul>` },
+      en: { t: "The deck", b: `<ul>
+      <li><b>${R.DECK_SIZE} cards</b>, only <b>1 copy</b> of each.</li>
+      <li><b>1 Legend</b>: its passive is always on, and its 2 colors decide which cards your deck can use.</li>
+      <li><b>${R.MIN_CHAMPIONS}\u2013${R.MAX_CHAMPIONS} Champions</b>, at least one named like your Legend. That one starts in the Champion Slot.</li>
+      <li>Up to <b>${R.MAX_SIGNATURES} Signature</b> cards: strong two-color cards that only work with their own Legend.</li>
+      <li>A separate <b>Mana Deck</b> of ${R.RUNE_DECK_SIZE} Runes in your Legend's two colors.</li>
+      <li>Guideline: average cost around 4, lots of cheap cards and a few expensive finishers.</li></ul>` }
+    },
+    {
+      icon: "\u{1F5FA}\uFE0F",
+      hu: { t: "Z\xF3n\xE1k az asztalon", b: `<ul>
+      <li><b>Battlefield</b>: itt \xE1llnak a Unitjaid, innen t\xE1madnak.</li>
+      <li><b>Shield Zone</b>: ${R.SHIELDS} leford\xEDtott lap, ezek v\xE9denek.</li>
+      <li><b>Deck</b> \xE9s <b>Graveyard</b>: a Graveyardba ker\xFClnek az elpusztult Unitok \xE9s a lej\xE1tszott Spellek.</li>
+      <li><b>Mana Zone</b> \xE9s <b>Mana Deck</b>: a Mana Deckb\u0151l h\xFAzott Rune-ok adj\xE1k a man\xE1t.</li>
+      <li><b>Legend</b>, <b>Champion Slot</b>, <b>Signature Slot</b>: ezek a lapok az asztalon kezdenek, \xE9s innen kij\xE1tszhat\xF3k.</li>
+      <li><b>Gear Slotok</b>: egyszerre legfeljebb ${R.GEAR_SLOTS} Gear lehet lent.</li></ul>` },
+      en: { t: "Zones on the table", b: `<ul>
+      <li><b>Battlefield</b>: your Units stand here and attack from here.</li>
+      <li><b>Shield Zone</b>: ${R.SHIELDS} face-down cards that protect you.</li>
+      <li><b>Deck</b> and <b>Graveyard</b>: destroyed Units and resolved Spells go to the Graveyard.</li>
+      <li><b>Mana Zone</b> and <b>Mana Deck</b>: Runes from the Mana Deck give you mana.</li>
+      <li><b>Legend</b>, <b>Champion Slot</b>, <b>Signature Slot</b>: these start on the table and can be played from there.</li>
+      <li><b>Gear Slots</b>: at most ${R.GEAR_SLOTS} Gear at a time.</li></ul>` }
+    },
+    {
+      icon: "\u{1F3B2}",
+      hu: { t: "Kezd\xE9s", b: `<ol>
+      <li>Keverd meg a paklit, \xE9s a fels\u0151 ${R.SHIELDS} lapot tedd le leford\xEDtva: ezek a Shieldjeid.</li>
+      <li>H\xFAzz ${R.OPENING_HAND} lapot. Legfeljebb ${R.MULLIGAN_MAX}-t visszatehetsz a pakli alj\xE1ra, \xE9s ugyanannyit \xFAjrah\xFAzol (mulligan).</li>
+      <li>P\xE9nzfeldob\xE1ssal d\u0151l el, ki kezd.</li></ol>` },
+      en: { t: "Setup", b: `<ol>
+      <li>Shuffle and put the top ${R.SHIELDS} cards face down: these are your Shields.</li>
+      <li>Draw ${R.OPENING_HAND}. You may put up to ${R.MULLIGAN_MAX} on the bottom of your deck and draw that many again (mulligan).</li>
+      <li>A coin flip decides who goes first.</li></ol>` }
+    },
+    {
+      icon: "\u{1F504}",
+      hu: { t: "Egy k\xF6r menete", b: `<ol>
+      <li><b>Kezd\xE9s</b>: minden lapod fel\xE1ll (untap), \xE9s lefutnak a k\xF6r eleji hat\xE1sok.</li>
+      <li><b>H\xFAz\xE1s</b>: h\xFAzol 1 lapot. Ha \xFCres a pakli, egy Shieldot veszel k\xE9zbe helyette.</li>
+      <li><b>Mana</b>: ${R.CHANNEL_PER_TURN} Rune-t teszel a Mana Deckb\u0151l a Mana Zone-ba (a m\xE1sodik j\xE1t\xE9kos az els\u0151 k\xF6r\xE9ben ${R.CHANNEL_SECOND_PLAYER_FIRST_TURN}-at).</li>
+      <li><b>Kij\xE1tsz\xE1s</b>: Unitokat, Spelleket \xE9s Geart j\xE1tszol ki. Annyi Rune-t ford\xEDtasz le, amennyi a k\xF6lts\xE9g, \xE9s <b>legal\xE1bb 1-nek egyeznie kell a lap sz\xEDn\xE9vel</b>.</li>
+      <li><b>Harc</b>: egyes\xE9vel t\xE1madsz (l\xE1sd lent).</li>
+      <li><b>V\xE9ge</b>: lej\xE1rnak az \u201Eebben a k\xF6rben\u201D hat\xE1sok.</li></ol>
+      <p><b>Recycle N</b>: plusz k\xF6lts\xE9g. N darab, a lap sz\xEDn\xE9vel egyez\u0151 Rune-t visszateszel a Mana Deck alj\xE1ra.</p>` },
+      en: { t: "Turn order", b: `<ol>
+      <li><b>Start</b>: untap everything and resolve start-of-turn effects.</li>
+      <li><b>Draw</b> 1 card. If your deck is empty, take a Shield into your hand instead.</li>
+      <li><b>Mana</b>: channel ${R.CHANNEL_PER_TURN} Runes from the Mana Deck (the second player channels ${R.CHANNEL_SECOND_PLAYER_FIRST_TURN} on their first turn).</li>
+      <li><b>Play</b> Units, Spells and Gear. Tap Runes equal to the cost; <b>at least 1 must match the card's color</b>.</li>
+      <li><b>Combat</b>: attack one at a time (see below).</li>
+      <li><b>End</b>: "this turn" effects expire.</li></ol>
+      <p><b>Recycle N</b> is an extra cost: put N Runes of the card's color on the bottom of the Mana Deck.</p>` }
+    },
+    {
+      icon: "\u2694\uFE0F",
+      hu: { t: "Harc", b: `<p>Egy \xE1ll\xF3 (untapped) Unittal t\xE1madsz, \xE9s ez leford\xEDtja. A kij\xE1tsz\xE1s k\xF6r\xE9ben egy Unit m\xE9g nem t\xE1madhat, kiv\xE9ve ha <b>Haste</b> vagy akt\xEDv <b>Nostalgia Line</b> van rajta. H\xE1rom c\xE9lpont k\xF6z\xFCl v\xE1laszthatsz:</p>
+      <ul>
+      <li><b>Shield</b>: 1 Shield bet\xF6rik, \xE9s a tulajdonosa k\xE9zbe veszi. Ha az <b>Shield Trigger</b>, azonnal ingyen kij\xE1tszhatja.</li>
+      <li><b>Direct Attack</b>: csak ha az ellenf\xE9lnek m\xE1r nincs Shieldje. Ha betal\xE1l, nyert\xE9l.</li>
+      <li><b>Leford\xEDtott (tapped) ellens\xE9ges Unit</b>: a nagyobb <b>Might</b> nyer, a vesztes elpusztul. D\xF6ntetlenn\xE9l mindkett\u0151.</li></ul>
+      <p>A v\xE9dekez\u0151 egy \xE1ll\xF3 <b>Defensive</b> Unitra ir\xE1ny\xEDthatja \xE1t a t\xE1mad\xE1st. Ezut\xE1n mindketten j\xE1tszhattok <b>Action</b> \xE9s <b>Reaction</b> spelleket. Ezek egy veremre (stack) ker\xFClnek, \xE9s ford\xEDtott sorrendben old\xF3dnak fel (az utols\xF3 els\u0151k\xE9nt). A Reaction ak\xE1r egy m\xE1sik spellre v\xE1laszul is mehet.</p>` },
+      en: { t: "Combat", b: `<p>Attack with an untapped Unit (it taps). Units can't attack the turn they're played unless they have <b>Haste</b> or an active <b>Nostalgia Line</b>. Pick a target:</p>
+      <ul>
+      <li><b>Shield</b>: break 1 Shield; its owner takes it into their hand. If it's a <b>Shield Trigger</b>, they may play it for free right away.</li>
+      <li><b>Direct Attack</b>: only when the opponent has no Shields. If it lands, you win.</li>
+      <li><b>A tapped enemy Unit</b>: higher <b>Might</b> wins and the loser is destroyed. On a tie, both are.</li></ul>
+      <p>The defender may redirect the attack to an untapped <b>Defensive</b> Unit. Then both players may cast <b>Action</b> and <b>Reaction</b> spells onto a stack, which resolves last-in, first-out. A Reaction can even answer another spell.</p>` }
+    },
+    {
+      icon: "\u{1F4DC}",
+      hu: { t: "Lap t\xEDpusok", b: `<ul>
+      <li><b>Legend</b>: passz\xEDv k\xE9pess\xE9g, v\xE9gig az asztalon marad.</li>
+      <li><b>Unit</b>: harcol\xF3 l\xE9ny a Battlefielden, a sz\xE1ma a Might (er\u0151).</li>
+      <li><b>Champion</b>: k\xFCl\xF6nleges Unit, egyik\xFCk a Champion Slotb\xF3l indul.</li>
+      <li><b>Signature</b>: k\xE9tsz\xEDn\u0171, er\u0151s lap, egy adott Legendhez tartozik.</li>
+      <li><b>Spell</b>: egyszeri hat\xE1s, ut\xE1na a Graveyardba ker\xFCl.</li>
+      <li><b>Gear</b>: tart\xF3s lap a Gear Slotban, gyakran tap-pel aktiv\xE1lhat\xF3. Ha mindk\xE9t slot foglalt, az \xFAj Gear egy \xE1ltalad v\xE1lasztott r\xE9gi hely\xE9re ker\xFCl. A <i>Saga</i> Gear n\xE9h\xE1ny haszn\xE1lat ut\xE1n lej\xE1r.</li>
+      <li><b>Token</b>: lapok \xE1ltal l\xE9trehozott Unit (pl. Miniature).</li>
+      <li><b>Rune</b>: mana a Mana Deckb\u0151l.</li></ul>
+      <p>A 0 vagy kevesebb Might-\xFA Unit elpusztul.</p>` },
+      en: { t: "Card types", b: `<ul>
+      <li><b>Legend</b>: a passive ability that stays on the table all game.</li>
+      <li><b>Unit</b>: a fighter on the Battlefield; its number is its Might.</li>
+      <li><b>Champion</b>: a special Unit; one starts in the Champion Slot.</li>
+      <li><b>Signature</b>: a strong two-color card tied to one Legend.</li>
+      <li><b>Spell</b>: a one-time effect, then it goes to the Graveyard.</li>
+      <li><b>Gear</b>: a lasting card in a Gear Slot, often used by tapping. With both slots full, a new Gear replaces one of your choice. <i>Saga</i> Gear expires after a few uses.</li>
+      <li><b>Token</b>: a Unit created by other cards (e.g. Miniature).</li>
+      <li><b>Rune</b>: mana from the Mana Deck.</li></ul>
+      <p>A Unit with 0 or less Might is destroyed.</p>` }
+    }
+  ];
+  var KW = [
+    ["Shield Trigger", "Ha Shieldb\xF3l ker\xFCl a kezedbe, azonnal ingyen kij\xE1tszhatod.", "If you get it from your Shield Zone, you may play it for free right away."],
+    ["Shieldify N", "Kij\xE1tsz\xE1skor N lapot teszel a kezedb\u0151l a Shield Zone-ba.", "When played, put N cards from your hand into your Shield Zone."],
+    ["Defensive", "Ha egy ellens\xE9ges Unit t\xE1mad, ezt leford\xEDtva magadra ir\xE1ny\xEDthatod a t\xE1mad\xE1st.", "When an enemy Unit attacks, tap this to redirect the attack to it."],
+    ["Deathtouch", "Ha harcban elpusztul, azt a Unitot is elpuszt\xEDtja, amelyik meg\xF6lte.", "If it loses a fight, it also destroys the Unit that killed it."],
+    ["Haste", "M\xE1r a kij\xE1tsz\xE1s k\xF6r\xE9ben t\xE1madhat.", "Can attack the turn it is played."],
+    ["Nostalgia Line", "Este 16:00 \xE9s 22:00 k\xF6z\xF6tt a kij\xE1tsz\xE1s k\xF6r\xE9ben is t\xE1madhat (a val\xF3s id\u0151 sz\xE1m\xEDt).", "Between 16:00 and 22:00 (real local time) it can attack the turn it is played."],
+    ["Breaker", "1 helyett 2 Shieldot t\xF6r.", "Breaks 2 Shields instead of 1."],
+    ["Party Breaker", "\xC1ll\xF3 (untapped) Unitokat is megt\xE1madhat.", "Can attack untapped Units."],
+    ["Indestructible", "Nem lehet elpuszt\xEDtani.", "Can't be destroyed."],
+    ["Unstoppable", "A t\xE1mad\xE1s\xE1t nem lehet \xE1tir\xE1ny\xEDtani.", "Its attacks can't be redirected."],
+    ["Vigilance", "A k\xF6r\xF6d v\xE9g\xE9n \xFAjra fel\xE1ll\xEDthatod (untap).", "You may untap it at the end of your turn."],
+    ["Slow Start", "Leford\xEDtva (tapped) \xE9rkezik.", "Enters tapped."],
+    ["Furious", "Minden k\xF6rben t\xE1madnia kell.", "Must attack every turn."],
+    ["Accelerate", "Plusz k\xF6lts\xE9g\xE9rt \xE1llva \xE9rkezik, \xEDgy azonnal t\xE1madhat.", "Pay extra so it enters ready and can attack right away."],
+    ["Action", "Harc k\xF6zben is kij\xE1tszhat\xF3, ha a stack \xFCres.", "Can also be played in combat while the stack is empty."],
+    ["Reaction", "B\xE1rmikor kij\xE1tszhat\xF3, ak\xE1r egy m\xE1sik spellre v\xE1laszul is.", "Can be played any time, even in response to another spell."]
+  ];
+  function renderRules(app2) {
+    const l = getLang();
+    const h = (o) => o[l];
+    app2.innerHTML = `<div class="page rules-page">
+    <div class="row rules-head"><h2 style="margin:0">${l === "hu" ? "Szab\xE1lyok" : "Rules"}</h2><span class="spacer"></span>${langToggleHtml()}</div>
+    <p class="muted rules-intro">${l === "hu" ? "A Rajongoi TCG a Duel Masters egyszer\u0171 alapjaira \xE9p\xFCl (Shieldek, Shield Trigger, Direct Attack), n\xE9h\xE1ny Riftbound-elemmel: Legend, Champion, Signature, Gear \xE9s Rune alap\xFA mana." : "Rajongoi TCG builds on the simple core of Duel Masters (Shields, Shield Trigger, Direct Attack) with a few Riftbound ideas: Legend, Champion, Signature, Gear and Rune-based mana."}</p>
+    <div class="rules-grid">
+      ${SECTIONS.map((s) => `<section class="rule-card"><h3><span class="rule-ico">${s.icon}</span>${h(s).t}</h3>${h(s).b}</section>`).join("")}
+      <section class="rule-card rule-kw"><h3><span class="rule-ico">\u{1F511}</span>${l === "hu" ? "Kulcsszavak" : "Keywords"}</h3>
+        <dl>${KW.map(([k, hu, en]) => `<div><dt>${k}</dt><dd>${l === "hu" ? hu : en}</dd></div>`).join("")}</dl></section>
+    </div>
+  </div>`;
+    bindLangToggle(app2, () => renderRules(app2));
   }
 
   // js/app.js
@@ -4074,6 +4310,8 @@ ${def.text}`;
         return renderBoosters(app);
       case "achievements":
         return renderAchievements(app);
+      case "rules":
+        return renderRules(app);
       default:
         return renderHome();
     }
@@ -4092,18 +4330,18 @@ ${def.text}`;
   };
   var CONTROLS = "button, .chip, .dd-opt, .deck-pick, .tabs button, nav a, .logo, select";
   document.addEventListener("click", (e) => {
-    const t = e.target.closest(CONTROLS);
-    if (t && t !== muteBtn && !t.disabled) sfx.click();
+    const t2 = e.target.closest(CONTROLS);
+    if (t2 && t2 !== muteBtn && !t2.disabled) sfx.click();
   }, true);
   var hoverEl = null;
   document.addEventListener("mouseover", (e) => {
-    const t = e.target.closest(CONTROLS + ", .grid .card, .hand-row.mine .card, .flip");
-    if (t && t !== hoverEl) {
-      hoverEl = t;
-      if (t.matches(".hand-row.mine .card")) sfx.swish(0.5);
+    const t2 = e.target.closest(CONTROLS + ", .grid .card, .hand-row.mine .card, .flip");
+    if (t2 && t2 !== hoverEl) {
+      hoverEl = t2;
+      if (t2.matches(".hand-row.mine .card")) sfx.swish(0.5);
       else sfx.hover();
     }
-    if (!t) hoverEl = null;
+    if (!t2) hoverEl = null;
   });
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     navigator.serviceWorker.register("sw.js").catch(() => {

@@ -806,3 +806,25 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
 .di-ach .ach-ico { font-size: 22px; width: 30px; text-align: center; flex: none; }
 .di-ach.got { opacity: .55; }
 .di-done { color: var(--good); font-size: 12px; font-weight: 800; }
+
+/* ---------------------------------------------- HU / EN toggle */
+.lang-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; overflow: hidden; background: var(--bg2); }
+.lang-toggle button { border: 0; border-radius: 0; background: transparent; color: var(--muted); padding: 5px 14px; font-size: 14px; font-weight: 700; box-shadow: none; }
+.lang-toggle button.on { background: var(--copper-hi); color: #1a120a; }
+.di-langrow { margin-top: 16px; margin-bottom: -6px; }
+
+/* ---------------------------------------------- Rules page */
+.rules-page { max-width: 1240px; margin: 0 auto; }
+.rules-head { margin-bottom: 8px; gap: 12px; }
+.rules-intro { max-width: 860px; line-height: 1.5; }
+.rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 14px; margin-top: 14px; }
+.rule-card { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; line-height: 1.5; }
+.rule-card h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; color: var(--copper-hi); font-family: 'Lexend'; font-size: 18px; }
+.rule-ico { font-size: 22px; }
+.rule-card ul, .rule-card ol { margin: 4px 0; padding-left: 20px; }
+.rule-card li { margin: 4px 0; }
+.rule-card p { margin: 6px 0; }
+.rule-kw { grid-column: 1 / -1; }
+.rule-kw dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 6px 22px; margin: 0; }
+.rule-kw dt { font-weight: 800; color: var(--copper-hi); margin-top: 4px; }
+.rule-kw dd { margin: 0 0 4px; }
