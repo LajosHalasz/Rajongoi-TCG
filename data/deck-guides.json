@@ -1,0 +1,23 @@
+{
+ "ogn-lui": {
+  "archetype": "Art & Miniatures midrange",
+  "style": "Hold the line early with Defensive units and cheap Miniature tokens, grind value with your Legend and card draw, then turn the corner with big Fury bodies once your opponent's Shield Triggers are sealed.",
+  "plan": [
+   "Turns 1–3: get Miniature Painter and a 3D Printer down. Lui's Forge costs 1 and is a Shield Trigger, so it is never a dead card.",
+   "Turns 3–5: Cowtrix is a 6 Might body for 3. Pick Rumi (draw GOLDEN) + Zoe (channel 3 runes) to jump straight into your top end.",
+   "Wall up with the Defensive units (Solar Boat Team, Manyika Dreadnought, Aronverse, Darkest Dungeoneers) and let Miniatures chump-block while Amateur Dungeon Master draws you cards.",
+   "Finish: cast GOLDEN, then swing with The Sluice Machine, The Dealmaker, X Forge 2 Miniatures and Aronverse. EPIC – The Ithaca Saga lets everyone attack and still stand guard."
+  ],
+  "mulligan": "Keep Miniature Painter, 3D Printer - Lui's Forge, The Solar Boat Team or Cowtrix. Ship hands with several 7+ cost cards.",
+  "combos": [
+   { "cards": ["OGN-172", "OGN-177"], "text": "Cowtrix with Rumi + Zoe draws GOLDEN and ramps 3 runes — cast GOLDEN the same turn: it draws a card (Cowtrix is on the field) and stops their Shield Triggers until your next turn, so attack right after." },
+   { "cards": ["OGN-188", "OGN-179", "OGN-189"], "text": "Miniature Painter gives your Miniatures Accelerate, so Printer tokens can attack the turn they are made. X Forge 2 makes 5 Might Miniatures." },
+   { "cards": ["OGN-174", "OGN-175"], "text": "Amateur Dungeon Master draws whenever a Miniature dies, and Miniature Army Box (+1 Might, draws on play) makes every chump block pay off." },
+   { "cards": ["OGN-182", "OGN-186"], "text": "The Solar Boat Team's Shieldify can hide The ULTIMATE FLEX (or Strawberry Club) in your Shield Zone — when it breaks you play it for free." },
+   { "cards": ["OGN-178", "OGN-185"], "text": "The Chronicler makes your other Art cards cost 1 this turn: EPIC – The Ithaca Saga, Aronverse or Parody Alchemist for 1. They get banished at end of turn, so spend them on a lethal or huge swing turn." },
+   { "cards": ["OGN-173", "OGN-171"], "text": "Movie Night at Chris digs for Movie cards; finish the turn with The Law (it must be your last card) for +2 Might and Defensive." },
+   { "cards": ["OGN-L-lui", "OGN-173", "OGN-186"], "text": "Aspect of Entertainment ([T][2]) returns a Movie or Art card from your Graveyard — rebuy Movie Night for more cards or The ULTIMATE FLEX to survive another turn." },
+   { "cards": ["OGN-180"], "text": "Parody Alchemist copies the opponent's best non-Mighty unit with Haste for one turn — a surprise extra attacker for the final push." }
+  ]
+ }
+}

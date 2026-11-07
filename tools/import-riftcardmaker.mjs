@@ -174,7 +174,7 @@ function convert(j) {
     const tmp = writeLayer(img, `${id}.src`);
     const file = path.join(imgDir, `${id}.jpg`);
     try {
-      execFileSync('convert', [tmp, '-resize', '900x900>', '-quality', '82', file]);
+      execFileSync('convert', [tmp, '-auto-orient', '-resize', '900x900>', '-quality', '82', file]);
       fs.unlinkSync(tmp);
     } catch {
       fs.renameSync(tmp, file);
@@ -195,7 +195,7 @@ function convert(j) {
       const sx = W / (iw * c.width / 100), sy = H / (ih * c.height / 100);
       const ox = Math.round(-c.x / 100 * iw * sx), oy = Math.round(-c.y / 100 * ih * sy);
       const op = im.opacity ?? 1;
-      args.push('(', tmp, '-resize', `${Math.round(iw * sx)}x${Math.round(ih * sy)}!`, '-alpha', 'set',
+      args.push('(', tmp, '-auto-orient', '-resize', `${Math.round(iw * sx)}x${Math.round(ih * sy)}!`, '-alpha', 'set',
         '-channel', 'A', '-evaluate', 'multiply', String(op), '+channel', ')',
         '-geometry', `${ox >= 0 ? '+' : ''}${ox}${oy >= 0 ? '+' : ''}${oy}`, '-composite');
     });

@@ -4,6 +4,7 @@ import { validateDeck } from './engine/deck.js';
 
 const LS_KEY = 'riftmasters.decks.v1'; // kept so decks saved before the rename still load
 let premade = [];
+let guides = {};
 
 async function getJson(url, fallback) {
   try {
@@ -16,14 +17,15 @@ async function getJson(url, fallback) {
 export async function loadData() {
   // data/data.js (classic script) works everywhere, including file://
   const pre = typeof window !== 'undefined' && window.RM_DATA;
-  const [placeholders, imported, overrides, decks] = pre
-    ? [[...pre.cards, ...(pre.tokens || [])], pre.imported, pre.effects, pre.decks]
+  const [placeholders, imported, overrides, decks, deckGuides] = pre
+    ? [[...pre.cards, ...(pre.tokens || [])], pre.imported, pre.effects, pre.decks, pre.guides || {}]
     : await Promise.all([
       Promise.all([getJson('data/cards.json', []), getJson('data/tokens.json', [])]).then(([a, b]) => [...a, ...b]), getJson('data/imported.json', []),
-      getJson('data/effects.json', {}), getJson('data/decks.json', []),
+      getJson('data/effects.json', {}), getJson('data/decks.json', []), getJson('data/deck-guides.json', {}),
     ]);
   setCardDb(mergeSources(placeholders, imported), overrides);
   premade = decks;
+  guides = deckGuides || {};
   return allCards();
 }
 
@@ -36,4 +38,6 @@ export function saveCustomDecks(list) {
 export function allDecks() { return [...premade, ...customDecks()]; }
 export function playableDecks() { return allDecks().filter(d => !d.comingSoon && !validateDeck(d).errors.length); }
 export function comingSoonDecks() { return allDecks().filter(d => d.comingSoon); }
+/** Hand-written strategy notes for a premade deck (data/deck-guides.json), if any. */
+export function deckGuide(id) { return guides[id] || null; }
 export function findDeck(id) { return allDecks().find(d => d.id === id); }

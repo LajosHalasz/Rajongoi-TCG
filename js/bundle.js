@@ -159,18 +159,18 @@ ${def.text}`;
   }
   function championMatchesLegend(champ, legend) {
     if (!champ || !legend) return false;
-    const names = [legend.name, legend.subname, ...legend.championNames || []].filter(Boolean).map(baseName);
-    return names.includes(baseName(champ.name)) || !!champ.subname && names.includes(baseName(champ.subname));
+    const names2 = [legend.name, legend.subname, ...legend.championNames || []].filter(Boolean).map(baseName);
+    return names2.includes(baseName(champ.name)) || !!champ.subname && names2.includes(baseName(champ.subname));
   }
   function signatureMatchesLegend(sig, legend) {
     if (!sig || !legend) return false;
     if (sig.legend) return sig.legend === legend.id;
     return (sig.tribes || []).some((t) => baseName(t) === baseName(legend.name));
   }
-  function keywordMarkup(kw, n) {
-    const k = KEYWORDS[kw];
-    if (!k) return `{${kw}#555555}`;
-    const label = n != null ? `${kw} ${n}` : kw;
+  function keywordMarkup(kw2, n) {
+    const k = KEYWORDS[kw2];
+    if (!k) return `{${kw2}#555555}`;
+    const label = n != null ? `${kw2} ${n}` : kw2;
     const reminder = k.reminder.replace("[N]", `[${n ?? 1}]`);
     return `{${label}#${k.hex.replace("#", "")}}__(${reminder})__`;
   }
@@ -260,9 +260,9 @@ ${def.text}`;
   }
   function describe(def) {
     const lines = [];
-    for (const kw of def.keywords || []) {
-      if (kw === "Shieldify") continue;
-      lines.push(keywordMarkup(kw));
+    for (const kw2 of def.keywords || []) {
+      if (kw2 === "Shieldify") continue;
+      lines.push(keywordMarkup(kw2));
     }
     if (def.uses) lines.push(`{Saga ${def.uses}#8A6D3B}__(Expires after ${def.uses} uses.)__`);
     const groups = /* @__PURE__ */ new Map();
@@ -283,11 +283,11 @@ ${def.text}`;
   // js/engine/deck.js
   function deckStats(deck) {
     const ids = Object.entries(deck.cards || {}).flatMap(([id, n]) => Array(n).fill(id)).filter(hasDef);
-    const defs = ids.map(getDef);
-    const count = (f) => defs.filter(f).length;
+    const defs2 = ids.map(getDef);
+    const count = (f) => defs2.filter(f).length;
     const curve = {};
-    for (const d of defs) curve[Math.min(d.cost, 10)] = (curve[Math.min(d.cost, 10)] || 0) + 1;
-    const totalCost = defs.reduce((a, d) => a + (d.cost || 0), 0);
+    for (const d of defs2) curve[Math.min(d.cost, 10)] = (curve[Math.min(d.cost, 10)] || 0) + 1;
+    const totalCost = defs2.reduce((a, d) => a + (d.cost || 0), 0);
     return {
       total: ids.length,
       units: count((d) => d.type === "unit"),
@@ -313,8 +313,8 @@ ${def.text}`;
     if (st.total !== RULES.DECK_SIZE) errors.push(`Deck must have exactly ${RULES.DECK_SIZE} cards (has ${st.total}).`);
     for (const [id, n] of Object.entries(deck.cards || {})) if (n > RULES.MAX_COPIES && hasDef(id)) errors.push(`Only ${RULES.MAX_COPIES} copy allowed: ${getDef(id).name}.`);
     const ids = Object.keys(deck.cards || {}).filter(hasDef);
-    const defs = ids.map(getDef);
-    for (const d of defs) {
+    const defs2 = ids.map(getDef);
+    for (const d of defs2) {
       if (d.type === "legend" || d.type === "token" || d.type === "rune") errors.push(`${d.name} can't be in the main deck.`);
       if (d.type === "signature" && !signatureMatchesLegend(d, legend)) {
         errors.push(`${d.name} is a Signature card of another Legend.`);
@@ -324,7 +324,7 @@ ${def.text}`;
     }
     if (st.champions < RULES.MIN_CHAMPIONS || st.champions > RULES.MAX_CHAMPIONS)
       errors.push(`Deck needs ${RULES.MIN_CHAMPIONS}-${RULES.MAX_CHAMPIONS} Champion Units (has ${st.champions}).`);
-    if (!defs.some((d) => d.type === "champion" && championMatchesLegend(d, legend)))
+    if (!defs2.some((d) => d.type === "champion" && championMatchesLegend(d, legend)))
       errors.push(`At least one Champion must share the Legend's name (${legend.name.split(",")[0]}).`);
     if (st.signatures > RULES.MAX_SIGNATURES) errors.push(`Max ${RULES.MAX_SIGNATURES} Signature cards.`);
     if (!deck.champion || !ids.includes(deck.champion)) errors.push("Choose the Champion that starts in the Champion Slot.");
@@ -346,6 +346,7 @@ ${def.text}`;
   // js/data.js
   var LS_KEY = "riftmasters.decks.v1";
   var premade = [];
+  var guides = {};
   async function getJson(url, fallback) {
     try {
       const r = await fetch(url, { cache: "no-cache" });
@@ -357,14 +358,16 @@ ${def.text}`;
   }
   async function loadData() {
     const pre = typeof window !== "undefined" && window.RM_DATA;
-    const [placeholders, imported, overrides, decks] = pre ? [[...pre.cards, ...pre.tokens || []], pre.imported, pre.effects, pre.decks] : await Promise.all([
+    const [placeholders, imported, overrides, decks, deckGuides] = pre ? [[...pre.cards, ...pre.tokens || []], pre.imported, pre.effects, pre.decks, pre.guides || {}] : await Promise.all([
       Promise.all([getJson("data/cards.json", []), getJson("data/tokens.json", [])]).then(([a, b]) => [...a, ...b]),
       getJson("data/imported.json", []),
       getJson("data/effects.json", {}),
-      getJson("data/decks.json", [])
+      getJson("data/decks.json", []),
+      getJson("data/deck-guides.json", {})
     ]);
     setCardDb(mergeSources(placeholders, imported), overrides);
     premade = decks;
+    guides = deckGuides || {};
     return allCards();
   }
   function customDecks() {
@@ -388,6 +391,9 @@ ${def.text}`;
   }
   function comingSoonDecks() {
     return allDecks().filter((d) => d.comingSoon);
+  }
+  function deckGuide(id) {
+    return guides[id] || null;
   }
   function findDeck(id) {
     return allDecks().find((d) => d.id === id);
@@ -524,7 +530,7 @@ ${def.text}`;
     if (def.type !== "legend" && def.type !== "rune") stats.push(`Cost <b>${opts.cost ?? def.cost}</b>`);
     if (def.recycle) stats.push(`Recycle <b>${def.recycle}</b>`);
     if (k === "unit") stats.push(`Might <b>${opts.power ?? def.power}</b>${opts.power != null && opts.power !== def.power ? ` <span class="muted">(printed ${def.power})</span>` : ""}`);
-    const kwHelp = (def.keywords || []).filter((kw) => KEYWORDS[kw] && !(def.text || "").includes(kw)).map((kw) => `<p><span class="kw" style="background:${KEYWORDS[kw].hex}">${esc(kw)}</span> <i>${esc(KEYWORDS[kw].reminder.replace("[N]", ""))}</i></p>`).join("");
+    const kwHelp = (def.keywords || []).filter((kw2) => KEYWORDS[kw2] && !(def.text || "").includes(kw2)).map((kw2) => `<p><span class="kw" style="background:${KEYWORDS[kw2].hex}">${esc(kw2)}</span> <i>${esc(KEYWORDS[kw2].reminder.replace("[N]", ""))}</i></p>`).join("");
     return `<div class="card-details" style="--domain:${colorHex(def)}">
     <div class="cd-name">${esc(def.name)}${def.subname ? ` <span class="muted">\u2014 ${esc(def.subname)}</span>` : ""}</div>
     <div class="cd-type">${esc(typeLabel(def))}${(def.tribes || []).length ? " \xB7 " + def.tribes.map(esc).join(", ") : ""} \xB7 ${def.colors.join(" / ") || "Neutral"}</div>
@@ -939,7 +945,7 @@ ${def.text}`;
     }
     return arr;
   }
-  function createGame({ decks, names = ["You", "AI"], ai = [false, true], seed = Date.now(), firstPlayer = null }) {
+  function createGame({ decks, names: names2 = ["You", "AI"], ai = [false, true], seed = Date.now(), firstPlayer = null }) {
     const s = {
       seed: seed | 0,
       uid: 0,
@@ -958,7 +964,7 @@ ${def.text}`;
       players: [],
       firstOverride: firstPlayer
     };
-    decks.forEach((d, i) => s.players.push(buildPlayer(s, d, i, names[i], ai[i])));
+    decks.forEach((d, i) => s.players.push(buildPlayer(s, d, i, names2[i], ai[i])));
     log(s, `${s.players[0].name} (${decks[0].name}) vs ${s.players[1].name} (${decks[1].name})`);
     s.pending = { kind: "mulligan", player: 0 };
     return s;
@@ -1026,14 +1032,14 @@ ${def.text}`;
     }
     return null;
   }
-  function hasKeyword(s, inst, kw) {
+  function hasKeyword(s, inst, kw2) {
     const d = getDef(inst.id);
-    if ((d.keywords || []).includes(kw)) return true;
-    if (kw === "Unstoppable" && d.unstoppableIfTribe) {
+    if ((d.keywords || []).includes(kw2)) return true;
+    if (kw2 === "Unstoppable" && d.unstoppableIfTribe) {
       const p = s.players[inst.owner];
       if ([...p.battle, ...p.gear].some((c) => (getDef(c.id).tribes || []).includes(d.unstoppableIfTribe))) return true;
     }
-    return inst.mods.some((m) => m.keyword === kw);
+    return inst.mods.some((m) => m.keyword === kw2);
   }
   var isMighty = (s, u) => power(s, u) >= 5;
   function power(s, inst, opts = {}) {
@@ -2571,6 +2577,17 @@ ${def.text}`;
 
   // js/engine/achievements.js
   var sameTurn = (events, ev, f) => events.filter((e) => e.turn === ev.turn && f(e));
+  var defOf = (id) => {
+    try {
+      return getDef(id);
+    } catch {
+      return null;
+    }
+  };
+  var makesTokens = (ids) => [...ids].filter((id) => JSON.stringify(defOf(id)?.effects || []).includes('"do":"token"'));
+  var withKw = (ids, kw2) => [...ids].filter((id) => (defOf(id)?.keywords || []).includes(kw2));
+  var withTribe = (ids, t) => [...ids].filter((id) => (defOf(id)?.tribes || []).some((x) => x.toLowerCase() === t.toLowerCase()));
+  var names = (ids) => ids.map((id) => defOf(id)?.name || id).join(", ");
   var playedThisTurn = (events, ev, me, id) => events.some((e) => e.type === "play" && e.player === me && e.id === id && e.turn === ev.turn);
   var ACHIEVEMENTS = [
     {
@@ -2578,6 +2595,12 @@ ${def.text}`;
       name: "Funniest shit I have ever seen",
       icon: "\u{1F923}",
       desc: "Destroy your opponent with a copy of a token creature they created, using the Parody Alchemist.",
+      hint: ({ mine, theirs }) => {
+        if (!mine.has("OGN-180")) return null;
+        if (!theirs) return "Possible if the AI's deck makes tokens: copy one with Parody Alchemist and land the final blow with it.";
+        const t = makesTokens(theirs);
+        return t.length ? `They make tokens (${names(t)}) \u2014 copy one with Parody Alchemist and deliver the final direct attack with the copy.` : null;
+      },
       check: ({ ev, me }) => ev.type === "finalBlow" && ev.player === me && ev.copy && ev.token
     },
     {
@@ -2585,6 +2608,7 @@ ${def.text}`;
       name: "Unexpected FLEX",
       icon: "\u{1F4AA}",
       desc: "Play The Ultimate Flex from a triggered shield.",
+      hint: ({ mine }) => mine.has("OGN-186") ? `You run The ULTIMATE FLEX${mine.has("OGN-182") ? " \u2014 Shieldify it with The Solar Boat Team so it can trigger from your shields" : " \u2014 hope it lands in your shields"}.` : null,
       check: ({ ev, me }) => ev.type === "play" && ev.player === me && ev.id === "OGN-186" && ev.via === "shieldTrigger"
     },
     {
@@ -2592,6 +2616,7 @@ ${def.text}`;
       name: "Speed Painting",
       icon: "\u{1F58C}\uFE0F",
       desc: "Accelerate 3 Miniatures with the Miniature Painter in a single turn.",
+      hint: ({ mine }) => mine.has("OGN-188") && (mine.has("OGN-179") || mine.has("OGN-189")) ? "Untap the 3D Printers over a few turns, then make and accelerate 3 Miniatures in one big turn (Painter on the field)." : null,
       check: ({ ev, me, events }) => ev.type === "accelerate" && ev.player === me && sameTurn(events, ev, (e) => e.type === "accelerate" && e.player === me).length >= 3
     },
     {
@@ -2599,6 +2624,13 @@ ${def.text}`;
       name: "Manyika can rest finally",
       icon: "\u{1FAA6}",
       desc: "Watch a Manyika Dreadnought die from a Burst-Pouch (either of you may control them).",
+      hint: ({ mine, theirs }) => {
+        const a = mine.has("OGN-176"), b = theirs?.has("OGN-176");
+        if (a && b) return "Both decks run Manyika Dreadnought \u2014 attack theirs with your Burst-Pouch, or let theirs run into yours.";
+        if (a && !theirs) return "Needs a Manyika on both sides \u2014 possible if the AI also picks a deck with Manyika Dreadnought.";
+        if ((a || b) && (mine.has("OGN-180") || theirs?.has("OGN-180"))) return "Copy a Burst-Pouch with Parody Alchemist and attack into a Manyika Dreadnought.";
+        return null;
+      },
       check: ({ ev }) => ev.type === "kill" && ev.victim === "OGN-176" && ev.killer === "TKN-005"
     },
     {
@@ -2606,6 +2638,11 @@ ${def.text}`;
       name: "Art of Destruction",
       icon: "\u{1F3A8}",
       desc: "Banish 5 cards in a turn with The Chronicler.",
+      hint: ({ mine }) => {
+        if (!mine.has("OGN-178")) return null;
+        const art = withTribe(mine, "Art").filter((id) => id !== "OGN-178");
+        return art.length >= 5 ? `Hold 5 Art cards, play The Chronicler, then cast them all for 1 (${art.length} Art cards in your deck).` : null;
+      },
       check: ({ ev, me, events }) => ev.type === "banish" && ev.player === me && sameTurn(events, ev, (e) => e.type === "banish" && e.player === me).length >= 5
     },
     {
@@ -2613,6 +2650,10 @@ ${def.text}`;
       name: "Came Prepared",
       icon: "\u{1F6E1}\uFE0F",
       desc: "Shieldify a Shield Trigger card.",
+      hint: ({ mine }) => {
+        const sh = withKw(mine, "Shieldify"), st = withKw(mine, "Shield Trigger");
+        return sh.length && st.length ? `Play ${names(sh)} with a Shield Trigger card in hand (${names(st)}).` : null;
+      },
       check: ({ ev, me }) => ev.type === "shieldify" && ev.player === me && (getDef(ev.id).keywords || []).includes("Shield Trigger")
     },
     {
@@ -2628,6 +2669,7 @@ ${def.text}`;
       name: "Join the Strawberry Club",
       icon: "\u{1F353}",
       desc: "Have your opponent play Welcome to the Strawberry Club! against you as a Shield Trigger.",
+      hint: ({ theirs }) => !theirs ? "Possible if the AI's deck runs Welcome to the Strawberry Club!." : theirs.has("OGN-012") ? "The AI runs Welcome to the Strawberry Club! \u2014 keep breaking shields and it may trigger." : null,
       check: ({ ev, op }) => ev.type === "play" && ev.player === op && ev.id === "OGN-012" && ev.via === "shieldTrigger"
     },
     {
@@ -2635,6 +2677,7 @@ ${def.text}`;
       name: "Quality Movie Night",
       icon: "\u{1F3AC}",
       desc: "Play Movie Night at Chris and The Law on the same turn.",
+      hint: ({ mine }) => mine.has("OGN-173") && mine.has("OGN-171") ? "Cast Movie Night at Chris, then The Law as your last card that turn (4 mana)." : null,
       check: ({ ev, me, events }) => ev.type === "play" && ev.player === me && ["OGN-173", "OGN-171"].includes(ev.id) && playedThisTurn(events, ev, me, "OGN-173") && playedThisTurn(events, ev, me, "OGN-171")
     },
     {
@@ -2642,6 +2685,7 @@ ${def.text}`;
       name: "Finale",
       icon: "\u{1F404}",
       desc: "Play Cowtrix and GOLDEN on the same turn.",
+      hint: ({ mine }) => mine.has("OGN-172") && mine.has("OGN-177") ? "Play Cowtrix choosing Rumi (draws GOLDEN), then cast GOLDEN the same turn." : null,
       check: ({ ev, me, events }) => ev.type === "play" && ev.player === me && ["OGN-172", "OGN-177"].includes(ev.id) && playedThisTurn(events, ev, me, "OGN-172") && playedThisTurn(events, ev, me, "OGN-177")
     },
     {
@@ -2649,6 +2693,7 @@ ${def.text}`;
       name: "Printer Upgrade",
       icon: "\u{1F5A8}\uFE0F",
       desc: "Replace 3D Printer - Lui's Forge with 3D Printer - X Forge 2.",
+      hint: ({ mine }) => mine.has("OGN-179") && mine.has("OGN-189") ? "With both Gear slots full (one of them Lui's Forge), play X Forge 2 and choose to replace Lui's Forge." : null,
       check: ({ ev, me }) => ev.type === "gearReplace" && ev.player === me && ev.oldId === "OGN-179" && ev.newId === "OGN-189"
     },
     {
@@ -2656,9 +2701,23 @@ ${def.text}`;
       name: "Dungeon Survivors",
       icon: "\u{1F3F0}",
       desc: "Win the game with Darkest Dungeoneers tapped on your side of the battlefield.",
+      hint: ({ mine }) => mine.has("OGN-045") ? "Use Darkest Dungeoneers' Defensive (it taps) or attack with it on your winning turn." : null,
       check: ({ ev, me, s }) => ev.type === "win" && ev.player === me && s.players[me].battle.some((u) => u.id === "OGN-045" && u.tapped)
     }
   ];
+  function achievementHints(mine, theirs) {
+    const out = [];
+    for (const a of ACHIEVEMENTS) {
+      if (a.unobtainable || !a.hint) continue;
+      let tip = null;
+      try {
+        tip = a.hint({ mine, theirs });
+      } catch {
+      }
+      if (tip) out.push({ ...a, tip });
+    }
+    return out;
+  }
   function checkAchievements(s, me, seen, already = /* @__PURE__ */ new Set()) {
     const events = s.events || [];
     const out = [];
@@ -2728,6 +2787,78 @@ ${def.text}`;
   </div>`;
   }
 
+  // js/ui/deckinfo.js
+  var deckIds = (d) => new Set([d.legend, d.champion, ...Object.keys(d.cards || {})].filter((id) => id && hasDef(id)));
+  var defs = (ids) => [...ids].map(getDef);
+  var kw = (d, k) => (d.keywords || []).includes(k);
+  var nameList = (list) => list.map((d) => `<b>${esc(d.name)}</b>`).join(", ");
+  function startingCards(d) {
+    const sigs = Object.keys(d.cards || {}).filter((id) => hasDef(id) && getDef(id).type === "signature");
+    if (d.signature && !sigs.includes(d.signature)) sigs.unshift(d.signature);
+    return [
+      ...d.legend ? [{ id: d.legend, role: "Legend" }] : [],
+      ...d.champion ? [{ id: d.champion, role: "Champion" }] : [],
+      ...sigs.map((id) => ({ id, role: "Signature" }))
+    ].filter((x) => hasDef(x.id));
+  }
+  function matchupTips(mine, theirs) {
+    const M = defs(mine), T = defs(theirs);
+    const tips = [];
+    const triggers = T.filter((d) => kw(d, "Shield Trigger"));
+    if (triggers.length) {
+      tips.push(`They run ${triggers.length} Shield Trigger${triggers.length > 1 ? "s" : ""} (${nameList(triggers)}). ` + (mine.has("OGN-177") ? "Cast <b>GOLDEN</b> before your big attack so none of them can fire." : "Don't over-commit into their shields."));
+    }
+    const walls = T.filter((d) => kw(d, "Defensive"));
+    if (walls.length) {
+      const pb = M.filter((d) => kw(d, "Party Breaker"));
+      tips.push(`Their Defensive units (${nameList(walls)}) can redirect your attacks.` + (pb.length ? ` ${nameList(pb)} can attack untapped units \u2014 use it to clear them first.` : " Tap or remove them before going for shields."));
+    }
+    const chaos = T.filter((d) => (d.colors || []).includes("Chaos") && d.type !== "legend" && (d.power ?? 0) < 5);
+    if (chaos.length && mine.has("OGN-172")) tips.push(`<b>Cowtrix</b> destroys their non-Mighty Chaos cards when it enters (${chaos.length} in their deck).`);
+    const big = T.filter((d) => (d.cost || 0) >= 7 && ["unit", "champion"].includes(d.type));
+    if (big.length) tips.push(`Their top end: ${nameList(big)}. Keep a Defensive unit back once they reach that much mana.`);
+    const deathtouch = T.filter((d) => JSON.stringify(d.effects || []).includes("TKN-005") || kw(d, "Deathtouch"));
+    if (deathtouch.length) tips.push(`Watch out for Deathtouch (${nameList(deathtouch)}): attack it with tokens, not with your best unit.`);
+    if (theirs.has("OGN-186")) tips.push("They also run <b>The ULTIMATE FLEX</b>: when it resolves they can't lose that turn, so don't waste a lethal swing into it.");
+    return tips;
+  }
+  function cardRow(d) {
+    return `<div class="di-cards">${startingCards(d).map((x) => `<div class="di-card" data-di-cid="${x.id}">
+    ${cardHtml(getDef(x.id), { size: "sm" })}<span class="di-role">${x.role}</span></div>`).join("")}</div>`;
+  }
+  function guideHtml(d) {
+    const g = deckGuide(d.id);
+    if (!g) return '<p class="muted">No strategy notes for this deck yet.</p>';
+    const chips = (ids) => ids.filter(hasDef).map((id) => `<span class="di-chip" data-di-cid="${id}">${esc(getDef(id).name)}</span>`).join("");
+    return `<div class="di-style"><span class="di-arch">${esc(g.archetype || "")}</span>${esc(g.style || "")}</div>
+    ${g.plan?.length ? `<h4>Game plan</h4><ol class="di-plan">${g.plan.map((p) => `<li>${esc(p)}</li>`).join("")}</ol>` : ""}
+    ${g.mulligan ? `<p class="di-mull"><b>Mulligan:</b> ${esc(g.mulligan)}</p>` : ""}
+    ${g.combos?.length ? `<h4>Combos</h4><div class="di-combos">${g.combos.map((c) => `<div class="di-combo"><div class="di-chips">${chips(c.cards)}</div>${esc(c.text)}</div>`).join("")}</div>` : ""}`;
+  }
+  function deckInfoHtml(deck, other2, side2) {
+    if (!deck) {
+      return `<div class="deck-info"><p class="muted">The AI will pick one of the playable decks at random.</p></div>`;
+    }
+    const mine = deckIds(deck), theirs = other2 ? deckIds(other2) : null;
+    if (side2 === "ai") {
+      const g = deckGuide(deck.id);
+      return `<div class="deck-info">${cardRow(deck)}
+      ${g ? `<div class="di-style"><span class="di-arch">${esc(g.archetype || "")}</span>${esc(g.style || "")}</div>` : ""}
+      <details class="di-sec"><summary>The AI's full game plan</summary>${guideHtml(deck)}</details>
+    </div>`;
+    }
+    const tips = theirs ? matchupTips(mine, theirs) : [];
+    const got = unlockedMap();
+    const hints = achievementHints(mine, theirs).sort((a, b) => !!got[a.id] - !!got[b.id]);
+    return `<div class="deck-info">${cardRow(deck)}
+    <details class="di-sec" open><summary>How to play this deck</summary>${guideHtml(deck)}</details>
+    ${tips.length ? `<details class="di-sec" open><summary>Matchup tips</summary><ul class="di-tips">${tips.map((t) => `<li>${t}</li>`).join("")}</ul></details>` : ""}
+    ${hints.length ? `<details class="di-sec" open><summary>Achievements you can go for${theirs ? "" : " (opponent random)"}</summary>
+      <div class="di-achs">${hints.map((a) => `<div class="di-ach ${got[a.id] ? "got" : ""}"><span class="ach-ico">${a.icon}</span>
+        <div><b>${esc(a.name)}</b>${got[a.id] ? ' <span class="di-done">\u2713 unlocked</span>' : ""}<div class="muted">${esc(a.tip)}</div></div></div>`).join("")}</div></details>` : ""}
+  </div>`;
+  }
+
   // js/ui/play.js
   var HUMAN = 0;
   var AI = 1;
@@ -2788,7 +2919,16 @@ ${def.text}`;
       <div class="vs">VS</div>
       ${dropdown("ai", "Opponent (AI) deck")}
     </div>
+    <div class="versus deck-infos">
+      ${deckInfoHtml(findDeck(pick.me), pick.ai === "random" ? null : findDeck(pick.ai), "me")}
+      <div></div>
+      ${deckInfoHtml(pick.ai === "random" ? null : findDeck(pick.ai), findDeck(pick.me), "ai")}
+    </div>
   </div>`;
+    app2.querySelectorAll("[data-di-cid]").forEach((el) => el.onclick = (e) => {
+      e.stopPropagation();
+      showCardModal(getDef(el.dataset.diCid));
+    });
     const closeAll = () => app2.querySelectorAll(".dd-list").forEach((l) => l.hidden = true);
     app2.querySelectorAll(".dd").forEach((dd) => {
       dd.querySelector(".dd-btn").onclick = (e) => {
