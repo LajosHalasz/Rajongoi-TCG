@@ -28,6 +28,24 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'The Dealmaker: opponent draws 1; next turn, if they hold more cards, their strongest Unit is destroyed'() {
+    const s = fresh();
+    const p = s.players[0], op = s.players[1];
+    const dm = card(s, 0, 'OGN-183', 'battle');
+    const big = card(s, 1, 'OGN-181', 'battle'), small = card(s, 1, 'OGN-016', 'battle');
+    const before = op.hand.length;
+    step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === dm.uid));
+    assert.equal(op.hand.length, before + 1, 'opponent draws');
+    assert.equal(p.contracts.length, 1);
+    p.hand = []; op.hand = []; card(s, 1, 'OGN-016'); card(s, 1, 'OGN-016'); // they hold 2, I hold 0
+    // the opponent's turn ends -> the start of my next turn: the bill comes due
+    s.active = 1; s.phase = 'end'; s.pending = null;
+    step(s, legalActions(s, 1).find(a => a.type === 'endPhase') || { type: 'endPhase' });
+    assert(!op.battle.includes(big), 'strongest Unit collected');
+    assert(op.battle.includes(small));
+    assert.equal(p.contracts.length, 0);
+    assert(s.events.some(e => e.type === 'contractCollected' && e.player === 0));
+  },
   'Aspect of REDACTED: Side Channel turns a Shield face up, Exploit swaps it with a hand card (stolen Shield Trigger plays free)'() {
     const laci = decks.find(d => d.id === 'ogn-laci');
     const s = createGame({ decks: [laci, deck], ai: [false, false], seed: 7, firstPlayer: 0 });
@@ -313,14 +331,7 @@ const tests = {
     assert(!s.players[0].battle.includes(ar) && !s.players[0].graveyard.includes(ar), 'banished');
     assert(s.players[0].battle.includes(ch), 'Chronicler itself stays');
   },
-  'The Dealmaker: [T] +1 Might and Indestructible until next turn'() {
-    const s = fresh(); const dm = card(s, 0, 'OGN-183', 'battle');
-    step(s, { type: 'activate', uid: dm.uid });
-    assert.equal(power(s, dm), 8);
-    assert(hasKw(s, dm, 'Indestructible'));
-    s.active = 1; const k = card(s, 1, 'OGN-022'); // Ahsoka can't target 8 might; use direct destroy attempt via Snowball-like check
-    assert(s.players[0].battle.includes(dm));
-  },
+
   'Aronverse of Madness: Defensive and can attack untapped units'() {
     const s = fresh(); const a = card(s, 0, 'OGN-184', 'battle'); const e = card(s, 1, 'OGN-016', 'battle');
     step(s, { type: 'endPhase' });

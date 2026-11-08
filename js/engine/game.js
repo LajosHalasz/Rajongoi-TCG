@@ -625,6 +625,23 @@ function doMulligan(s, pi, uids) {
   beginTurn(s);
 }
 
+// The Dealmaker: "[T]: Your opponent draws 1 card. At the start of your next turn, if they have more
+// cards in hand than you, destroy their strongest Unit. (The bill comes due.)"
+function collectContracts(s, p) {
+  const due = p.contracts || [];
+  p.contracts = [];
+  const op = s.players[other(p.idx)];
+  for (const c of due) {
+    if (op.hand.length <= p.hand.length) { log(s, `${c.name}'s contract: ${op.name} doesn't owe anything (${op.hand.length} vs ${p.hand.length} cards).`); continue; }
+    const target = [...op.battle].sort((a, b) => power(s, b) - power(s, a))[0];
+    if (!target) { log(s, `${c.name}'s contract comes due, but ${op.name} has no Units.`); continue; }
+    log(s, `The bill comes due! ${c.name} collects ${nm(target)}.`);
+    const id = target.id;
+    destroyUnit(s, target);
+    if (!op.battle.includes(target)) emit(s, 'contractCollected', { player: p.idx, victim: id });
+  }
+}
+
 function beginTurn(s) {
   s.turn++;
   const p = s.players[s.active];
@@ -634,6 +651,7 @@ function beginTurn(s) {
   for (const r of p.mana) r.tapped = false;
   for (const g of p.gear) g.tapped = false;
   p.legend.tapped = false;
+  collectContracts(s, p);
   for (const src of [p.legend, ...p.gear, ...p.battle]) fire(s, p.idx, src, 'turnStart');
   if (s.winner != null) return;
   s.phase = 'draw';
@@ -917,6 +935,12 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       break;
     case 'grantKeyword':
       for (const u of targets) u.mods.push({ keyword: e.keyword, ...until(u) });
+      break;
+    case 'contract':
+      drawCard(s, op.idx);
+      log(s, `${op.name} accepts ${getDef(source.id).name}'s gift and draws a card. The bill comes due next turn…`);
+      (me.contracts ||= []).push({ name: getDef(source.id).name });
+      emit(s, 'deal', { player: pi });
       break;
     case 'cantLose':
       me.cantLoseTurn = s.turn;

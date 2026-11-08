@@ -1634,12 +1634,10 @@
     ],
     "cost": 7,
     "power": 7,
-    "keywords": [
-      "Indestructible"
-    ],
+    "keywords": [],
     "effects": [],
     "tribes": [],
-    "text": "[T]: Make a trade offer to your opponent. It can be ANYTHING. If your opponent accepts you both recieve what was offered. \nIf they don't, this gains +1 [M] and this gains {Indestructible#21705B} until your next turn.\n",
+    "text": "[T]: Your opponent draws 1 card. At the start of your next turn, if they have more cards in hand than you, destroy their strongest Unit[U]. __(The bill comes due.)__",
     "flavor": "Do we have a deal then? ~ Alastor, Radio Demon",
     "rarity": "epic",
     "illustrator": "Lui",

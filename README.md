@@ -16,7 +16,7 @@ It's a static site with no build step and no dependencies, so it works on GitHub
 
 The **Achievements** tab lists 12 achievements. They are unlocked in Play vs AI and saved in the browser, and an unlock shows a toast with a sound.
 
-The engine emits structured events (`play`, `kill`, `banish`, `shieldify`, `gearReplace`, `accelerate`, `finalBlow`, `win`). `js/engine/achievements.js` checks them; each achievement is a small `check()` function, so new ones are easy to add. *Art of the Deal* can't be unlocked yet, because the AI never accepts a Dealmaker deal; it will work with online play.
+The engine emits structured events (`play`, `kill`, `banish`, `shieldify`, `gearReplace`, `accelerate`, `finalBlow`, `win`). `js/engine/achievements.js` checks them; each achievement is a small `check()` function, so new ones are easy to add. *Art of the Deal* unlocks when a Dealmaker contract is collected (`contractCollected` event): the opponent drew your card, still holds more cards than you at the start of your next turn, and loses their strongest Unit.
 
 ## Card Editor
 The **Editor** tab (`js/ui/editor.js`) builds cards in the game's own schema with a live preview (the real card renderer):

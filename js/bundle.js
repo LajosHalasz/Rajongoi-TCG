@@ -245,6 +245,8 @@ ${def.text}`;
         return `Return a Unit from your Graveyard to your hand.`;
       case "seizure":
         return "Banish all Units on the Field, and enter Seizure.";
+      case "contract":
+        return "Your opponent draws 1 card. At the start of your next turn, if they have more cards in hand than you, destroy their strongest Unit.";
       case "cantLose":
         return "You can't lose the game this turn.";
       case "grantKeyword":
@@ -838,9 +840,12 @@ ${def.text}`;
       id: "art-of-deal",
       name: "Art of the Deal",
       icon: "\u{1F91D}",
-      desc: "Make a deal with your opponent using The Dealmaker.",
-      unobtainable: "Unlocks with online play \u2014 the AI never accepts a deal.",
-      check: () => false
+      desc: "Make a deal with your opponent using The Dealmaker \u2014 and collect when the bill comes due.",
+      hint: ({ mine }) => mine.has("OGN-183") ? {
+        hu: "Tapeld a The Dealmakert, amikor az ellenf\xE9l keze m\xE1r k\xF6zel van a ti\xE9dhez: a k\xF6vetkez\u0151 k\xF6r\xF6dben, ha t\xF6bb lapja van, elviszed a leger\u0151sebb Unitj\xE1t.",
+        en: "Tap The Dealmaker when your opponent's hand is close to yours: next turn, if they hold more cards, you collect their strongest Unit."
+      } : null,
+      check: ({ ev, me }) => ev.type === "contractCollected" && ev.player === me
     },
     {
       id: "strawberry",
@@ -2409,6 +2414,26 @@ ${def.text}`;
     log(s, `Coin flip: ${s.players[s.first].name} goes first.`);
     beginTurn(s);
   }
+  function collectContracts(s, p) {
+    const due = p.contracts || [];
+    p.contracts = [];
+    const op = s.players[other(p.idx)];
+    for (const c of due) {
+      if (op.hand.length <= p.hand.length) {
+        log(s, `${c.name}'s contract: ${op.name} doesn't owe anything (${op.hand.length} vs ${p.hand.length} cards).`);
+        continue;
+      }
+      const target = [...op.battle].sort((a, b) => power(s, b) - power(s, a))[0];
+      if (!target) {
+        log(s, `${c.name}'s contract comes due, but ${op.name} has no Units.`);
+        continue;
+      }
+      log(s, `The bill comes due! ${c.name} collects ${nm(target)}.`);
+      const id = target.id;
+      destroyUnit(s, target);
+      if (!op.battle.includes(target)) emit(s, "contractCollected", { player: p.idx, victim: id });
+    }
+  }
   function beginTurn(s) {
     s.turn++;
     const p = s.players[s.active];
@@ -2422,6 +2447,7 @@ ${def.text}`;
     for (const r of p.mana) r.tapped = false;
     for (const g of p.gear) g.tapped = false;
     p.legend.tapped = false;
+    collectContracts(s, p);
     for (const src of [p.legend, ...p.gear, ...p.battle]) fire(s, p.idx, src, "turnStart");
     if (s.winner != null) return;
     s.phase = "draw";
@@ -2739,6 +2765,12 @@ ${def.text}`;
         break;
       case "grantKeyword":
         for (const u of targets) u.mods.push({ keyword: e.keyword, ...until(u) });
+        break;
+      case "contract":
+        drawCard(s, op.idx);
+        log(s, `${op.name} accepts ${getDef(source.id).name}'s gift and draws a card. The bill comes due next turn\u2026`);
+        (me.contracts || (me.contracts = [])).push({ name: getDef(source.id).name });
+        emit(s, "deal", { player: pi });
         break;
       case "cantLose":
         me.cantLoseTurn = s.turn;

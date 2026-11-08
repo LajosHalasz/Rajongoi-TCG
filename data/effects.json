@@ -562,20 +562,9 @@
   "effects": [
    {
     "on": "activate",
-    "do": "buff",
-    "target": "self",
-    "amount": 1,
-    "duration": "permanent"
-   },
-   {
-    "on": "activate",
-    "do": "grantKeyword",
-    "target": "self",
-    "keyword": "Indestructible",
-    "duration": "nextTurn"
+    "do": "contract"
    }
-  ],
-  "digitalNote": "In the digital game the opponent always refuses the deal."
+  ]
  },
  "OGN-184": {
   "keywords": [

@@ -122,6 +122,15 @@ const tests = {
     assert.equal(s.winner, 0);
     assert(got(s).includes('dungeon-survivors'));
   },
+  'Art of the Deal (collect on a Dealmaker contract)'() {
+    const s = fresh();
+    const dm = card(s, 0, 'OGN-183', 'battle'); card(s, 1, 'OGN-181', 'battle');
+    step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === dm.uid));
+    s.players[0].hand = []; card(s, 1, 'OGN-016');
+    s.active = 1; s.phase = 'end'; s.pending = null;
+    step(s, { type: 'endPhase' });
+    assert(got(s).includes('art-of-deal'));
+  },
   'All 12 achievements are defined'() {
     assert.equal(ACHIEVEMENTS.length, 12);
   },

@@ -82,9 +82,11 @@ export const ACHIEVEMENTS = [
   },
   {
     id: 'art-of-deal', name: 'Art of the Deal', icon: '🤝',
-    desc: 'Make a deal with your opponent using The Dealmaker.',
-    unobtainable: 'Unlocks with online play — the AI never accepts a deal.',
-    check: () => false,
+    desc: 'Make a deal with your opponent using The Dealmaker — and collect when the bill comes due.',
+    hint: ({ mine }) => mine.has('OGN-183')
+      ? { hu: 'Tapeld a The Dealmakert, amikor az ellenfél keze már közel van a tiédhez: a következő körödben, ha több lapja van, elviszed a legerősebb Unitját.',
+        en: "Tap The Dealmaker when your opponent's hand is close to yours: next turn, if they hold more cards, you collect their strongest Unit." } : null,
+    check: ({ ev, me }) => ev.type === 'contractCollected' && ev.player === me,
   },
   {
     id: 'strawberry', name: 'Join the Strawberry Club', icon: '🍓',
