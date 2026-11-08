@@ -126,7 +126,8 @@ function convert(j) {
     const sub = (j.subname || '').trim();
     const owner = (sub && knownOwners.has(sub.toLowerCase()) ? sub : '') || baseName(j.name) || j.illustrator;
     owners = [owner];
-    set = (j.setInfo || 'OGN').trim().slice(0, 3).toUpperCase();
+    // "OGN L02/300" or "L02 OGN": the set is the letters-only part
+    set = (String(j.setInfo || '').match(/\b([A-Za-z]{3})\b/)?.[1] || 'OGN').toUpperCase();
     number = 'L-' + slug(owner);
     id = `${set}-${number}`;
   } else if (type === 'rune') {

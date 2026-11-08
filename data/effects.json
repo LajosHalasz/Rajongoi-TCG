@@ -721,5 +721,17 @@
     ]
    }
   ]
+ },
+ "OGN-L-balu": {
+  "keywords": [],
+  "activateCost": 2,
+  "effects": [
+   {
+    "on": "activate",
+    "do": "token",
+    "tokenId": "TKN-006",
+    "tokenName": "Whiskey"
+   }
+  ]
  }
 }

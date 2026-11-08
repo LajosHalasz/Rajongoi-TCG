@@ -1849,6 +1849,42 @@
     }
   },
   {
+    "id": "OGN-L-balu",
+    "set": "OGN",
+    "number": "L-balu",
+    "name": "Harbringer of Quality",
+    "type": "legend",
+    "subname": "Balu",
+    "owners": [
+      "Balu"
+    ],
+    "colors": [
+      "Fury",
+      "Mind"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Whiskey"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "[T][2]: Summon a {Whiskey#6D6E6B} Token Unit with 1[M].",
+    "flavor": "",
+    "rarity": "common",
+    "illustrator": "Lui",
+    "setInfo": "L02 OGN",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-L-balu.jpg",
+    "imageCrop": {
+      "x": 2.1027599820563054,
+      "y": 0.9103734011950461,
+      "width": 95.14747859181732,
+      "height": 99.17474994518909
+    }
+  },
+  {
     "id": "OGN-L-lui",
     "set": "OGN",
     "number": "L-lui",
