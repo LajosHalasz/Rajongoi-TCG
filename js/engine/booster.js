@@ -1,12 +1,12 @@
 // Booster packs (15 cards):
-//   10 Commons · 1 Rune of the set (template Runes cover colors without artwork yet) · 2 Uncommons
-//   1 Rare slot — Rare cards, Legends and (non-full-art) Champions included
-//   1 Epic slot (last) — Epic cards: Signatures, EPIC: The Musical, full-art cards, full-art Runes
+//   6 Commons · 5 Uncommons · 1 Rune of the set (template Runes cover colors without artwork yet)
+//   3 Rares — Rare cards, Legends and (non-full-art) Champions included; the last one is an
+//     Epic in ~1 of 4 packs (Signatures, EPIC: The Musical, full-art cards, full-art Runes)
 // God pack (~1 in 300 packs): no Commons, every slot upgraded (see PACK_RULES.god).
 import { allCards, rarityOf } from './cards.js';
 
 export const PACK_RULES = {
-  commons: 10, uncommons: 2,
+  commons: 6, uncommons: 5, rares: 3, epicChance: 1 / 4,
   godChance: 1 / 300,
   // per-slot odds inside a god pack
   god: { common: { uncommon: 0.55, rare: 0.3, epic: 0.15 }, uncommon: { rare: 0.6, epic: 0.4 }, rare: { rare: 0.5, epic: 0.5 } },
@@ -55,10 +55,11 @@ export function openPack(set, rand = Math.random) {
   };
   const out = [];
   for (let i = 0; i < PACK_RULES.commons; i++) out.push(god ? upgraded(PACK_RULES.god.common) : slot('common'));
-  out.push({ def: pick(P.runes, P.commons), slot: 'rune' });
   for (let i = 0; i < PACK_RULES.uncommons; i++) out.push(god ? upgraded(PACK_RULES.god.uncommon) : slot('uncommon'));
-  out.push(god ? upgraded(PACK_RULES.god.rare) : slot('rare'));
-  out.push(slot('epic'));
+  out.push({ def: pick(P.runes, P.commons), slot: 'rune' });
+  for (let i = 0; i < PACK_RULES.rares - 1; i++) out.push(god ? upgraded(PACK_RULES.god.rare) : slot('rare'));
+  // the last Rare may be an Epic (always in a god pack)
+  out.push(god || rand() < PACK_RULES.epicChance ? slot('epic') : slot('rare'));
   const res = out.filter(e => e.def);
   if (god) {
     // reveal order: worst first, best last

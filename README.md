@@ -62,13 +62,12 @@ The 🔊 button in the top bar mutes all sound. The setting is remembered.
 ## Booster packs
 
 The **Boosters** page opens 15-card packs with an animation: the pack tears open, the cards are dealt face down, and rarer cards glow before they flip. A pack contains:
-- 10 Commons.
-- 1 Rune or Token.
-- 2 Uncommons.
-- 1 Rare: Rare cards, Legends and Champions (unless full-art).
-- 1 Epic, always the last card: Signatures, EPIC: The Musical, full-art cards and full-art Runes.
+- 6 Commons.
+- 5 Uncommons.
+- 1 Rune of the set (sets without Rune artwork for a color use a template Rune with the color's symbol).
+- 3 Rares: Rare cards, Legends and Champions (unless full-art). The last one is an Epic in about 1 of 4 packs: Signatures, EPIC: The Musical, full-art cards and full-art Runes.
 
-**God pack** (about 1 in 300 packs, like the ~1 in 2,000 "rare packs" of Pokémon TCG Pocket but friendlier): no Commons; every Common slot becomes Uncommon 55% / Rare 30% / Epic 15%, every Uncommon slot Rare 60% / Epic 40%, the Rare slot Rare 50% / Epic 50%, and the Epic slot stays Epic.
+**God pack** (about 1 in 300 packs, like the ~1 in 2,000 "rare packs" of Pokémon TCG Pocket but friendlier): no Commons; every Common slot becomes Uncommon 55% / Rare 30% / Epic 15%, every Uncommon slot Rare 60% / Epic 40%, the first two Rares Rare 50% / Epic 50%, and the last Rare is always an Epic.
 
 Odds are set in `js/engine/booster.js`. The page remembers which cards you have pulled (in browser storage) and marks first-time pulls as **NEW**.
 

@@ -4304,8 +4304,10 @@ ${def.text}`;
 
   // js/engine/booster.js
   var PACK_RULES = {
-    commons: 10,
-    uncommons: 2,
+    commons: 6,
+    uncommons: 5,
+    rares: 3,
+    epicChance: 1 / 4,
     godChance: 1 / 300,
     // per-slot odds inside a god pack
     god: { common: { uncommon: 0.55, rare: 0.3, epic: 0.15 }, uncommon: { rare: 0.6, epic: 0.4 }, rare: { rare: 0.5, epic: 0.5 } }
@@ -4351,10 +4353,10 @@ ${def.text}`;
     };
     const out = [];
     for (let i = 0; i < PACK_RULES.commons; i++) out.push(god ? upgraded(PACK_RULES.god.common) : slot("common"));
-    out.push({ def: pick2(P.runes, P.commons), slot: "rune" });
     for (let i = 0; i < PACK_RULES.uncommons; i++) out.push(god ? upgraded(PACK_RULES.god.uncommon) : slot("uncommon"));
-    out.push(god ? upgraded(PACK_RULES.god.rare) : slot("rare"));
-    out.push(slot("epic"));
+    out.push({ def: pick2(P.runes, P.commons), slot: "rune" });
+    for (let i = 0; i < PACK_RULES.rares - 1; i++) out.push(god ? upgraded(PACK_RULES.god.rare) : slot("rare"));
+    out.push(god || rand2() < PACK_RULES.epicChance ? slot("epic") : slot("rare"));
     const res = out.filter((e) => e.def);
     if (god) {
       const rank = (e) => e.slot === "rune" ? -1 : ["common", "uncommon", "rare", "epic"].indexOf(rarityOf(e.def));
@@ -4414,7 +4416,7 @@ ${def.text}`;
       <p class="muted">Click the pack to tear it open.</p>
     </div>
     <div class="booster-odds muted">
-      Each pack: ${PACK_RULES.commons} Commons \xB7 1 Rune of the set \xB7 ${PACK_RULES.uncommons} Uncommons \xB7 1 Rare (Legends and Champions are Rares) \xB7 1 Epic (Signatures, full-art cards, EPIC: The Musical).
+      Each pack: ${PACK_RULES.commons} Commons \xB7 ${PACK_RULES.uncommons} Uncommons \xB7 1 Rune of the set \xB7 ${PACK_RULES.rares} Rares (Legends and Champions are Rares) \u2014 the last one is an Epic in ~1 of ${Math.round(1 / PACK_RULES.epicChance)} packs (Signatures, full-art cards, EPIC: The Musical).
       <br>\u2728 <b>God pack</b> in ~1 of ${Math.round(1 / PACK_RULES.godChance)} packs: no Commons and much better Rare / Epic odds in every slot.
       <br>Pool: ${P.commons.length} commons, ${P.uncommons.length} uncommons, ${P.rares.length} rares (incl. ${P.legends.length} legends), ${P.epics.length} epics.
       ${state.opened ? `<br>Packs opened this session: <b>${state.opened}</b>` : ""}
