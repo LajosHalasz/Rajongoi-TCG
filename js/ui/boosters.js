@@ -87,7 +87,11 @@ function tearOpen(app, sets) {
   }, 1250);
 }
 
+// phones: a hand-swiped row of cards (Hearthstone-style); a card flips when it reaches the front
+const swipeMode = () => matchMedia('(max-width: 760px)').matches;
+
 function drawReveal(app, sets) {
+  const swipe = swipeMode();
   const cards = state.pack.map((e, i) => {
     const t = tier(e);
     return `<div class="flip t-${t}" data-i="${i}" style="--d:${i * 55}ms">
@@ -99,14 +103,14 @@ function drawReveal(app, sets) {
   }).join('');
   app.innerHTML = `<div class="page booster-page ${state.pack.god ? 'god-pack' : ''}">
     ${state.pack.god ? '<div class="god-banner">✨ GOD PACK! ✨</div>' : ''}
-    <div class="row" style="margin-bottom:10px"><h2 style="margin:0">${esc(SET_INFO[state.set]?.name || state.set)} booster</h2><span class="spacer"></span>
-      <button id="all" class="primary">Reveal all</button></div>
-    <p class="muted" style="margin-top:0">Click the cards to flip them. The best card is saved for last.</p>
-    <div class="reveal-grid">${cards}</div>
-    <div class="row" id="after" style="justify-content:center;margin-top:20px;visibility:hidden">
-      <button class="primary" id="again">Open another pack</button>
-      <button id="back">Back to packs</button>
-    </div>
+    <div class="row reveal-head"><h2 style="margin:0">${esc(SET_INFO[state.set]?.name || state.set)} booster</h2><span class="spacer"></span>
+      <div class="reveal-actions">
+        <button id="all" class="primary">Reveal all</button>
+        <button id="again">Open another pack</button>
+        <button id="back" class="ghost">Back to packs</button>
+      </div></div>
+    <p class="muted reveal-hint" style="margin-top:0">${swipe ? 'Swipe the cards — each one flips when it reaches the front. The best card is saved for last.' : 'Click the cards to flip them. The best card is saved for last.'}</p>
+    <div class="reveal-grid ${swipe ? 'swipe' : ''}">${cards}</div>
   </div>`;
   const flip = (el) => {
     const i = +el.dataset.i;
@@ -123,15 +127,42 @@ function drawReveal(app, sets) {
         setTimeout(() => app.querySelector('.booster-page')?.classList.remove('quake'), 450);
       }, 260);
     }
-    if (state.revealed.size === state.pack.length) app.querySelector('#after').style.visibility = 'visible';
+    if (state.revealed.size === state.pack.length) {
+      app.querySelector('#all').hidden = true;
+      app.querySelector('#again').classList.add('primary');
+    }
   };
   app.querySelectorAll('.flip').forEach(el => el.onclick = () => flip(el));
+  if (swipe) setupSwipe(app.querySelector('.reveal-grid'), flip);
   app.querySelector('#all').onclick = () => {
     const els = [...app.querySelectorAll('.flip')].filter(el => !state.revealed.has(+el.dataset.i));
     els.forEach((el, k) => setTimeout(() => flip(el), k * 140));
   };
   app.querySelector('#again').onclick = () => { drawShop(app, sets); setTimeout(() => app.querySelector('#pack')?.click(), 50); };
   app.querySelector('#back').onclick = () => drawShop(app, sets);
+}
+
+/** Coverflow row: cards tilt and shrink away from the centre; the card that reaches the front flips. */
+function setupSwipe(row, flip) {
+  const cards = [...row.querySelectorAll('.flip')];
+  let ready = false, raf = 0;
+  const update = () => {
+    raf = 0;
+    const r = row.getBoundingClientRect(), mid = r.left + r.width / 2;
+    for (const el of cards) {
+      const b = el.getBoundingClientRect();
+      const d = Math.max(-1.5, Math.min(1.5, (b.left + b.width / 2 - mid) / b.width)); // 0 = at the front
+      el.style.transform = `perspective(900px) rotateY(${(-d * 28).toFixed(1)}deg) scale(${(1 - Math.min(Math.abs(d), 1) * 0.16).toFixed(3)})`;
+      el.style.zIndex = String(100 - Math.round(Math.abs(d) * 10));
+      if (ready && Math.abs(d) < 0.22 && !el.classList.contains('flipped')) flip(el);
+    }
+  };
+  const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
+  row.addEventListener('scroll', schedule, { passive: true });
+  window.addEventListener('resize', schedule);
+  update();
+  // let the deal animation finish, then the first card (already at the front) turns over
+  setTimeout(() => { ready = true; update(); }, 900);
 }
 
 /** Little particle burst around an element. */

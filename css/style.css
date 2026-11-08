@@ -988,3 +988,18 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
   animation: god-shift 2.4s linear infinite, pulse 0.9s infinite alternate; filter: drop-shadow(0 0 14px rgba(255,220,120,.6)); }
 @keyframes god-shift { to { background-position: 300% 0; } }
 .booster-page.god-pack .flip:not(.flipped) .pack-back { box-shadow: 0 0 0 3px #ffe36b, 0 0 30px rgba(255,200,90,.9); animation: rainbow 1.6s linear infinite; }
+
+/* booster reveal: actions together, top right */
+.reveal-head { margin-bottom: 10px; gap: 10px; flex-wrap: wrap; align-items: center; }
+.reveal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+/* phones: swipe row (coverflow) */
+.reveal-grid.swipe { display: flex; gap: 0; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+  padding: 26px calc(50% - min(31vw, 140px)) 30px; margin: 0 -16px; scrollbar-width: none; overscroll-behavior-x: contain; }
+.reveal-grid.swipe::-webkit-scrollbar { display: none; }
+.reveal-grid.swipe .flip { width: min(62vw, 280px); flex: none; scroll-snap-align: center; scroll-snap-stop: always; transform-origin: 50% 60%; transition: transform .08s linear; }
+.reveal-grid.swipe .flip-front .card { --w: min(62vw, 280px); }
+.reveal-grid.swipe .new-badge { top: 4px; right: 4px; }
+@media (max-width: 760px) {
+  .reveal-actions { width: 100%; }
+  .reveal-actions button { flex: 1; padding: 8px 6px; font-size: 14px; }
+}

@@ -4415,7 +4415,9 @@ ${def.text}`;
       state.pack.forEach((_, i) => setTimeout(() => sfx.deal(i), 120 + i * 55));
     }, 1250);
   }
+  var swipeMode = () => matchMedia("(max-width: 760px)").matches;
   function drawReveal(app2, sets) {
+    const swipe = swipeMode();
     const cards = state.pack.map((e, i) => {
       const t2 = tier(e);
       return `<div class="flip t-${t2}" data-i="${i}" style="--d:${i * 55}ms">
@@ -4427,14 +4429,14 @@ ${def.text}`;
     }).join("");
     app2.innerHTML = `<div class="page booster-page ${state.pack.god ? "god-pack" : ""}">
     ${state.pack.god ? '<div class="god-banner">\u2728 GOD PACK! \u2728</div>' : ""}
-    <div class="row" style="margin-bottom:10px"><h2 style="margin:0">${esc(SET_INFO[state.set]?.name || state.set)} booster</h2><span class="spacer"></span>
-      <button id="all" class="primary">Reveal all</button></div>
-    <p class="muted" style="margin-top:0">Click the cards to flip them. The best card is saved for last.</p>
-    <div class="reveal-grid">${cards}</div>
-    <div class="row" id="after" style="justify-content:center;margin-top:20px;visibility:hidden">
-      <button class="primary" id="again">Open another pack</button>
-      <button id="back">Back to packs</button>
-    </div>
+    <div class="row reveal-head"><h2 style="margin:0">${esc(SET_INFO[state.set]?.name || state.set)} booster</h2><span class="spacer"></span>
+      <div class="reveal-actions">
+        <button id="all" class="primary">Reveal all</button>
+        <button id="again">Open another pack</button>
+        <button id="back" class="ghost">Back to packs</button>
+      </div></div>
+    <p class="muted reveal-hint" style="margin-top:0">${swipe ? "Swipe the cards \u2014 each one flips when it reaches the front. The best card is saved for last." : "Click the cards to flip them. The best card is saved for last."}</p>
+    <div class="reveal-grid ${swipe ? "swipe" : ""}">${cards}</div>
   </div>`;
     const flip = (el) => {
       const i = +el.dataset.i;
@@ -4454,9 +4456,13 @@ ${def.text}`;
           setTimeout(() => app2.querySelector(".booster-page")?.classList.remove("quake"), 450);
         }, 260);
       }
-      if (state.revealed.size === state.pack.length) app2.querySelector("#after").style.visibility = "visible";
+      if (state.revealed.size === state.pack.length) {
+        app2.querySelector("#all").hidden = true;
+        app2.querySelector("#again").classList.add("primary");
+      }
     };
     app2.querySelectorAll(".flip").forEach((el) => el.onclick = () => flip(el));
+    if (swipe) setupSwipe(app2.querySelector(".reveal-grid"), flip);
     app2.querySelector("#all").onclick = () => {
       const els = [...app2.querySelectorAll(".flip")].filter((el) => !state.revealed.has(+el.dataset.i));
       els.forEach((el, k) => setTimeout(() => flip(el), k * 140));
@@ -4466,6 +4472,31 @@ ${def.text}`;
       setTimeout(() => app2.querySelector("#pack")?.click(), 50);
     };
     app2.querySelector("#back").onclick = () => drawShop(app2, sets);
+  }
+  function setupSwipe(row, flip) {
+    const cards = [...row.querySelectorAll(".flip")];
+    let ready = false, raf = 0;
+    const update = () => {
+      raf = 0;
+      const r = row.getBoundingClientRect(), mid = r.left + r.width / 2;
+      for (const el of cards) {
+        const b = el.getBoundingClientRect();
+        const d = Math.max(-1.5, Math.min(1.5, (b.left + b.width / 2 - mid) / b.width));
+        el.style.transform = `perspective(900px) rotateY(${(-d * 28).toFixed(1)}deg) scale(${(1 - Math.min(Math.abs(d), 1) * 0.16).toFixed(3)})`;
+        el.style.zIndex = String(100 - Math.round(Math.abs(d) * 10));
+        if (ready && Math.abs(d) < 0.22 && !el.classList.contains("flipped")) flip(el);
+      }
+    };
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    row.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    update();
+    setTimeout(() => {
+      ready = true;
+      update();
+    }, 900);
   }
   function burst(el, colors, n) {
     const r = el.getBoundingClientRect();
