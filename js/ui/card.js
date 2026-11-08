@@ -56,7 +56,8 @@ const color2 = (def) => (def.colors[1] ? COLORS[def.colors[1]].hex : colorHex(de
 
 /** Full-art gold frame: Signatures, Legends and EPIC cards (with artwork). */
 export function isFullArt(def) {
-  return !!def.image && def.type !== 'rune' && (rarityOf(def) === 'epic' || def.type === 'signature' || def.type === 'legend');
+  // Legends always use the Legend template (two big runes), even before their artwork exists
+  return def.type === 'legend' || (!!def.image && def.type !== 'rune' && (rarityOf(def) === 'epic' || def.type === 'signature'));
 }
 /** Foil finish: Champions, Legends and EPIC cards (Signatures are EPIC). */
 export const isFoil = (def) => ['champion', 'legend'].includes(def.type) || rarityOf(def) === 'epic' || !!def.fullArtRune;
@@ -138,7 +139,7 @@ export function cardHtml(def, opts = {}) {
 
   const art = def.image
     ? `<div class="art ${full || rare ? 'art-full' : 'art-window'}">${cardImg(def, opts.size)}</div>`
-    : `<div class="art art-window">${placeholderArt(def)}</div>`;
+    : `<div class="art ${full ? 'art-full' : 'art-window'}">${placeholderArt(def)}</div>`;
   const cost = legend || def.type === 'rune' || def.type === 'token' ? ''
     : `<div class="cost ${prov.includes('cost') ? 'prov' : ''}" title="${prov.includes('cost') ? 'Provisional cost' : 'Cost'}"><span>${opts.cost ?? def.cost}</span></div>`;
   const domainsTopLeft = full && legend

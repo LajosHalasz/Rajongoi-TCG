@@ -926,3 +926,7 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 .card .badge-seizure { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%) rotate(-8deg); z-index: 6; padding: 1.5cqw 4cqw;
   background: #8e4fc4; color: #fff; font-family: 'Lexend'; font-weight: 800; font-size: 9cqw; letter-spacing: .08em; border-radius: 2cqw;
   box-shadow: 0 0 0 1cqw rgba(255,255,255,.85), 0 0 5cqw rgba(142,79,196,.9); animation: pulse .9s infinite alternate; }
+/* full-art (Legend template) placeholders: the placeholder art fills the whole card */
+.card .art-full .art-ph { left: 0; right: 0; top: 0; height: 100%; }
+.card .art-full .art-ph .ph-glyph, .card .art-full .art-ph .ph-initials { transform: translateY(-26cqw); }
+.card .art-full .art-ph .ph-label { top: 44%; bottom: auto; }

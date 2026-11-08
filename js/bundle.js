@@ -525,7 +525,7 @@ ${def.text}`;
   }
   var color2 = (def) => def.colors[1] ? COLORS[def.colors[1]].hex : colorHex(def);
   function isFullArt(def) {
-    return !!def.image && def.type !== "rune" && (rarityOf(def) === "epic" || def.type === "signature" || def.type === "legend");
+    return def.type === "legend" || !!def.image && def.type !== "rune" && (rarityOf(def) === "epic" || def.type === "signature");
   }
   var isFoil = (def) => ["champion", "legend"].includes(def.type) || rarityOf(def) === "epic" || !!def.fullArtRune;
   var isRareArt = (def) => !!def.image && rarityOf(def) === "rare";
@@ -602,7 +602,7 @@ ${def.text}`;
     const data = `data-cid="${esc(def.id)}"${opts.uid ? ` data-uid="${esc(opts.uid)}"` : ""}`;
     const style = `--domain:${colorHex(def)};--c1:${colorHex(def)};--c2:${color2(def)};--type:${TYPE_INFO[def.type]?.hex || "#555"}`;
     const tribes = (def.tribes || []).slice(0, 2);
-    const art = def.image ? `<div class="art ${full || rare ? "art-full" : "art-window"}">${cardImg(def, opts.size)}</div>` : `<div class="art art-window">${placeholderArt(def)}</div>`;
+    const art = def.image ? `<div class="art ${full || rare ? "art-full" : "art-window"}">${cardImg(def, opts.size)}</div>` : `<div class="art ${full ? "art-full" : "art-window"}">${placeholderArt(def)}</div>`;
     const cost = legend || def.type === "rune" || def.type === "token" ? "" : `<div class="cost ${prov.includes("cost") ? "prov" : ""}" title="${prov.includes("cost") ? "Provisional cost" : "Cost"}"><span>${opts.cost ?? def.cost}</span></div>`;
     const domainsTopLeft = full && legend ? `<div class="fa-domains">${def.colors.map((c) => domainIcon(c, "big")).join("")}</div>` : "";
     const mightHtml = showMight ? `<div class="might ${mightCls} ${prov.includes("might") ? "prov" : ""}"><span class="might-ico"><i></i></span><span class="might-val">${might}</span></div>` : "";
