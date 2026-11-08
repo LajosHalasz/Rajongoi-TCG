@@ -32,19 +32,21 @@ const SECTIONS = [
   {
     icon: '🗺️',
     hu: { t: 'Zónák az asztalon', b: `<ul>
-      <li><b>Battlefield</b>: itt állnak a Unitjaid, innen támadnak.</li>
+      <li><b>Battlefield</b>: itt állnak a Unitjaid, innen támadnak. Legfeljebb ${R.MAX_BATTLE} Unitod lehet itt.</li>
       <li><b>Shield Zone</b>: ${R.SHIELDS} lefordított lap, ezek védenek.</li>
       <li><b>Deck</b> és <b>Graveyard</b>: a Graveyardba kerülnek az elpusztult Unitok és a lejátszott Spellek.</li>
       <li><b>Mana Zone</b> és <b>Mana Deck</b>: a Mana Deckből húzott Rune-ok adják a manát.</li>
       <li><b>Legend</b>, <b>Champion Slot</b>, <b>Signature Slot</b>: ezek a lapok az asztalon kezdenek, és innen kijátszhatók.</li>
-      <li><b>Gear Slotok</b>: egyszerre legfeljebb ${R.GEAR_SLOTS} Gear lehet lent.</li></ul>` },
+      <li><b>Gear Slotok</b>: egyszerre legfeljebb ${R.GEAR_SLOTS} Gear lehet lent.</li>
+      <li><b>Kéz</b>: legfeljebb ${R.MAX_HAND} lap. Ha tele van, az újonnan kapott lap (húzás, betört Shield…) a Graveyardba kerül.</li></ul>` },
     en: { t: 'Zones on the table', b: `<ul>
-      <li><b>Battlefield</b>: your Units stand here and attack from here.</li>
+      <li><b>Battlefield</b>: your Units stand here and attack from here. At most ${R.MAX_BATTLE} Units.</li>
       <li><b>Shield Zone</b>: ${R.SHIELDS} face-down cards that protect you.</li>
       <li><b>Deck</b> and <b>Graveyard</b>: destroyed Units and resolved Spells go to the Graveyard.</li>
       <li><b>Mana Zone</b> and <b>Mana Deck</b>: Runes from the Mana Deck give you mana.</li>
       <li><b>Legend</b>, <b>Champion Slot</b>, <b>Signature Slot</b>: these start on the table and can be played from there.</li>
-      <li><b>Gear Slots</b>: at most ${R.GEAR_SLOTS} Gear at a time.</li></ul>` },
+      <li><b>Gear Slots</b>: at most ${R.GEAR_SLOTS} Gear at a time.</li>
+      <li><b>Hand</b>: at most ${R.MAX_HAND} cards. With a full hand, a new card (a draw, a broken Shield…) goes to the Graveyard.</li></ul>` },
   },
   {
     icon: '🎲',

@@ -12,6 +12,8 @@ export const RULES = {
   CHANNEL_PER_TURN: 2,
   CHANNEL_SECOND_PLAYER_FIRST_TURN: 3,
   GEAR_SLOTS: 2,
+  MAX_HAND: 12,           // a card that would go to a full hand goes to the Graveyard instead
+  MAX_BATTLE: 12,         // Units a player can have on the Battlefield
   MAX_TURNS: 80,          // safety valve (total turns, both players)
 };
 

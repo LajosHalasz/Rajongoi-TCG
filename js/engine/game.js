@@ -303,6 +303,20 @@ export function playEffects(d, modes) {
   return [...base, ...modes.flatMap(i => (d.modes[i].effects || []).map(e => ({ on: 'play', ...e })))];
 }
 
+// Hand limit (12): a card that would go to a full hand goes to the Graveyard instead ("burned").
+function toHand(s, p, card) {
+  if (p.hand.length >= RULES.MAX_HAND) {
+    p.graveyard.push(card);
+    log(s, `${p.name}'s hand is full (${RULES.MAX_HAND}): ${nm(card)} goes to the Graveyard.`);
+    return false;
+  }
+  p.hand.push(card);
+  return true;
+}
+// Battlefield limit (12 Units per player)
+const fieldFull = (p) => p.battle.length >= RULES.MAX_BATTLE;
+function noRoom(s, p, what) { log(s, `${p.name}'s Battlefield is full (${RULES.MAX_BATTLE} Units): ${what} can't enter.`); }
+
 function playOptions(s, pi, mode) {
   const p = s.players[pi];
   const acts = [];
@@ -318,6 +332,7 @@ function playOptions(s, pi, mode) {
     }
     if (d.requiresStack && !s.stack.some(it => it.controller !== pi)) continue;
     if (!affordDef(s, p, d)) continue;
+    if (k === 'unit' && fieldFull(p)) continue;
     const dupKey = inst.id + (p.hand.includes(inst) ? 'h' : 's');
     if (seen.has(dupKey)) continue; // identical copies in hand -> one option
     seen.add(dupKey);
@@ -354,6 +369,7 @@ function promoteOptions(p, g, d, promo) {
 function doPromote(s, pi, d, promo, a) {
   const p = s.players[pi];
   if (!a.target) {
+    if (fieldFull(p)) return noRoom(s, p, 'a Pawn');
     const t = mk(s, promo.pawn, pi); t.sick = true; p.battle.push(t);
     log(s, `${p.name} creates ${nm(t)}.`);
     return;
@@ -401,7 +417,7 @@ function doExploitSwap(s, pi, a) {
     given.owner = op.idx; delete given.faceUp;
     taken.owner = pi; delete taken.faceUp;
     op.shields[i] = given;
-    p.hand.push(taken);
+    toHand(s, p, taken);
     log(s, `${p.name} takes ${nm(taken)} and plants a face-down card in ${op.name}'s Shield Zone.`);
     emit(s, 'exploit', { player: pi, id: taken.id, planted: given.id });
     if ((getDef(taken.id).keywords || []).includes('Shield Trigger')) s.queue.unshift({ kind: 'shieldTrigger', player: pi, uid: taken.uid });
@@ -699,10 +715,10 @@ function doEndPhase(s) {
 
 function drawCard(s, pi) {
   const p = s.players[pi];
-  if (p.deck.length) { p.hand.push(p.deck.shift()); return; }
+  if (p.deck.length) { toHand(s, p, p.deck.shift()); return; }
   // Empty deck: take a shield instead; with no shields left you lose.
   if (p.shields.length) {
-    p.hand.push(p.shields.shift());
+    toHand(s, p, p.shields.shift());
     log(s, `${p.name}'s deck is empty — a shield is taken into hand instead.`);
   } else setWinner(s, other(pi), `${p.name} could not draw.`);
 }
@@ -790,6 +806,11 @@ function putIntoPlay(s, pi, inst, target, modes = null, replace = null) {
   const k = kindOf(d);
   modes = resolveModes(s, pi, d, modes);
   inst.tapped = false; inst.mods = [];
+  if (k === 'unit' && fieldFull(p)) { // e.g. a Shield Trigger Unit or a summon onto a full Battlefield
+    noRoom(s, p, d.name);
+    p.graveyard.push(inst);
+    return;
+  }
   if (k === 'unit') {
     inst.sick = true;
     const h = clockHour();
@@ -957,7 +978,7 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       else if (source && me.battle.includes(source)) destroyUnit(s, source);
       break;
     case 'breakOwnShield':
-      for (let i = 0; i < n && me.shields.length; i++) me.hand.push(me.shields.shift());
+      for (let i = 0; i < n && me.shields.length; i++) toHand(s, me, me.shields.shift());
       log(s, `${me.name} breaks their own shield.`);
       break;
     case 'lockShields':
@@ -1011,7 +1032,7 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
         const owner = s.players[u.owner];
         owner.battle.splice(owner.battle.indexOf(u), 1);
         resetInst(u);
-        if (!getDef(u.id).token) owner.hand.push(u);
+        if (!getDef(u.id).token) toHand(s, owner, u);
         log(s, `${nm(u)} returns to ${owner.name}'s hand.`);
       }
       break;
@@ -1032,7 +1053,7 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       break;
     case 'recover': {
       const i = me.graveyard.map(c => kindOf(getDef(c.id))).lastIndexOf('unit');
-      if (i >= 0) { const c = me.graveyard.splice(i, 1)[0]; me.hand.push(c); log(s, `${me.name} recovers ${nm(c)}.`); }
+      if (i >= 0) { const c = me.graveyard.splice(i, 1)[0]; if (toHand(s, me, c)) log(s, `${me.name} recovers ${nm(c)}.`); }
       break;
     }
     case 'tutor': {
@@ -1043,13 +1064,14 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       const pool = me[zone].filter(ok).sort((a, b) => getDef(b.id).cost - getDef(a.id).cost);
       const c = pool[0];
       me[zone].splice(me[zone].indexOf(c), 1);
-      me.hand.push(c);
+      toHand(s, me, c);
       shuffle(s, me.deck);
       log(s, `${me.name} searches their deck and takes ${nm(c)}.`);
       break;
     }
     case 'token':
       for (let i = 0; i < n; i++) {
+        if (fieldFull(me)) { noRoom(s, me, 'the token'); break; }
         const t = mk(s, e.tokenId, pi);
         t.sick = true;
         me.battle.push(t);
@@ -1066,6 +1088,7 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       break;
     case 'copyUnit':
       for (const u of targets) if (okPower(u)) {
+        if (fieldFull(me)) { noRoom(s, me, 'the copy'); break; }
         const c = mk(s, u.id, pi);
         c.temp = true; c.fast = true; c.sick = true;
         me.battle.push(c);
@@ -1145,11 +1168,11 @@ function breakShields(s, defIdx, n) {
   if (p.shieldLockUntil > s.turn) { log(s, `${p.name}'s shields are unbreakable!`); return; }
   for (let i = 0; i < n && p.shields.length; i++) {
     const sh = p.shields.shift();
-    p.hand.push(sh);
+    const inHand = toHand(s, p, sh);
     const d = getDef(sh.id);
     log(s, `${p.name}'s shield breaks (${p.shields.length} left).`);
     if (p.triggersSealedUntil > s.turn) continue;
-    if ((d.keywords || []).includes('Shield Trigger')) s.queue.push({ kind: 'shieldTrigger', player: defIdx, uid: sh.uid });
+    if (inHand && (d.keywords || []).includes('Shield Trigger')) s.queue.push({ kind: 'shieldTrigger', player: defIdx, uid: sh.uid });
   }
 }
 
@@ -1176,7 +1199,7 @@ function doPick(s, pi, a) {
     const seen = q.uids.map(uid => p.reveal.find(c => c.uid === uid)).filter(Boolean);
     p.reveal = p.reveal.filter(c => !seen.includes(c));
     const keep = seen.filter(c => picked.has(c.uid));
-    p.hand.push(...keep);
+    for (const c of keep) toHand(s, p, c);
     p.deck.push(...seen.filter(c => !picked.has(c.uid)));
     shuffle(s, p.deck);
     log(s, `${p.name} keeps ${keep.length ? keep.map(nm).join(', ') : 'nothing'} and shuffles the rest back.`);
@@ -1185,7 +1208,7 @@ function doPick(s, pi, a) {
       const c = p.graveyard.find(x => x.uid === uid);
       if (!c) continue;
       p.graveyard.splice(p.graveyard.indexOf(c), 1);
-      p.hand.push(c);
+      toHand(s, p, c);
       log(s, `${p.name} returns ${nm(c)} from the Graveyard to hand.`);
     }
   }

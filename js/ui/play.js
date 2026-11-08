@@ -329,7 +329,9 @@ function playerRow(s, p, mine, hl) {
 }
 
 function battleRow(s, p, hl) {
-  return `<div class="battle">${p.battle.map(u => unitCard(s, u, hl)).join('') || `<span class="empty">${p.idx === HUMAN ? 'Your' : "AI's"} Battle Zone</span>`}</div>`;
+  // big cards up to 7 Units; beyond that they shrink to fit (max. 12 on the Battlefield)
+  const n = p.battle.length;
+  return `<div class="battle ${n > 7 ? 'many' : ''}" style="--n:${Math.max(n, 1)}">${p.battle.map(u => unitCard(s, u, hl)).join('') || `<span class="empty">${p.idx === HUMAN ? 'Your' : "AI's"} Battle Zone</span>`}</div>`;
 }
 
 function midbar(s, legal, ui) {
@@ -516,6 +518,8 @@ function animateArrivals(s, app) {
   }
 }
 
+// debug hook (console / automated checks): window.RajongoiDebug.state, .render()
+if (typeof window !== 'undefined') window.RajongoiDebug = { get state() { return G?.s; }, render: () => G && render() };
 // debug hook: window.RajongoiFX.crack(el) / .land(el) replays the effects on any element
 if (typeof window !== 'undefined') window.RajongoiFX = { crack: (el) => crackField(el, G ? G.app : document), land: (el) => shockwave(el), bolt: (el, colors, opts) => { lightning(el, colors, opts); if (!opts) sfx.lightning(); },
   // demo(cardId): drop a card onto your battle zone with the real arrival effects

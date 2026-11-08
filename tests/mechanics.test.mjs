@@ -28,6 +28,22 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Limits: at most 12 cards in hand (a broken Shield is burned) and 12 Units on the Battlefield'() {
+    const s = fresh(); const p = s.players[0];
+    for (let i = 0; i < 12; i++) card(s, 0, 'OGN-016');          // full hand
+    for (let i = 0; i < 12; i++) card(s, 0, 'OGN-016', 'battle'); // full Battlefield
+    s.active = 0; s.phase = 'play';
+    assert(!legalActions(s, 0).some(a => a.type === 'play' && p.hand.some(h => h.uid === a.uid)), 'no Unit can be played onto a full Battlefield');
+    // the opponent breaks a Shield while the hand is full: it goes to the Graveyard
+    s.active = 1; s.phase = 'combat';
+    const att = card(s, 1, 'OGN-181', 'battle');
+    const sh = p.shields[0];
+    step(s, { type: 'attack', uid: att.uid, target: { kind: 'shield' } });
+    for (let i = 0; i < 20 && s.pending && ['priority', 'block'].includes(s.pending.kind); i++) step(s, { type: s.pending.kind === 'block' ? 'noBlock' : 'pass' });
+    assert.equal(p.hand.length, 12, 'hand stays at 12');
+    assert(p.graveyard.some(c => c.uid === sh.uid), 'the broken Shield is burned');
+  },
+
   'The Dealmaker: opponent draws 1; next turn, if they hold more cards, their strongest Unit is destroyed'() {
     const s = fresh();
     const p = s.players[0], op = s.players[1];

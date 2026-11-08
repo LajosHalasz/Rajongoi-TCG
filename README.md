@@ -136,7 +136,7 @@ Shuffle the deck. The top 5 cards become face-down **Shields**. Draw 5 cards; yo
    After an attack is declared, the defender may redirect it to an untapped **Defensive** Unit. Then both players may cast **Action** spells (only while the stack is empty) and **Reaction** spells (any time, including in response) onto a **stack**. The stack resolves last-in-first-out, and then the fight resolves.
 6. **End**: "this turn" effects expire.
 
-Units with 0 or less Might are destroyed. Gear uses 2 slots; playing a third Gear makes the oldest one expire. *Saga* Gear expires after N uses.
+Units with 0 or less Might are destroyed. A player holds at most 12 cards (a card that would go to a full hand goes to the Graveyard) and has at most 12 Units on the Battlefield. Gear uses 2 slots; playing a third Gear makes the oldest one expire. *Saga* Gear expires after N uses.
 
 ### Keywords
 Shield Trigger · Shieldify N · Defensive · Deathtouch · Haste · Breaker (Double Breaker) · Party Breaker · Slow Start · Unstoppable · Immobile · Furious (must attack each turn) · Assault · Vigilance · Elusive · Action · Reaction · Nostalgia Line (uses the player's real local time, 16:00–22:00).

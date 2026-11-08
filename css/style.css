@@ -1020,3 +1020,7 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
   .played-panel .pp-card .card { --w: 100%; }
   .played-panel { overflow-x: hidden; }
 }
+/* Battlefield: bigger Units; past 7 they shrink so up to 12 fit in one row */
+.battle { --bw: calc(var(--cw) * 1.3); flex-wrap: nowrap; min-height: calc(var(--bw) * 1.4 + 14px); }
+.battle > .card { --w: var(--bw); }
+.battle.many > .card { --w: min(var(--bw), calc((100% - 10px * (var(--n) - 1)) / var(--n))); }
