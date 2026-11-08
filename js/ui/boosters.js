@@ -16,7 +16,8 @@ const savePulls = (p) => { try { localStorage.setItem(LS_PULLS, JSON.stringify(p
 
 let state = { set: null, pack: null, revealed: new Set(), opened: 0, busy: false };
 
-const tier = (e) => (e.slot === 'hit' ? 'hit' : rarityOf(e.def));
+// the reveal effect follows the card's real rarity: a Rare Champion glows gold, Epics (Signatures, full-art) go rainbow
+const tier = (e) => (e.slot === 'hit' && rarityOf(e.def) === 'epic' ? 'hit' : rarityOf(e.def));
 
 export function renderBoosters(app) {
   const sets = boosterSets();

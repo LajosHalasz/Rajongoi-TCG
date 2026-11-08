@@ -4343,7 +4343,7 @@ ${def.text}`;
     }
   };
   var state = { set: null, pack: null, revealed: /* @__PURE__ */ new Set(), opened: 0, busy: false };
-  var tier = (e) => e.slot === "hit" ? "hit" : rarityOf(e.def);
+  var tier = (e) => e.slot === "hit" && rarityOf(e.def) === "epic" ? "hit" : rarityOf(e.def);
   function renderBoosters(app2) {
     const sets = boosterSets();
     if (!state.set || !sets.includes(state.set)) state.set = sets[0];
