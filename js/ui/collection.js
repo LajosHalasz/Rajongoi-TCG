@@ -2,7 +2,7 @@ import { allCards, getDef, hasDef, kindOf, rarityOf, championMatchesLegend, sign
 import { COLORS, TYPE_INFO, GUIDE, RULES } from '../engine/rules.js';
 import { validateDeck } from '../engine/deck.js';
 import { cardHtml, cardDetailsHtml, esc } from './card.js';
-import { allDecks, customDecks, saveCustomDecks, findDeck } from '../data.js';
+import { allDecks, customDecks, saveCustomDecks, findDeck, deckName } from '../data.js';
 
 const SET_NAMES = { OGN: 'OGN 2026-01', DND: 'DND — DLC', BAS: 'Fillers', TKN: 'Tokens', RUN: 'Runes' };
 const TYPE_ORDER = ['legend', 'champion', 'unit', 'spell', 'gear', 'signature', 'token', 'rune'];
@@ -115,7 +115,7 @@ export function renderDecks(app) {
     return `<div class="deck-tile">
       ${legend ? cardHtml(legend, { size: 'xs' }) : ''}
       <div style="flex:1;min-width:0">
-        <h3>${esc(d.name)}</h3>
+        <h3>${esc(deckName(d))}</h3>
         <div class="meta">${legend ? esc(legend.colors.join(' / ')) : 'No legend'} · ${v.stats.total} cards · avg ${v.stats.avgCost.toFixed(1)}</div>
         <div class="meta">${d.comingSoon ? '<span class="soon-tag">COMING SOON</span> ' : ''}${d.premade ? 'Premade' : 'Custom'} · ${v.errors.length ? `<span class="msg err">${v.errors.length} problem(s)</span>` : '<span class="msg ok">Legal</span>'}</div>
         <div class="row" style="margin-top:8px">
@@ -160,7 +160,7 @@ export function renderBuilder(app, arg) {
   if (arg === 'new') draft = { id: 'custom-' + Date.now(), name: 'New deck', legend: null, champion: null, signature: null, cards: {}, runes: {} };
   else if (arg.startsWith('copy:')) {
     const src = findDeck(arg.slice(5));
-    draft = structuredClone(src); draft.id = 'custom-' + Date.now(); draft.name = src.name + ' (copy)'; draft.premade = false;
+    draft = structuredClone(src); draft.id = 'custom-' + Date.now(); draft.name = deckName(src) + ' (copy)'; draft.premade = false;
   } else draft = structuredClone(findDeck(arg) || {});
   if (!draft.cards) { location.hash = '#/decks'; return; }
 

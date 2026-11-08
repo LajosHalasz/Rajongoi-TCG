@@ -482,6 +482,13 @@ ${def.text}`;
     const g = guides[id];
     return g ? g[lang] || g.en || g.hu || g : null;
   }
+  function deckName(d) {
+    if (!d) return "";
+    if (!d.premade || !d.owner || !hasDef(d.legend)) return d.name;
+    const L2 = getDef(d.legend);
+    if (L2.placeholder) return d.name;
+    return L2.name.split("|")[0].trim().toLowerCase() === d.owner.toLowerCase() ? L2.name : `${d.owner} | ${L2.name}`;
+  }
   function findDeck(id) {
     return allDecks().find((d) => d.id === id);
   }
@@ -828,7 +835,7 @@ ${def.text}`;
       return `<div class="deck-tile">
       ${legend ? cardHtml(legend, { size: "xs" }) : ""}
       <div style="flex:1;min-width:0">
-        <h3>${esc(d.name)}</h3>
+        <h3>${esc(deckName(d))}</h3>
         <div class="meta">${legend ? esc(legend.colors.join(" / ")) : "No legend"} \xB7 ${v.stats.total} cards \xB7 avg ${v.stats.avgCost.toFixed(1)}</div>
         <div class="meta">${d.comingSoon ? '<span class="soon-tag">COMING SOON</span> ' : ""}${d.premade ? "Premade" : "Custom"} \xB7 ${v.errors.length ? `<span class="msg err">${v.errors.length} problem(s)</span>` : '<span class="msg ok">Legal</span>'}</div>
         <div class="row" style="margin-top:8px">
@@ -881,7 +888,7 @@ ${def.text}`;
       const src = findDeck(arg.slice(5));
       draft = structuredClone(src);
       draft.id = "custom-" + Date.now();
-      draft.name = src.name + " (copy)";
+      draft.name = deckName(src) + " (copy)";
       draft.premade = false;
     } else draft = structuredClone(findDeck(arg) || {});
     if (!draft.cards) {
@@ -3118,14 +3125,14 @@ ${def.text}`;
     const option = (who, d, locked = false) => {
       const id = d ? d.id : "random";
       return `<div class="dd-opt ${pick[who] === id ? "on" : ""} ${locked ? "locked" : ""}" ${locked ? "" : `data-who="${who}" data-id="${id}"`}>
-      ${thumb(d)}<div class="dd-text"><b>${esc(d ? d.name : "Random deck")}</b><div class="muted">${locked ? getDef(d.legend).colors.join(" / ") : meta(d)}</div></div>
+      ${thumb(d)}<div class="dd-text"><b>${esc(d ? deckName(d) : "Random deck")}</b><div class="muted">${locked ? getDef(d.legend).colors.join(" / ") : meta(d)}</div></div>
       ${locked ? '<span class="soon-tag">COMING SOON</span>' : ""}</div>`;
     };
     const dropdown = (who, label) => {
       const cur = pick[who] === "random" ? null : findDeck(pick[who]);
       return `<div class="dd" data-dd="${who}">
       <div class="dd-label">${label}</div>
-      <button class="dd-btn" type="button">${thumb(cur)}<div class="dd-text"><b>${esc(cur ? cur.name : "Random deck")}</b><div class="muted">${meta(cur)}</div></div><span class="dd-caret">\u25BE</span></button>
+      <button class="dd-btn" type="button">${thumb(cur)}<div class="dd-text"><b>${esc(cur ? deckName(cur) : "Random deck")}</b><div class="muted">${meta(cur)}</div></div><span class="dd-caret">\u25BE</span></button>
       <div class="dd-list" hidden>
         ${who === "ai" ? option(who, null) : ""}
         ${decks.map((d) => option(who, d)).join("")}

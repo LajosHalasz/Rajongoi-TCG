@@ -3,7 +3,7 @@ import { chooseAction } from '../engine/ai.js';
 import { getDef, hasDef, kindOf, allCards } from '../engine/cards.js';
 import { COLORS, RULES } from '../engine/rules.js';
 import { validateDeck } from '../engine/deck.js';
-import { playableDecks, comingSoonDecks, findDeck } from '../data.js';
+import { playableDecks, comingSoonDecks, findDeck, deckName } from '../data.js';
 import { cardHtml, cardBackHtml, cardDetailsHtml, esc, isFoil } from './card.js';
 import { showCardModal } from './collection.js';
 import { sfx, soundForLog } from './sfx.js';
@@ -49,14 +49,14 @@ export function renderSetup(app) {
   const option = (who, d, locked = false) => {
     const id = d ? d.id : 'random';
     return `<div class="dd-opt ${pick[who] === id ? 'on' : ''} ${locked ? 'locked' : ''}" ${locked ? '' : `data-who="${who}" data-id="${id}"`}>
-      ${thumb(d)}<div class="dd-text"><b>${esc(d ? d.name : 'Random deck')}</b><div class="muted">${locked ? getDef(d.legend).colors.join(' / ') : meta(d)}</div></div>
+      ${thumb(d)}<div class="dd-text"><b>${esc(d ? deckName(d) : 'Random deck')}</b><div class="muted">${locked ? getDef(d.legend).colors.join(' / ') : meta(d)}</div></div>
       ${locked ? '<span class="soon-tag">COMING SOON</span>' : ''}</div>`;
   };
   const dropdown = (who, label) => {
     const cur = pick[who] === 'random' ? null : findDeck(pick[who]);
     return `<div class="dd" data-dd="${who}">
       <div class="dd-label">${label}</div>
-      <button class="dd-btn" type="button">${thumb(cur)}<div class="dd-text"><b>${esc(cur ? cur.name : 'Random deck')}</b><div class="muted">${meta(cur)}</div></div><span class="dd-caret">▾</span></button>
+      <button class="dd-btn" type="button">${thumb(cur)}<div class="dd-text"><b>${esc(cur ? deckName(cur) : 'Random deck')}</b><div class="muted">${meta(cur)}</div></div><span class="dd-caret">▾</span></button>
       <div class="dd-list" hidden>
         ${who === 'ai' ? option(who, null) : ''}
         ${decks.map(d => option(who, d)).join('')}

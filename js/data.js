@@ -1,5 +1,5 @@
 // Browser data loading: placeholders + imported (real) cards + logic overrides.
-import { setCardDb, allCards, mergeSources } from './engine/cards.js';
+import { setCardDb, allCards, mergeSources, getDef, hasDef } from './engine/cards.js';
 import { validateDeck } from './engine/deck.js';
 import { loadCustomCards, putCustomCard, removeCustomCard } from './cardstore.js';
 
@@ -67,4 +67,13 @@ export function playableDecks() { return allDecks().filter(d => !d.comingSoon &&
 export function comingSoonDecks() { return allDecks().filter(d => d.comingSoon); }
 /** Hand-written strategy notes for a premade deck (data/deck-guides.json), if any. */
 export function deckGuide(id, lang = 'hu') { const g = guides[id]; return g ? (g[lang] || g.en || g.hu || g) : null; }
+/** Premade decks are shown as "Owner | Legend name" once their Legend is a real (non-placeholder) card. */
+export function deckName(d) {
+  if (!d) return '';
+  if (!d.premade || !d.owner || !hasDef(d.legend)) return d.name;
+  const L = getDef(d.legend);
+  if (L.placeholder) return d.name;
+  // older Legends already carry the owner: "Matyi | Always on time"
+  return L.name.split('|')[0].trim().toLowerCase() === d.owner.toLowerCase() ? L.name : `${d.owner} | ${L.name}`;
+}
 export function findDeck(id) { return allDecks().find(d => d.id === id); }
