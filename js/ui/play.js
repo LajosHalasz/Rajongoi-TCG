@@ -44,7 +44,7 @@ export function renderSetup(app) {
     if (!d) return 'Surprise me';
     const L = getDef(d.legend);
     const v = validateDeck(d);
-    return `${L.colors.join(' / ')} · avg cost ${v.stats.avgCost.toFixed(1)} · ${d.premade ? 'premade' : 'custom'}${d.fillers ? ` · ${d.fillers} filler` : ''}`;
+    return `${L.colors.join(' / ')} · avg cost ${v.stats.avgCost.toFixed(1)} · ${d.premade ? 'premade' : 'custom'}`;
   };
   const option = (who, d, locked = false) => {
     const id = d ? d.id : 'random';

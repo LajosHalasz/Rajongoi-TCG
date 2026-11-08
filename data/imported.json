@@ -2041,6 +2041,43 @@
     }
   },
   {
+    "id": "OGN-L-kozi",
+    "set": "OGN",
+    "number": "L-kozi",
+    "name": "Aspect of Foundation",
+    "type": "legend",
+    "subname": "Kozi",
+    "owners": [
+      "Kozi"
+    ],
+    "colors": [
+      "Mind",
+      "Chaos"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Promote",
+      "Chess"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "[1][T]: {Promote#21705B} a {Chess#6D6E6B}Token . __(Pawn to Knight, Bishop or Rook, then those to King or Queen, summoning sickness applied.)__ If you don't have any, create a 1[M] Pawn. ",
+    "flavor": "",
+    "rarity": "epic",
+    "illustrator": "Lui",
+    "setInfo": "L08 OGN",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-L-kozi.jpg",
+    "imageCrop": {
+      "x": 2.1894121500595682,
+      "y": 0.3641000107732256,
+      "width": 95.14747859181732,
+      "height": 99.17474994518909
+    }
+  },
+  {
     "id": "OGN-L-lui",
     "set": "OGN",
     "number": "L-lui",

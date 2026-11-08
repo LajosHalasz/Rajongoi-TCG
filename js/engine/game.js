@@ -340,6 +340,32 @@ function withTargets(s, pi, d, base, required, trigger = 'play', modes = null) {
   return ts.map(t => ({ ...base, target: t }));
 }
 
+// Aspect of Foundation: "[1][T]: Promote a Chess Token (Pawn to Knight, Bishop or Rook, then those to
+// King or Queen, summoning sickness applied). If you don't have any, create a 1[M] Pawn."
+function promoteOptions(p, g, d, promo) {
+  const chess = p.battle.filter(u => getDef(u.id).chessRank);
+  if (!chess.length) return [{ type: 'activate', uid: g.uid }];
+  const out = [];
+  for (const u of chess) for (const to of promo.promote[getDef(u.id).chessRank] || []) {
+    out.push({ type: 'activate', uid: g.uid, target: u.uid, modes: [d.modes.findIndex(m => m.to === to)] });
+  }
+  return out;
+}
+function doPromote(s, pi, d, promo, a) {
+  const p = s.players[pi];
+  if (!a.target) {
+    const t = mk(s, promo.pawn, pi); t.sick = true; p.battle.push(t);
+    log(s, `${p.name} creates ${nm(t)}.`);
+    return;
+  }
+  const i = p.battle.findIndex(u => u.uid === a.target);
+  if (i < 0) return;
+  const old = p.battle[i];
+  const t = mk(s, d.modes[a.modes[0]].to, pi); t.sick = true;
+  p.battle.splice(i, 1, t);
+  log(s, `${nm(old)} is promoted to ${nm(t)}!`);
+}
+
 function activateOptions(s, pi) {
   const p = s.players[pi];
   const acts = [];
@@ -352,6 +378,8 @@ function activateOptions(s, pi) {
     // conditional tap abilities: "If you are in Seizure, ..." / Shieldify needs a card in hand
     if (!(d.effects || []).some(e => e.on === 'activate' && (e.requires !== 'seizure' || p.seizure) && (e.do !== 'shieldify' || p.hand.length) && (e.do !== 'forceThunks' || (p.thunks || []).length))) continue;
     if (!canAfford(p, d.activateCost || 0, null)) continue;
+    const promo = (d.effects || []).find(e => e.on === 'activate' && e.do === 'promote');
+    if (promo) { acts.push(...promoteOptions(p, g, d, promo)); continue; }
     acts.push(...withTargets(s, pi, d, { type: 'activate', uid: g.uid }, true, 'activate'));
   }
   return acts;
@@ -808,6 +836,8 @@ function doActivate(s, pi, a) {
   payCost(s, p, d.activateCost || 0, null);
   if (d.activateNoTap) g.activatedTurn = s.turn; else g.tapped = true;
   log(s, `${p.name} activates ${d.name}.`);
+  const promo = (d.effects || []).find(e => e.on === 'activate' && e.do === 'promote');
+  if (promo) { doPromote(s, pi, d, promo, a); consumeUse(s, pi, g); return; }
   runTwiceIfDoubled(s, pi, g, effectsOn(d, 'activate'), a.target);
   consumeUse(s, pi, g);
 }

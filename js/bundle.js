@@ -718,7 +718,7 @@ ${def.text}`;
   }
 
   // js/ui/collection.js
-  var SET_NAMES = { OGN: "OGN 2026-01", DND: "DND \u2014 DLC", BAS: "Fillers", TKN: "Tokens", RUN: "Runes" };
+  var SET_NAMES = { OGN: "OGN 2026-01", DND: "DND \u2014 DLC", TKN: "Tokens", RUN: "Runes" };
   var TYPE_ORDER = ["legend", "champion", "unit", "spell", "gear", "signature", "token", "rune"];
   var sortCards = (a, b) => a.set.localeCompare(b.set) || String(a.number).localeCompare(String(b.number));
   function showCardModal(def) {
@@ -761,7 +761,7 @@ ${def.text}`;
   };
   function renderCollection(app2, set) {
     const cards = allCards();
-    const ORDER = ["OGN", "DND", "TKN", "RUN", "BAS"];
+    const ORDER = ["OGN", "DND", "TKN", "RUN"];
     const rank = (x) => ORDER.indexOf(x) + 1 || 50;
     const sets = [...new Set(cards.map((c) => c.set))].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
     if (!sets.includes(set)) set = sets[0];
@@ -1417,6 +1417,32 @@ ${def.text}`;
     if (!ts.length) return required ? [] : [base];
     return ts.map((t2) => ({ ...base, target: t2 }));
   }
+  function promoteOptions(p, g, d, promo) {
+    const chess = p.battle.filter((u) => getDef(u.id).chessRank);
+    if (!chess.length) return [{ type: "activate", uid: g.uid }];
+    const out = [];
+    for (const u of chess) for (const to of promo.promote[getDef(u.id).chessRank] || []) {
+      out.push({ type: "activate", uid: g.uid, target: u.uid, modes: [d.modes.findIndex((m) => m.to === to)] });
+    }
+    return out;
+  }
+  function doPromote(s, pi, d, promo, a) {
+    const p = s.players[pi];
+    if (!a.target) {
+      const t3 = mk(s, promo.pawn, pi);
+      t3.sick = true;
+      p.battle.push(t3);
+      log(s, `${p.name} creates ${nm(t3)}.`);
+      return;
+    }
+    const i = p.battle.findIndex((u) => u.uid === a.target);
+    if (i < 0) return;
+    const old = p.battle[i];
+    const t2 = mk(s, d.modes[a.modes[0]].to, pi);
+    t2.sick = true;
+    p.battle.splice(i, 1, t2);
+    log(s, `${nm(old)} is promoted to ${nm(t2)}!`);
+  }
   function activateOptions(s, pi) {
     const p = s.players[pi];
     const acts = [];
@@ -1429,6 +1455,11 @@ ${def.text}`;
       if (g === p.legend && !(d.effects || []).some((e) => e.on === "activate" && (e.do !== "recoverTribe" || p.graveyard.some((c) => e.tribes.some((t2) => hasTribe(getDef(c.id), t2)))))) continue;
       if (!(d.effects || []).some((e) => e.on === "activate" && (e.requires !== "seizure" || p.seizure) && (e.do !== "shieldify" || p.hand.length) && (e.do !== "forceThunks" || (p.thunks || []).length))) continue;
       if (!canAfford(p, d.activateCost || 0, null)) continue;
+      const promo = (d.effects || []).find((e) => e.on === "activate" && e.do === "promote");
+      if (promo) {
+        acts.push(...promoteOptions(p, g, d, promo));
+        continue;
+      }
       acts.push(...withTargets(s, pi, d, { type: "activate", uid: g.uid }, true, "activate"));
     }
     return acts;
@@ -1926,6 +1957,12 @@ ${def.text}`;
     if (d.activateNoTap) g.activatedTurn = s.turn;
     else g.tapped = true;
     log(s, `${p.name} activates ${d.name}.`);
+    const promo = (d.effects || []).find((e) => e.on === "activate" && e.do === "promote");
+    if (promo) {
+      doPromote(s, pi, d, promo, a);
+      consumeUse(s, pi, g);
+      return;
+    }
     runTwiceIfDoubled(s, pi, g, effectsOn(d, "activate"), a.target);
     consumeUse(s, pi, g);
   }
@@ -3215,7 +3252,7 @@ ${def.text}`;
       if (!d) return "Surprise me";
       const L2 = getDef(d.legend);
       const v = validateDeck(d);
-      return `${L2.colors.join(" / ")} \xB7 avg cost ${v.stats.avgCost.toFixed(1)} \xB7 ${d.premade ? "premade" : "custom"}${d.fillers ? ` \xB7 ${d.fillers} filler` : ""}`;
+      return `${L2.colors.join(" / ")} \xB7 avg cost ${v.stats.avgCost.toFixed(1)} \xB7 ${d.premade ? "premade" : "custom"}`;
     };
     const option = (who, d, locked = false) => {
       const id = d ? d.id : "random";

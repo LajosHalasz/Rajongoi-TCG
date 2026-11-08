@@ -800,5 +800,65 @@
     "do": "forceThunks"
    }
   ]
+ },
+ "TKN-001": {
+  "tribes": [
+   "Chess"
+  ],
+  "chessRank": 1
+ },
+ "TKN-002": {
+  "tribes": [
+   "Chess"
+  ],
+  "chessRank": 1
+ },
+ "OGN-L-kozi": {
+  "keywords": [],
+  "activateCost": 1,
+  "modes": [
+   {
+    "name": "Knight (3, Party Breaker)",
+    "to": "TKN-008"
+   },
+   {
+    "name": "Bishop (3, Unstoppable)",
+    "to": "TKN-009"
+   },
+   {
+    "name": "Rook (4, Defensive)",
+    "to": "TKN-010"
+   },
+   {
+    "name": "Queen (6, Breaker)",
+    "to": "TKN-011"
+   },
+   {
+    "name": "King (3, Indestructible)",
+    "to": "TKN-012"
+   }
+  ],
+  "effects": [
+   {
+    "on": "activate",
+    "do": "promote",
+    "pawn": "TKN-007",
+    "promote": {
+     "1": [
+      "TKN-008",
+      "TKN-009",
+      "TKN-010"
+     ],
+     "2": [
+      "TKN-011",
+      "TKN-012"
+     ]
+    }
+   }
+  ],
+  "championNames": [
+   "Aron Yeager",
+   "Kozeke Yeager"
+  ]
  }
 }

@@ -20,20 +20,12 @@
       "OGN-076": 1,
       "OGN-077": 1,
       "OGN-062": 1,
-      "OGN-063": 1,
-      "BAS-003": 1,
-      "BAS-004": 1,
-      "BAS-005": 1,
-      "BAS-009": 1,
-      "BAS-010": 1,
-      "BAS-011": 1,
-      "BAS-013": 1
+      "OGN-063": 1
     },
     "runes": {
       "Chaos": 6,
       "Order": 6
     },
-    "fillers": 7,
     "runeArt": {
       "Chaos": "RUN-Chaos-anna",
       "Order": "RUN-Order-anna"
@@ -74,8 +66,7 @@
     "runes": {
       "Mind": 6,
       "Fury": 6
-    },
-    "fillers": 0
+    }
   },
   {
     "id": "ogn-bea",
@@ -111,7 +102,6 @@
       "Calm": 6,
       "Chaos": 6
     },
-    "fillers": 0,
     "comingSoon": true
   },
   {
@@ -148,7 +138,6 @@
       "Order": 6,
       "Mind": 6
     },
-    "fillers": 0,
     "runeArt": {
       "Mind": "RUN-Mind-chris"
     },
@@ -179,16 +168,12 @@
       "OGN-060": 1,
       "OGN-055": 1,
       "OGN-056": 1,
-      "OGN-057": 1,
-      "BAS-001": 1,
-      "BAS-009": 1,
-      "BAS-012": 1
+      "OGN-057": 1
     },
     "runes": {
       "Mind": 6,
       "Calm": 6
     },
-    "fillers": 3,
     "comingSoon": true
   },
   {
@@ -212,20 +197,12 @@
       "OGN-080": 1,
       "OGN-081": 1,
       "OGN-095": 1,
-      "OGN-141": 1,
-      "BAS-003": 1,
-      "BAS-009": 1,
-      "BAS-001": 1,
-      "BAS-004": 1,
-      "BAS-010": 1,
-      "BAS-013": 1,
-      "BAS-015": 1
+      "OGN-141": 1
     },
     "runes": {
       "Mind": 6,
       "Chaos": 6
     },
-    "fillers": 7,
     "comingSoon": true
   },
   {
@@ -262,7 +239,6 @@
       "Chaos": 6,
       "Fury": 6
     },
-    "fillers": 0,
     "comingSoon": true
   },
   {
@@ -298,8 +274,7 @@
     "runes": {
       "Fury": 6,
       "Order": 6
-    },
-    "fillers": 0
+    }
   },
   {
     "id": "ogn-matyi",
@@ -319,23 +294,12 @@
       "OGN-133": 1,
       "OGN-134": 1,
       "OGN-136": 1,
-      "OGN-131": 1,
-      "BAS-009": 1,
-      "BAS-001": 1,
-      "BAS-003": 1,
-      "BAS-010": 1,
-      "BAS-011": 1,
-      "BAS-012": 1,
-      "BAS-013": 1,
-      "BAS-014": 1,
-      "BAS-015": 1,
-      "BAS-016": 1
+      "OGN-131": 1
     },
     "runes": {
       "Body": 6,
       "Chaos": 6
     },
-    "fillers": 10,
     "comingSoon": true
   },
   {
@@ -354,25 +318,12 @@
       "OGN-148": 1,
       "OGN-149": 1,
       "OGN-150": 1,
-      "OGN-137": 1,
-      "BAS-001": 1,
-      "BAS-003": 1,
-      "BAS-009": 1,
-      "BAS-002": 1,
-      "BAS-004": 1,
-      "BAS-010": 1,
-      "BAS-011": 1,
-      "BAS-012": 1,
-      "BAS-013": 1,
-      "BAS-014": 1,
-      "BAS-015": 1,
-      "BAS-016": 1
+      "OGN-137": 1
     },
     "runes": {
       "Body": 6,
       "Mind": 6
     },
-    "fillers": 12,
     "comingSoon": true
   },
   {
@@ -398,18 +349,12 @@
       "OGN-089": 1,
       "OGN-090": 1,
       "OGN-091": 1,
-      "OGN-092": 1,
-      "BAS-006": 1,
-      "BAS-009": 1,
-      "BAS-012": 1,
-      "BAS-014": 1,
-      "BAS-015": 1
+      "OGN-092": 1
     },
     "runes": {
       "Calm": 6,
       "Fury": 6
     },
-    "fillers": 5,
     "comingSoon": true
   },
   {
@@ -446,7 +391,6 @@
       "Body": 6,
       "Calm": 6
     },
-    "fillers": 0,
     "comingSoon": true
   }
 ]

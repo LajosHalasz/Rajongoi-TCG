@@ -57,25 +57,6 @@ CARD_LOGIC = {
     'DND-021': {'effects': [{'do': 'destroy', 'target': 'allUnits', 'filter': {'notColor': 'Chaos'}}]},   # Ballom
 }
 
-# Neutral filler cards that complete decks which have fewer than 20 cards yet.
-FILLERS = [
-    ('Rift Recruit', 'unit', 1, 2, [], []),
-    ('Rift Spark', 'spell', 1, 0, ['Action'], [{'do': 'destroy', 'target': 'enemyUnit', 'maxPower': 1}]),
-    ('Shield Bearer', 'unit', 2, 2, ['Defensive'], []),
-    ('Rift Scout', 'unit', 2, 3, [], []),
-    ('Quick Study', 'spell', 2, 0, [], [{'do': 'draw', 'amount': 1}, {'do': 'channel', 'amount': 1, 'tapped': True}]),
-    ('Rift Brawler', 'unit', 3, 4, [], []),
-    ('Rift Guard', 'unit', 3, 3, ['Defensive'], []),
-    ('Rift Bolt', 'spell', 3, 0, ['Action'], [{'do': 'destroy', 'target': 'enemyUnit', 'maxPower': 3}]),
-    ('Rift Veteran', 'unit', 4, 5, [], []),
-    ('Rift Ward', 'spell', 4, 0, ['Reaction'], [{'do': 'bounce', 'target': 'enemyUnit'}]),
-    ('Siege Golem', 'unit', 5, 6, ['Breaker'], []),
-    ('Rift Titan', 'unit', 6, 7, ['Breaker'], []),
-    ('Rift Colossus', 'unit', 7, 8, ['Defensive', 'Breaker'], []),
-    ('Cataclysm', 'spell', 8, 0, [], [{'do': 'destroy', 'target': 'allEnemyUnits', 'maxPower': 4}]),
-    ('Rift Leviathan', 'unit', 9, 10, ['Breaker'], []),
-    ('Rift Dragon', 'unit', 10, 12, ['Haste', 'Breaker'], []),
-]
 def slug(x):
     import unicodedata
     x = ''.join(ch for ch in unicodedata.normalize('NFD', x) if not unicodedata.combining(ch))
@@ -243,16 +224,6 @@ def convert(row, set_code):
     return card
 
 
-def make_fillers():
-    out = []
-    for i, (name, kind, cost, power, kws, effs) in enumerate(FILLERS, 1):
-        out.append({'id': f'BAS-{i:03d}', 'set': 'BAS', 'number': f'{i:03d}', 'setInfo': f'BAS {i:03d}',
-                    'name': name, 'type': kind, 'colors': [], 'cost': cost, 'power': power, 'recycle': 0,
-                    'keywords': kws, 'effects': effs, 'tribes': ['Filler'], 'text': '', 'flavor': '',
-                    'placeholder': True, 'filler': True})
-    return out
-
-
 def base(name):
     return re.split(r'[|,]', name)[0].strip()
 
@@ -332,7 +303,7 @@ def renumber_collisions(cards, imported):
         by_id[new_id] = db
 
 
-def build_decks(cards, fillers, imported, overrides):
+def build_decks(cards, imported, overrides):
     imp_by_id = {c['id']: c for c in imported}
     view = []
     for c in cards:
@@ -393,17 +364,8 @@ def build_decks(cards, fillers, imported, overrides):
         if len(picked) > 20:
             dropped += [c['name'] for c in picked[20:]]
             picked = picked[:20]
-        # fill up following the Assembly Guide curve
-        curve = Counter(min(c['cost'], 10) for c in picked)
-        pool = list(fillers)
+        # no filler cards: a deck with fewer than 20 of its own cards simply stays short (and locked)
         added = 0
-        while len(picked) < 20 and pool:
-            need = sorted(pool, key=lambda f: (curve[f['cost']] - GUIDE_CURVE.get(f['cost'], 0), f['cost']))
-            f = need[0]
-            pool.remove(f)
-            picked.append(f)
-            curve[f['cost']] += 1
-            added += 1
         champ_slot = next((c for c in ch if ok_champ(c)), None)
         runes = {lcolors[0]: 12} if len(lcolors) == 1 else {lcolors[0]: 6, lcolors[1]: 6}
         rune_art = {}
@@ -415,7 +377,7 @@ def build_decks(cards, fillers, imported, overrides):
             'id': f'ogn-{re.sub(r"[^a-z0-9]+", "-", owner.lower())}', 'name': f"{owner}'s deck", 'premade': True,
             'owner': owner, 'legend': legend['id'], 'champion': champ_slot['id'] if champ_slot else None,
             'signature': sg[0]['id'] if sg else None, 'cards': {c['id']: 1 for c in picked}, 'runes': runes,
-            'fillers': added, **({'runeArt': rune_art} if rune_art else {}),
+            **({'runeArt': rune_art} if rune_art else {}),
             **({} if owner in PLAYABLE_OWNERS else {'comingSoon': True}),
         })
         report.append(f"  {owner:8s} {'/'.join(lcolors):12s} own {len(own):2d}  used {len(picked) - added:2d}  fillers {added:2d}"
@@ -434,13 +396,12 @@ def main():
         rows = read_table(db, t)
         cards += [convert(r, code) for r in rows if to_int(r['ID']) is not None and r['Name'].strip()]
         print(f'{t!r}: {len(rows)} rows -> set {code}')
-    fillers = make_fillers()
     imported = load_json('imported.json', [])
     overrides = {k: v for k, v in load_json('effects.json', {}).items() if not k.startswith('_')}
     renumber_collisions(cards, imported)
-    legends, decks, report = build_decks(cards, fillers, imported, overrides)
+    legends, decks, report = build_decks(cards, imported, overrides)
     # tokens come from data/imported.json (riftcardmaker exports)
-    all_cards = sorted(cards + legends + fillers, key=lambda c: (c['set'], c['number']))
+    all_cards = sorted(cards + legends, key=lambda c: (c['set'], c['number']))
     with open(os.path.join(ROOT, 'data', 'cards.json'), 'w') as f:
         json.dump(all_cards, f, ensure_ascii=False, indent=1)
     with open(os.path.join(ROOT, 'data', 'decks.json'), 'w') as f:
@@ -448,7 +409,7 @@ def main():
     prov = sum(1 for c in cards if c.get('provisional'))
     peff = sum(1 for c in cards if c.get('provisionalEffect'))
     print(f'{len(cards)} cards ({prov} with provisional numbers, {peff} with provisional effects), '
-          f'{len(legends)} placeholder Legends, {len(fillers)} fillers, {len(decks)} decks:')
+          f'{len(legends)} placeholder Legends, {len(decks)} decks:')
     print('\n'.join(report))
     subprocess.run(['node', os.path.join(ROOT, 'tools', 'build-data.mjs')], check=True)
 

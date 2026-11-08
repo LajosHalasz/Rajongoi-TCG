@@ -28,6 +28,34 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Aspect of Foundation: [1][T] creates a Pawn, then promotes Pawn -> Knight/Bishop/Rook -> Queen/King'() {
+    const kozi = decks.find(d => d.id === 'ogn-kozi');
+    const s = createGame({ decks: [kozi, deck], ai: [false, false], seed: 7, firstPlayer: 0 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const p = s.players[0]; p.hand = []; p.battle = [];
+    p.mana = Array.from({ length: 6 }, (_, i) => ({ uid: 'k' + i, color: i % 2 ? 'Mind' : 'Chaos', tapped: false }));
+    const legendActs = () => legalActions(s, 0).filter(a => a.type === 'activate' && a.uid === p.legend.uid);
+    const L = getDef(p.legend.id);
+    // no Chess token: create a 1-Might Pawn
+    assert.equal(legendActs().length, 1); step(s, legendActs()[0]);
+    assert.equal(p.battle.length, 1); assert.equal(getDef(p.battle[0].id).name, 'Pawn'); assert(p.battle[0].sick);
+    assert(p.legend.tapped);
+    // next turn: Pawn -> Knight / Bishop / Rook
+    p.legend.tapped = false;
+    const opts = legendActs().map(a => L.modes[a.modes[0]].to);
+    assert.deepEqual(opts.sort(), ['TKN-008', 'TKN-009', 'TKN-010']);
+    step(s, legendActs().find(a => L.modes[a.modes[0]].to === 'TKN-010'));
+    assert.equal(getDef(p.battle[0].id).name, 'Rook'); assert(p.battle[0].sick, 'summoning sickness applied');
+    // Rook -> Queen / King; royals can't promote further
+    p.legend.tapped = false;
+    step(s, legendActs().find(a => L.modes[a.modes[0]].to === 'TKN-011'));
+    assert.equal(getDef(p.battle[0].id).name, 'Queen');
+    p.legend.tapped = false;
+    assert.equal(legendActs().length, 0, 'a Queen cannot be promoted, and a Chess token exists so no new Pawn');
+    // the Pawns from "Make the first move" are Chess tokens too
+    const wp = card(s, 0, 'TKN-002', 'battle');
+    assert(legendActs().some(a => a.target === wp.uid));
+  },
   'Aspect of Excessive Detail: Lazy Evaluation stores spells as Thunks, Force resolves them (+1 card for exactly 3)'() {
     const domi = decks.find(d => d.id === 'ogn-domi');
     const s = createGame({ decks: [domi, deck], ai: [false, false], seed: 7, firstPlayer: 0 });

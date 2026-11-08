@@ -11,7 +11,8 @@ for (const d of decks) {
   const v = validateDeck(d);
   console.log(`${d.name}: avg ${v.stats.avgCost.toFixed(2)} | U${v.stats.units} C${v.stats.champions} S${v.stats.spells} G${v.stats.gears} Sig${v.stats.signatures}` +
     (v.errors.length ? `\n  ERRORS: ${v.errors.join(' | ')}` : '') + (v.warnings.length ? `\n  warn: ${v.warnings.join(' | ')}` : ''));
-  if (v.errors.length) fail++;
+  // locked ("Coming soon") decks may still be short — only playable decks must be legal
+  if (v.errors.length && !d.comingSoon) fail++;
 }
 
 const GAMES = +(process.env.GAMES || 4);

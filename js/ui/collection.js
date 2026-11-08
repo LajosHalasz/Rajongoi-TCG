@@ -4,7 +4,7 @@ import { validateDeck } from '../engine/deck.js';
 import { cardHtml, cardDetailsHtml, esc } from './card.js';
 import { allDecks, customDecks, saveCustomDecks, findDeck, deckName } from '../data.js';
 
-const SET_NAMES = { OGN: 'OGN 2026-01', DND: 'DND — DLC', BAS: 'Fillers', TKN: 'Tokens', RUN: 'Runes' };
+const SET_NAMES = { OGN: 'OGN 2026-01', DND: 'DND — DLC', TKN: 'Tokens', RUN: 'Runes' };
 const TYPE_ORDER = ['legend', 'champion', 'unit', 'spell', 'gear', 'signature', 'token', 'rune'];
 const sortCards = (a, b) => a.set.localeCompare(b.set) || String(a.number).localeCompare(String(b.number));
 
@@ -52,7 +52,7 @@ const SORTS = {
 
 export function renderCollection(app, set) {
   const cards = allCards();
-  const ORDER = ['OGN', 'DND', 'TKN', 'RUN', 'BAS'];
+  const ORDER = ['OGN', 'DND', 'TKN', 'RUN'];
   const rank = (x) => (ORDER.indexOf(x) + 1 || 50);
   const sets = [...new Set(cards.map(c => c.set))].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   if (!sets.includes(set)) set = sets[0];
