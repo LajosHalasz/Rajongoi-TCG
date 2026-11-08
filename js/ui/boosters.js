@@ -16,8 +16,8 @@ const savePulls = (p) => { try { localStorage.setItem(LS_PULLS, JSON.stringify(p
 
 let state = { set: null, pack: null, revealed: new Set(), opened: 0, busy: false };
 
-// the reveal effect follows the card's real rarity: a Rare Champion glows gold, Epics (Signatures, full-art) go rainbow
-const tier = (e) => (e.slot === 'hit' && rarityOf(e.def) === 'epic' ? 'hit' : rarityOf(e.def));
+// the reveal effect follows the card's real rarity: Rares glow gold, Epics go rainbow
+const tier = (e) => rarityOf(e.def);
 
 export function renderBoosters(app) {
   const sets = boosterSets();
@@ -50,10 +50,9 @@ function drawShop(app, sets) {
       <p class="muted">Click the pack to tear it open.</p>
     </div>
     <div class="booster-odds muted">
-      Each pack: ${PACK_RULES.commons} Commons · ${PACK_RULES.uncommons} Uncommons · 1 Rune or Token ·
-      1 Champion or Signature in ~1 of ${Math.round(1 / PACK_RULES.hitChance)} packs (otherwise a Rare — Legends are Rares too).
-      <br>✨ <b>God pack</b> in ~1 of ${Math.round(1 / PACK_RULES.godChance)} packs: no Commons, much better Rare / Epic odds and a guaranteed Champion or Signature.
-      <br>Pool: ${P.commons.length} commons, ${P.uncommons.length} uncommons, ${P.rares.length} rares (incl. ${P.legends.length} legends), ${P.epics.length} epics, ${P.hits.length} champions/signatures.
+      Each pack: ${PACK_RULES.commons} Commons · 1 Rune or Token · ${PACK_RULES.uncommons} Uncommons · 1 Rare (Legends and Champions are Rares) · 1 Epic (Signatures, full-art cards, EPIC: The Musical).
+      <br>✨ <b>God pack</b> in ~1 of ${Math.round(1 / PACK_RULES.godChance)} packs: no Commons and much better Rare / Epic odds in every slot.
+      <br>Pool: ${P.commons.length} commons, ${P.uncommons.length} uncommons, ${P.rares.length} rares (incl. ${P.legends.length} legends), ${P.epics.length} epics.
       ${state.opened ? `<br>Packs opened this session: <b>${state.opened}</b>` : ''}
     </div>
   </div>`;

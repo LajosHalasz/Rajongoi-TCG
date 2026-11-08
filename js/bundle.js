@@ -4293,11 +4293,10 @@ ${def.text}`;
   // js/engine/booster.js
   var PACK_RULES = {
     commons: 10,
-    uncommons: 3,
-    hitChance: 1 / 8,
+    uncommons: 2,
     godChance: 1 / 300,
     // per-slot odds inside a god pack
-    god: { common: { uncommon: 0.55, rare: 0.3, epic: 0.15 }, uncommon: { rare: 0.6, epic: 0.4 } }
+    god: { common: { uncommon: 0.55, rare: 0.3, epic: 0.15 }, uncommon: { rare: 0.6, epic: 0.4 }, rare: { rare: 0.5, epic: 0.5 } }
   };
   var playable = (c) => ["unit", "spell", "gear"].includes(c.type);
   function boosterSets() {
@@ -4308,16 +4307,14 @@ ${def.text}`;
   }
   function setPools(set) {
     const cards = allCards().filter((c) => c.set === set && !c.filler && !(c.type === "legend" && c.placeholder));
-    const of = (r) => cards.filter((c) => playable(c) && rarityOf(c) === r);
+    const collectible = (c) => playable(c) || ["legend", "champion", "signature"].includes(c.type);
+    const of = (r) => cards.filter((c) => collectible(c) && rarityOf(c) === r);
+    const fullArtRunes = allCards().filter((c) => c.type === "rune" && c.fullArtRune && String(c.setInfo || "").toUpperCase().startsWith(set));
     return {
       commons: of("common"),
       uncommons: of("uncommon"),
-      rares: cards.filter((c) => (playable(c) || c.type === "legend") && ["rare", "epic"].includes(rarityOf(c))),
-      epics: cards.filter((c) => playable(c) && rarityOf(c) === "epic"),
-      hits: [
-        ...cards.filter((c) => c.type === "champion" || c.type === "signature"),
-        ...allCards().filter((c) => c.type === "rune" && c.fullArtRune && String(c.setInfo || "").toUpperCase().startsWith(set))
-      ],
+      rares: of("rare"),
+      epics: [...of("epic"), ...fullArtRunes],
       legends: cards.filter((c) => c.type === "legend"),
       // part of the Rare pool, listed for the odds text
       extras: allCards().filter((c) => c.type === "rune" && !c.fullArtRune || c.type === "token")
@@ -4330,25 +4327,25 @@ ${def.text}`;
       return pool[Math.floor(rand2() * pool.length)];
     };
     const god = rand2() < PACK_RULES.godChance;
+    const fallback = { common: [P.commons, P.uncommons], uncommon: [P.uncommons, P.commons], rare: [P.rares, P.uncommons, P.commons], epic: [P.epics, P.rares, P.uncommons] };
+    const slot = (rar) => {
+      const def = pick2(...fallback[rar]);
+      return { def, slot: rar };
+    };
     const upgraded = (odds) => {
       let r = rand2();
-      for (const [rar, p] of Object.entries(odds)) {
-        if ((r -= p) < 0) {
-          const def = pick2(P[rar + "s"], P.rares, P.uncommons, P.commons);
-          return { def, slot: def ? rarityOf(def) : rar };
-        }
-      }
-      return { def: pick2(P.rares, P.uncommons), slot: "rare" };
+      for (const [rar, p] of Object.entries(odds)) if ((r -= p) < 0) return slot(rar);
+      return slot(Object.keys(odds).pop());
     };
     const out = [];
-    for (let i = 0; i < PACK_RULES.commons; i++) out.push(god ? upgraded(PACK_RULES.god.common) : { def: pick2(P.commons, P.uncommons), slot: "common" });
+    for (let i = 0; i < PACK_RULES.commons; i++) out.push(god ? upgraded(PACK_RULES.god.common) : slot("common"));
     out.push({ def: pick2(P.extras, P.commons), slot: "extra" });
-    for (let i = 0; i < PACK_RULES.uncommons; i++) out.push(god ? upgraded(PACK_RULES.god.uncommon) : { def: pick2(P.uncommons, P.commons), slot: "uncommon" });
-    const hit = P.hits.length && (god || rand2() < PACK_RULES.hitChance);
-    out.push(hit ? { def: pick2(P.hits), slot: "hit" } : { def: pick2(P.rares, P.uncommons, P.commons), slot: "rare" });
+    for (let i = 0; i < PACK_RULES.uncommons; i++) out.push(god ? upgraded(PACK_RULES.god.uncommon) : slot("uncommon"));
+    out.push(god ? upgraded(PACK_RULES.god.rare) : slot("rare"));
+    out.push(slot("epic"));
     const res = out.filter((e) => e.def);
     if (god) {
-      const rank = (e) => e.slot === "hit" ? 9 : e.slot === "extra" ? -1 : ["common", "uncommon", "rare", "epic"].indexOf(rarityOf(e.def));
+      const rank = (e) => e.slot === "extra" ? -1 : ["common", "uncommon", "rare", "epic"].indexOf(rarityOf(e.def));
       res.sort((a, b) => rank(a) - rank(b));
       res.god = true;
     }
@@ -4375,7 +4372,7 @@ ${def.text}`;
     }
   };
   var state = { set: null, pack: null, revealed: /* @__PURE__ */ new Set(), opened: 0, busy: false };
-  var tier = (e) => e.slot === "hit" && rarityOf(e.def) === "epic" ? "hit" : rarityOf(e.def);
+  var tier = (e) => rarityOf(e.def);
   function renderBoosters(app2) {
     const sets = boosterSets();
     if (!state.set || !sets.includes(state.set)) state.set = sets[0];
@@ -4405,10 +4402,9 @@ ${def.text}`;
       <p class="muted">Click the pack to tear it open.</p>
     </div>
     <div class="booster-odds muted">
-      Each pack: ${PACK_RULES.commons} Commons \xB7 ${PACK_RULES.uncommons} Uncommons \xB7 1 Rune or Token \xB7
-      1 Champion or Signature in ~1 of ${Math.round(1 / PACK_RULES.hitChance)} packs (otherwise a Rare \u2014 Legends are Rares too).
-      <br>\u2728 <b>God pack</b> in ~1 of ${Math.round(1 / PACK_RULES.godChance)} packs: no Commons, much better Rare / Epic odds and a guaranteed Champion or Signature.
-      <br>Pool: ${P.commons.length} commons, ${P.uncommons.length} uncommons, ${P.rares.length} rares (incl. ${P.legends.length} legends), ${P.epics.length} epics, ${P.hits.length} champions/signatures.
+      Each pack: ${PACK_RULES.commons} Commons \xB7 1 Rune or Token \xB7 ${PACK_RULES.uncommons} Uncommons \xB7 1 Rare (Legends and Champions are Rares) \xB7 1 Epic (Signatures, full-art cards, EPIC: The Musical).
+      <br>\u2728 <b>God pack</b> in ~1 of ${Math.round(1 / PACK_RULES.godChance)} packs: no Commons and much better Rare / Epic odds in every slot.
+      <br>Pool: ${P.commons.length} commons, ${P.uncommons.length} uncommons, ${P.rares.length} rares (incl. ${P.legends.length} legends), ${P.epics.length} epics.
       ${state.opened ? `<br>Packs opened this session: <b>${state.opened}</b>` : ""}
     </div>
   </div>`;
