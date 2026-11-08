@@ -126,6 +126,7 @@
     };
     def.colors = (def.colors || []).map(cap);
     def.type = (def.type || "unit").toLowerCase();
+    if (def.type === "legend") def.rarity = "epic";
     if (def.type === "signature" && !def.sigType) def.sigType = "spell";
     def.recycle = def.recycle || 0;
     def.text = def.text && def.text.trim() ? def.text : describe(def);
@@ -4770,7 +4771,10 @@ ${def.text}`;
       def.sigType = st2.sigType;
       if (st2.legend) def.legend = st2.legend;
     }
-    if (st2.type === "legend") def.owners = [st2.subname.trim() || st2.name.trim()];
+    if (st2.type === "legend") {
+      def.owners = [st2.subname.trim() || st2.name.trim()];
+      def.rarity = "epic";
+    }
     if (st2.type === "token") def.token = true;
     if (+st2.uses > 0) def.uses = +st2.uses;
     if (effects.some((e) => e.on === "activate") && +st2.activateCost > 0) def.activateCost = +st2.activateCost;

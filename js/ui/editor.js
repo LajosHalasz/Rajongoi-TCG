@@ -125,7 +125,7 @@ export function buildDef(st) {
   };
   if (st.subname.trim()) def.subname = st.subname.trim();
   if (st.type === 'signature') { def.sigType = st.sigType; if (st.legend) def.legend = st.legend; }
-  if (st.type === 'legend') def.owners = [st.subname.trim() || st.name.trim()];
+  if (st.type === 'legend') { def.owners = [st.subname.trim() || st.name.trim()]; def.rarity = 'epic'; } // every Legend is Epic
   if (st.type === 'token') def.token = true;
   if (+st.uses > 0) def.uses = +st.uses;
   if (effects.some(e => e.on === 'activate') && +st.activateCost > 0) def.activateCost = +st.activateCost;
