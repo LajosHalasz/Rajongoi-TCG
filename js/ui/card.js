@@ -33,6 +33,20 @@ export function markup(text) {
   return h.split('\n').map(l => l.trim() ? `<p>${l}</p>` : '').join('');
 }
 
+// Domain (color) symbols — our own drawings, used the way riftcardmaker frames use the
+// domain marks: the Legend's two big runes, the Recycle pips and the footer icons.
+const DOMAIN_PATH = {
+  Fury: 'M16 3c1.5 5.5 8 8.5 8 15.5A8 8 0 0 1 8 18.5c0-4 2.2-6 3.6-8.4.6 2.4 1.8 3.8 3.2 4.4C15.6 11 14.8 7 16 3z',
+  Calm: 'M26 6C14 6 6 12 6 22c0 1.6.3 3 .8 4.2C9 18 14 13 21 10c-6 4.2-10.4 9.8-12.6 16.6C9.6 27.5 11 28 13 28c9 0 13-9 13-22z',
+  Mind: 'M2 16c3.8-6 8.6-9 14-9s10.2 3 14 9c-3.8 6-8.6 9-14 9S5.8 22 2 16zM16 10a6 6 0 1 0 0 12a6 6 0 1 0 0-12zM16 13a3 3 0 1 0 0 6a3 3 0 1 0 0-6z',
+  Body: 'M2 27L12 9l5 8 3-5 10 15z',
+  Chaos: 'M16 2l3 9 9-3-6 8 6 8-9-3-3 9-3-9-9 3 6-8-6-8 9 3z',
+  Order: 'M4 23l2-14 6 6 4-10 4 10 6-6 2 14zM4 25h24v3H4z',
+};
+export const domainSvg = (color) => (DOMAIN_PATH[color]
+  ? `<svg class="dom-svg" viewBox="0 0 32 32" aria-hidden="true"><path fill-rule="evenodd" d="${DOMAIN_PATH[color]}"/></svg>` : '');
+const domainIcon = (color, cls = '') => `<span class="dom ${cls}" style="--dc:${COLORS[color]?.hex || '#777'}" title="${esc(color)}">${domainSvg(color)}</span>`;
+
 const GLYPH = { unit: '⚔', champion: '★', spell: '✦', gear: '⚙', legend: '♛', signature: '✪', token: '♟', rune: '◆' };
 
 export function colorHex(def) {
@@ -77,8 +91,9 @@ export function typeLabel(def) {
 }
 
 const recyclePill = (def) => (def.recycle
-  ? `<div class="rpill" title="Recycle ${def.recycle} rune(s) of this color">${Array.from({ length: def.recycle }, () => '<span></span>').join('')}</div>`
+  ? `<div class="rpill" title="Recycle ${def.recycle} rune(s) of this color">${Array.from({ length: def.recycle }, () => `<span>${domainSvg(def.colors[0])}</span>`).join('')}</div>`
   : '');
+const footerDomains = (def) => (def.colors.length ? `<span class="ft-doms">${def.colors.map(c => domainIcon(c)).join('')}</span>` : '');
 
 function rulesHtml(def) {
   const rules = def.text ? markup(def.text)
@@ -127,12 +142,12 @@ export function cardHtml(def, opts = {}) {
   const cost = legend || def.type === 'rune' || def.type === 'token' ? ''
     : `<div class="cost ${prov.includes('cost') ? 'prov' : ''}" title="${prov.includes('cost') ? 'Provisional cost' : 'Cost'}"><span>${opts.cost ?? def.cost}</span></div>`;
   const domainsTopLeft = full && legend
-    ? `<div class="fa-domains">${def.colors.map(c => `<span style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join('')}</div>` : '';
+    ? `<div class="fa-domains">${def.colors.map(c => domainIcon(c, 'big')).join('')}</div>` : '';
   const mightHtml = showMight
     ? `<div class="might ${mightCls} ${prov.includes('might') ? 'prov' : ''}"><span class="might-ico"><i></i></span><span class="might-val">${might}</span></div>` : '';
   const typeline = full
     ? `<div class="typeline gold"><span>${[typeLabel(def), ...tribes].map(esc).join(' <i>◆</i> ')}</span></div>`
-    : `<div class="typeline"><span class="domains">${def.colors.map(c => `<span class="domain" style="background:${COLORS[c]?.hex}" title="${c}"></span>`).join('')}</span><span class="type-badge">${esc(typeLabel(def))}</span>${tribes.map(t => `<span class="tribe">${esc(t)}</span>`).join('')}</div>`;
+    : `<div class="typeline"><span class="domains">${def.colors.map(c => `<span class="domain" style="background:${COLORS[c]?.hex}" title="${c}">${domainSvg(c)}</span>`).join('')}</span><span class="type-badge">${esc(typeLabel(def))}</span>${tribes.map(t => `<span class="tribe">${esc(t)}</span>`).join('')}</div>`;
 
   return `<div class="${cls}" ${data} style="${style};${opts.style || ''}">
     ${art}
@@ -143,7 +158,7 @@ export function cardHtml(def, opts = {}) {
     ${typeline}
     <div class="namebar"><span class="name">${esc(def.name)}</span>${def.subname && !opts.mini ? `<small>${esc(def.subname)}</small>` : ''}</div>
     ${rulesHtml(def)}
-    <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || (def.owners || []).join(' / '))}</span></div>
+    <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span class="ft-right"><span>${esc(def.illustrator || (def.owners || []).join(' / '))}</span>${footerDomains(def)}</span></div>
     ${isFoil(def) ? '<div class="foil-layer"></div>' : ''}
     ${opts.badges || ''}
   </div>`;

@@ -903,3 +903,23 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 .ed-eff-text p { margin: 0; }
 .ed-special { background: #6d5bd0; color: #fff; font-size: 12px; font-weight: 800; padding: 1px 8px; border-radius: 99px; text-transform: uppercase; letter-spacing: .05em; }
 .ed-eff-special code { font-size: 13px; }
+
+/* ---------------------------------------------- domain symbols */
+.card .dom { display: inline-grid; place-items: center; border-radius: 50%; background: var(--dc); }
+.card .dom-svg { width: 66%; height: 66%; fill: #fff; filter: drop-shadow(0 .3cqw .4cqw rgba(0,0,0,.45)); }
+/* Legend: two big runes, gold ring with a dark outer ring that cuts the frame line */
+.card.fullart .fa-domains { gap: 1.2cqw; left: 3.6%; top: 2.6%; }
+.card.fullart .fa-domains .dom.big { width: 15.5cqw; height: 15.5cqw; border: 1.2cqw solid var(--frame);
+  box-shadow: 0 0 0 .9cqw rgba(10,8,6,.85), inset 0 0 0 .8cqw rgba(0,0,0,.25), inset 0 -2cqw 3cqw rgba(0,0,0,.35), 0 .8cqw 1.6cqw rgba(0,0,0,.55);
+  background: radial-gradient(circle at 38% 30%, color-mix(in srgb, var(--dc) 70%, #fff), var(--dc) 60%, color-mix(in srgb, var(--dc) 70%, #000)); }
+.card.fullart .fa-domains .dom.big .dom-svg { width: 62%; height: 62%; }
+.card.mini .fa-domains .dom.big { width: 22cqw; height: 22cqw; }
+/* Recycle pips carry the color's symbol */
+.card .rpill span { display: grid; place-items: center; width: 5.6cqw; height: 5.6cqw; border: none; background: none; }
+.card .rpill span .dom-svg { width: 100%; height: 100%; }
+/* footer: illustrator, then the card's color symbols */
+.card .footer .ft-right { display: inline-flex; align-items: center; gap: 1.4cqw; }
+.card .ft-doms { display: inline-flex; gap: .8cqw; }
+.card .ft-doms .dom { width: 4.4cqw; height: 4.4cqw; }
+.card .ft-doms .dom-svg { width: 72%; height: 72%; filter: none; }
+.card .typeline .domain { display: inline-grid; place-items: center; } .card .typeline .domain .dom-svg { width: 62%; height: 62%; }
