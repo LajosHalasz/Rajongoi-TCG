@@ -39,7 +39,7 @@ function quickResponse(s, pi) {
   if (pd.kind === 'block') return heuristicBlock(s, pi, acts);
   if (pd.kind === 'priority') return { type: 'pass' };
   if (pd.kind === 'shieldTrigger') return acts.find(a => a.use) || acts[0];
-  if (pd.kind === 'shieldify') return cheapestHand(s, pi, acts);
+  if (pd.kind === 'shieldify' || pd.kind === 'exploitSwap') return cheapestHand(s, pi, acts);
   if (pd.kind === 'pick') return bestPick(s, pd, acts);
   if (pd.kind === 'mulligan') return { type: 'mulligan', uids: [] };
   return acts[0];
@@ -116,7 +116,7 @@ export function chooseAction(s, pi) {
     const hand = s.players[pi].hand.map(c => ({ uid: c.uid, cost: getDef(c.id).cost })).sort((a, b) => b.cost - a.cost);
     return { type: 'mulligan', uids: hand.filter(h => h.cost >= 5).slice(0, 2).map(h => h.uid) };
   }
-  if (pd && pd.kind === 'shieldify') return cheapestHand(s, pi, acts);
+  if (pd && (pd.kind === 'shieldify' || pd.kind === 'exploitSwap')) return cheapestHand(s, pi, acts);
   if (pd && pd.kind === 'pick') return bestPick(s, pd, acts);
 
   // Baseline = doing nothing (pass / no block / skip / end phase).

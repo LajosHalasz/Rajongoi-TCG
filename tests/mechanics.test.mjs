@@ -28,6 +28,32 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Aspect of REDACTED: Side Channel turns a Shield face up, Exploit swaps it with a hand card (stolen Shield Trigger plays free)'() {
+    const laci = decks.find(d => d.id === 'ogn-laci');
+    const s = createGame({ decks: [laci, deck], ai: [false, false], seed: 7, firstPlayer: 0 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const p = s.players[0], op = s.players[1]; p.hand = []; p.battle = []; op.battle = [];
+    p.mana = Array.from({ length: 6 }, (_, i) => ({ uid: 'h' + i, color: i % 2 ? 'Fury' : 'Chaos', tapped: false }));
+    op.shields[0] = { uid: 'st', id: 'OGN-179', owner: 1, tapped: false, sick: false, mods: [], uses: null }; // Lui's Forge: Shield Trigger
+    const legendActs = () => legalActions(s, 0).filter(a => a.type === 'activate' && a.uid === p.legend.uid);
+    assert(!legendActs().some(a => a.modes[0] === 1), 'no Exploit without a face-up Shield / hand card');
+    step(s, legendActs().find(a => a.modes[0] === 0 && a.target === 'st'));       // Side Channel
+    assert(op.shields[0].faceUp, 'turned face up');
+    assert(p.legend.tapped);
+    p.legend.tapped = false;
+    const mine = card(s, 0, 'OGN-016');
+    const runes = p.mana.filter(r => !r.tapped).length;
+    step(s, legendActs().find(a => a.modes[0] === 1 && a.target === 'st'));       // Exploit (2)
+    assert.equal(p.mana.filter(r => !r.tapped).length, runes - 2, 'Exploit costs 2');
+    assert.equal(s.pending.kind, 'exploitSwap');
+    step(s, { type: 'exploitSwap', uid: mine.uid });
+    assert.equal(op.shields[0].uid, mine.uid, 'my card is planted');
+    assert.equal(op.shields[0].owner, 1); assert(!op.shields[0].faceUp, 'planted face down');
+    assert.equal(s.pending.kind, 'shieldTrigger', 'stolen Shield Trigger may be played');
+    step(s, legalActions(s, 0).find(a => a.use));
+    assert(p.gear.some(g => g.uid === 'st'), 'Lui\'s Forge played for free by Laci');
+    assert.equal(p.gear.find(g => g.uid === 'st').owner, 0);
+  },
   'Aspect of Foundation: [1][T] creates a Pawn, then promotes Pawn -> Knight/Bishop/Rook -> Queen/King'() {
     const kozi = decks.find(d => d.id === 'ogn-kozi');
     const s = createGame({ decks: [kozi, deck], ai: [false, false], seed: 7, firstPlayer: 0 });

@@ -1443,6 +1443,49 @@ ${def.text}`;
     p.battle.splice(i, 1, t2);
     log(s, `${nm(old)} is promoted to ${nm(t2)}!`);
   }
+  function hackOptions(s, p, g, d) {
+    const op = s.players[other(p.idx)];
+    const out = [];
+    for (const sh of op.shields) if (!sh.faceUp) out.push({ type: "activate", uid: g.uid, target: sh.uid, modes: [0] });
+    const cost = (d.effects.find((e) => e.do === "exploit") || {}).cost || 0;
+    if (p.hand.length && canAfford(p, cost, null)) {
+      for (const sh of op.shields) if (sh.faceUp) out.push({ type: "activate", uid: g.uid, target: sh.uid, modes: [1] });
+    }
+    return out;
+  }
+  function doHack(s, pi, d, a) {
+    const p = s.players[pi], op = s.players[other(pi)];
+    const sh = op.shields.find((x) => x.uid === a.target);
+    if (!sh) return;
+    if (a.modes?.[0] === 1) {
+      payCost(s, p, (d.effects.find((e) => e.do === "exploit") || {}).cost || 0, null);
+      log(s, `Exploit: ${p.name} swaps a card from hand with ${op.name}'s face-up ${nm(sh)}.`);
+      s.queue.push({ kind: "exploitSwap", player: pi, shield: sh.uid });
+      return;
+    }
+    sh.faceUp = true;
+    log(s, `Side Channel: ${op.name}'s Shield is turned face up \u2014 ${nm(sh)}.`);
+  }
+  function doExploitSwap(s, pi, a) {
+    const q = s.queue.shift();
+    const p = s.players[pi], op = s.players[other(pi)];
+    const i = op.shields.findIndex((x) => x.uid === q.shield);
+    const h = p.hand.findIndex((c) => c.uid === a.uid);
+    if (i >= 0 && h >= 0) {
+      const taken = op.shields[i];
+      const given = p.hand.splice(h, 1)[0];
+      given.owner = op.idx;
+      delete given.faceUp;
+      taken.owner = pi;
+      delete taken.faceUp;
+      op.shields[i] = given;
+      p.hand.push(taken);
+      log(s, `${p.name} takes ${nm(taken)} and plants a face-down card in ${op.name}'s Shield Zone.`);
+      emit(s, "exploit", { player: pi, id: taken.id, planted: given.id });
+      if ((getDef(taken.id).keywords || []).includes("Shield Trigger")) s.queue.unshift({ kind: "shieldTrigger", player: pi, uid: taken.uid });
+    }
+    nextFromQueue(s);
+  }
   function activateOptions(s, pi) {
     const p = s.players[pi];
     const acts = [];
@@ -1458,6 +1501,10 @@ ${def.text}`;
       const promo = (d.effects || []).find((e) => e.on === "activate" && e.do === "promote");
       if (promo) {
         acts.push(...promoteOptions(p, g, d, promo));
+        continue;
+      }
+      if ((d.effects || []).some((e) => e.on === "activate" && e.do === "sideChannel")) {
+        acts.push(...hackOptions(s, p, g, d));
         continue;
       }
       acts.push(...withTargets(s, pi, d, { type: "activate", uid: g.uid }, true, "activate"));
@@ -1509,6 +1556,8 @@ ${def.text}`;
         }
         case "shieldify":
           return me.hand.map((c) => ({ type: "shieldify", uid: c.uid }));
+        case "exploitSwap":
+          return me.hand.map((c) => ({ type: "exploitSwap", uid: c.uid }));
         case "pick":
           return subsets(pd.choosable, pd.max).filter((u) => u.length >= pd.min).map((uids) => ({ type: "pick", uids }));
       }
@@ -1571,6 +1620,9 @@ ${def.text}`;
       case "shieldify":
         doShieldify(s, pi, a);
         break;
+      case "exploitSwap":
+        doExploitSwap(s, pi, a);
+        break;
       case "pick":
         doPick(s, pi, a);
         break;
@@ -1590,7 +1642,7 @@ ${def.text}`;
       checkDeaths(s);
       checkLowShields(s);
       if (s.winner != null) continue;
-      if (s.queue.length && s.queue[0].kind === "shieldify" && !s.players[s.queue[0].player].hand.length) {
+      if (s.queue.length && ["shieldify", "exploitSwap"].includes(s.queue[0].kind) && !s.players[s.queue[0].player].hand.length) {
         s.queue.shift();
         if (s.pending && s.pending.kind === "shieldify") s.pending = s.queue[0] || takeSuspended(s);
         continue;
@@ -1608,7 +1660,7 @@ ${def.text}`;
       return;
     }
   }
-  var isQueueKind = (pd) => pd.kind === "shieldTrigger" || pd.kind === "shieldify" || pd.kind === "pick";
+  var isQueueKind = (pd) => pd.kind === "shieldTrigger" || pd.kind === "shieldify" || pd.kind === "pick" || pd.kind === "exploitSwap";
   function takeSuspended(s) {
     const x = s.suspended;
     s.suspended = null;
@@ -1961,6 +2013,10 @@ ${def.text}`;
     if (promo) {
       doPromote(s, pi, d, promo, a);
       consumeUse(s, pi, g);
+      return;
+    }
+    if ((d.effects || []).some((e) => e.on === "activate" && e.do === "sideChannel")) {
+      doHack(s, pi, d, a);
       return;
     }
     runTwiceIfDoubled(s, pi, g, effectsOn(d, "activate"), a.target);
@@ -2455,7 +2511,7 @@ ${def.text}`;
     if (pd.kind === "block") return heuristicBlock(s, pi, acts);
     if (pd.kind === "priority") return { type: "pass" };
     if (pd.kind === "shieldTrigger") return acts.find((a) => a.use) || acts[0];
-    if (pd.kind === "shieldify") return cheapestHand(s, pi, acts);
+    if (pd.kind === "shieldify" || pd.kind === "exploitSwap") return cheapestHand(s, pi, acts);
     if (pd.kind === "pick") return bestPick(s, pd, acts);
     if (pd.kind === "mulligan") return { type: "mulligan", uids: [] };
     return acts[0];
@@ -2535,7 +2591,7 @@ ${def.text}`;
       const hand = s.players[pi].hand.map((c) => ({ uid: c.uid, cost: getDef(c.id).cost })).sort((a, b) => b.cost - a.cost);
       return { type: "mulligan", uids: hand.filter((h) => h.cost >= 5).slice(0, 2).map((h) => h.uid) };
     }
-    if (pd && pd.kind === "shieldify") return cheapestHand(s, pi, acts);
+    if (pd && (pd.kind === "shieldify" || pd.kind === "exploitSwap")) return cheapestHand(s, pi, acts);
     if (pd && pd.kind === "pick") return bestPick(s, pd, acts);
     const baseline = pd ? pd.kind === "priority" ? { type: "pass" } : pd.kind === "block" ? { type: "noBlock" } : acts[0] : null;
     const baseState = baseline ? simulate(s, pi, baseline) : s;
@@ -3436,7 +3492,7 @@ ${def.text}`;
       return h;
     }
     if (pd?.kind === "block") legal.filter((a) => a.type === "block").forEach((a) => h.targets.add(a.uid));
-    else if (pd?.kind === "shieldify") legal.forEach((a) => h.targets.add(a.uid));
+    else if (pd?.kind === "shieldify" || pd?.kind === "exploitSwap") legal.forEach((a) => h.targets.add(a.uid));
     else if (pd?.kind !== "mulligan") {
       for (const a of legal) {
         if (a.type === "play" || a.type === "activate") h.playable.add(a.uid);
@@ -3498,7 +3554,7 @@ ${def.text}`;
     const free = p.mana.filter((r) => !r.tapped).length;
     const shieldsTarget = !mine && hl.zoneTargets.has("shield");
     const directTarget = !mine && hl.zoneTargets.has("player");
-    const shields = p.shields.length ? `<div class="shields">${p.shields.map(() => cardBackHtml({ size: "sm" })).join("")}</div><div class="stack-pile"><span class="count" style="position:static">${p.shields.length}</span></div>` : '<span class="muted" style="padding:0 8px">No shields!</span>';
+    const shields = p.shields.length ? `<div class="shields">${p.shields.map((sh) => sh.faceUp ? cardHtml(getDef(sh.id), { size: "sm", mini: true, uid: sh.uid, classes: `shield-faceup ${hl.targets.has(sh.uid) ? "targetable" : ""}` }) : cardBackHtml({ size: "sm", attrs: `data-uid="${sh.uid}"`, classes: hl.targets.has(sh.uid) ? "targetable" : "" })).join("")}</div><div class="stack-pile"><span class="count" style="position:static">${p.shields.length}</span></div>` : '<span class="muted" style="padding:0 8px">No shields!</span>';
     const gy = p.graveyard[p.graveyard.length - 1];
     return `<div class="zone-row">
     <div class="pinfo player-target zone-target ${s.active === p.idx ? "active" : ""} ${directTarget ? "targetable" : ""}" ${!mine ? 'data-zone="player"' : ""}>
@@ -3567,6 +3623,8 @@ ${def.text}`;
       buttons = btn("pass", s.stack.length ? "Pass (resolve)" : "Pass", "primary");
     } else if (pd?.kind === "shieldify") {
       prompt2 = `<b>Shieldify</b>: choose a card from your hand to put into your Shield Zone (${pd.remaining} left).`;
+    } else if (pd?.kind === "exploitSwap") {
+      prompt2 = `<b>Exploit</b>: choose a card from your hand to plant face down in the opponent's Shield Zone.`;
     } else if (pd?.kind === "shieldTrigger") {
       prompt2 = "Shield Trigger!";
     } else if (pd?.kind === "pick") {
@@ -4071,7 +4129,7 @@ ${def.text}`;
       const a = legal.find((x) => x.type === "block" && x.uid === uid);
       return a ? act(a) : null;
     }
-    if (pd?.kind === "shieldify") {
+    if (pd?.kind === "shieldify" || pd?.kind === "exploitSwap") {
       const a = legal.find((x) => x.uid === uid);
       return a ? act(a) : null;
     }

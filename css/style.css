@@ -966,3 +966,7 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 }
 .card .badge-thunks { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); z-index: 6; white-space: nowrap; padding: 1.2cqw 3.5cqw;
   background: #21705b; color: #fff; font-family: 'Lexend'; font-weight: 800; font-size: 8cqw; border-radius: 2cqw; box-shadow: 0 0 0 .8cqw rgba(255,255,255,.8), 0 1cqw 3cqw rgba(0,0,0,.5); }
+/* face-up Shields (Side Channel) and choosable single Shields */
+.shields .card.shield-faceup { box-shadow: 0 0 0 2px #930090, 0 0 14px rgba(147,0,144,.7); z-index: 1; }
+.shields .card.targetable { z-index: 3; cursor: pointer; }
+.shields .card.targetable:hover { transform: translateY(-14%); z-index: 4; }

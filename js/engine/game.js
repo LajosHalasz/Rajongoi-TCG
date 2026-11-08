@@ -366,6 +366,49 @@ function doPromote(s, pi, d, promo, a) {
   log(s, `${nm(old)} is promoted to ${nm(t)}!`);
 }
 
+// Aspect of REDACTED: "[T]: Side Channel — You may turn one of your opponent's face-down Shields.
+// [T][2]: Exploit — Swap a card face-down from your hand with one of your opponent's face-up Shields.
+// If you took a Shield Trigger, you may play it for free."   (d.modes: 0 = Side Channel, 1 = Exploit)
+function hackOptions(s, p, g, d) {
+  const op = s.players[other(p.idx)];
+  const out = [];
+  for (const sh of op.shields) if (!sh.faceUp) out.push({ type: 'activate', uid: g.uid, target: sh.uid, modes: [0] });
+  const cost = (d.effects.find(e => e.do === 'exploit') || {}).cost || 0;
+  if (p.hand.length && canAfford(p, cost, null)) for (const sh of op.shields) if (sh.faceUp) out.push({ type: 'activate', uid: g.uid, target: sh.uid, modes: [1] });
+  return out;
+}
+function doHack(s, pi, d, a) {
+  const p = s.players[pi], op = s.players[other(pi)];
+  const sh = op.shields.find(x => x.uid === a.target);
+  if (!sh) return;
+  if (a.modes?.[0] === 1) {
+    payCost(s, p, (d.effects.find(e => e.do === 'exploit') || {}).cost || 0, null);
+    log(s, `Exploit: ${p.name} swaps a card from hand with ${op.name}'s face-up ${nm(sh)}.`);
+    s.queue.push({ kind: 'exploitSwap', player: pi, shield: sh.uid });
+    return;
+  }
+  sh.faceUp = true;
+  log(s, `Side Channel: ${op.name}'s Shield is turned face up — ${nm(sh)}.`);
+}
+function doExploitSwap(s, pi, a) {
+  const q = s.queue.shift();
+  const p = s.players[pi], op = s.players[other(pi)];
+  const i = op.shields.findIndex(x => x.uid === q.shield);
+  const h = p.hand.findIndex(c => c.uid === a.uid);
+  if (i >= 0 && h >= 0) {
+    const taken = op.shields[i];
+    const given = p.hand.splice(h, 1)[0];
+    given.owner = op.idx; delete given.faceUp;
+    taken.owner = pi; delete taken.faceUp;
+    op.shields[i] = given;
+    p.hand.push(taken);
+    log(s, `${p.name} takes ${nm(taken)} and plants a face-down card in ${op.name}'s Shield Zone.`);
+    emit(s, 'exploit', { player: pi, id: taken.id, planted: given.id });
+    if ((getDef(taken.id).keywords || []).includes('Shield Trigger')) s.queue.unshift({ kind: 'shieldTrigger', player: pi, uid: taken.uid });
+  }
+  nextFromQueue(s);
+}
+
 function activateOptions(s, pi) {
   const p = s.players[pi];
   const acts = [];
@@ -380,6 +423,7 @@ function activateOptions(s, pi) {
     if (!canAfford(p, d.activateCost || 0, null)) continue;
     const promo = (d.effects || []).find(e => e.on === 'activate' && e.do === 'promote');
     if (promo) { acts.push(...promoteOptions(p, g, d, promo)); continue; }
+    if ((d.effects || []).some(e => e.on === 'activate' && e.do === 'sideChannel')) { acts.push(...hackOptions(s, p, g, d)); continue; }
     acts.push(...withTargets(s, pi, d, { type: 'activate', uid: g.uid }, true, 'activate'));
   }
   return acts;
@@ -432,6 +476,8 @@ export function legalActions(s, pi) {
       }
       case 'shieldify':
         return me.hand.map(c => ({ type: 'shieldify', uid: c.uid }));
+      case 'exploitSwap':
+        return me.hand.map(c => ({ type: 'exploitSwap', uid: c.uid }));
       case 'pick':
         return subsets(pd.choosable, pd.max).filter(u => u.length >= pd.min).map(uids => ({ type: 'pick', uids }));
     }
@@ -482,6 +528,7 @@ export function step(s, a) {
     case 'pass': doPass(s, pd); break;
     case 'shieldTrigger': doShieldTrigger(s, pi, a); break;
     case 'shieldify': doShieldify(s, pi, a); break;
+    case 'exploitSwap': doExploitSwap(s, pi, a); break;
     case 'pick': doPick(s, pi, a); break;
     case 'endPhase': doEndPhase(s); break;
   }
@@ -496,7 +543,7 @@ function settle(s) {
     checkLowShields(s);
     if (s.winner != null) continue;
     // auto-skip shieldify when hand is empty
-    if (s.queue.length && s.queue[0].kind === 'shieldify' && !s.players[s.queue[0].player].hand.length) {
+    if (s.queue.length && ['shieldify', 'exploitSwap'].includes(s.queue[0].kind) && !s.players[s.queue[0].player].hand.length) {
       s.queue.shift();
       if (s.pending && s.pending.kind === 'shieldify') s.pending = s.queue[0] || takeSuspended(s);
       continue;
@@ -514,7 +561,7 @@ function settle(s) {
     return;
   }
 }
-const isQueueKind = (pd) => pd.kind === 'shieldTrigger' || pd.kind === 'shieldify' || pd.kind === 'pick';
+const isQueueKind = (pd) => pd.kind === 'shieldTrigger' || pd.kind === 'shieldify' || pd.kind === 'pick' || pd.kind === 'exploitSwap';
 function takeSuspended(s) { const x = s.suspended; s.suspended = null; return x; }
 function nextFromQueue(s) { s.pending = s.queue.length ? s.queue[0] : takeSuspended(s); }
 
@@ -838,6 +885,7 @@ function doActivate(s, pi, a) {
   log(s, `${p.name} activates ${d.name}.`);
   const promo = (d.effects || []).find(e => e.on === 'activate' && e.do === 'promote');
   if (promo) { doPromote(s, pi, d, promo, a); consumeUse(s, pi, g); return; }
+  if ((d.effects || []).some(e => e.on === 'activate' && e.do === 'sideChannel')) { doHack(s, pi, d, a); return; }
   runTwiceIfDoubled(s, pi, g, effectsOn(d, 'activate'), a.target);
   consumeUse(s, pi, g);
 }

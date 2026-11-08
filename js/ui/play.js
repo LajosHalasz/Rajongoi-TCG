@@ -234,7 +234,7 @@ function highlights(s, legal, ui) {
     return h;
   }
   if (pd?.kind === 'block') legal.filter(a => a.type === 'block').forEach(a => h.targets.add(a.uid));
-  else if (pd?.kind === 'shieldify') legal.forEach(a => h.targets.add(a.uid));
+  else if (pd?.kind === 'shieldify' || pd?.kind === 'exploitSwap') legal.forEach(a => h.targets.add(a.uid));
   else if (pd?.kind !== 'mulligan') {
     for (const a of legal) {
       if (a.type === 'play' || a.type === 'activate') h.playable.add(a.uid);
@@ -293,7 +293,9 @@ function playerRow(s, p, mine, hl) {
   const shieldsTarget = !mine && hl.zoneTargets.has('shield');
   const directTarget = !mine && hl.zoneTargets.has('player');
   const shields = p.shields.length
-    ? `<div class="shields">${p.shields.map(() => cardBackHtml({ size: 'sm' })).join('')}</div><div class="stack-pile"><span class="count" style="position:static">${p.shields.length}</span></div>`
+    ? `<div class="shields">${p.shields.map(sh => (sh.faceUp
+        ? cardHtml(getDef(sh.id), { size: 'sm', mini: true, uid: sh.uid, classes: `shield-faceup ${hl.targets.has(sh.uid) ? 'targetable' : ''}` })
+        : cardBackHtml({ size: 'sm', attrs: `data-uid="${sh.uid}"`, classes: hl.targets.has(sh.uid) ? 'targetable' : '' }))).join('')}</div><div class="stack-pile"><span class="count" style="position:static">${p.shields.length}</span></div>`
     : '<span class="muted" style="padding:0 8px">No shields!</span>';
   const gy = p.graveyard[p.graveyard.length - 1];
   return `<div class="zone-row">
@@ -366,6 +368,8 @@ function midbar(s, legal, ui) {
     buttons = btn('pass', s.stack.length ? 'Pass (resolve)' : 'Pass', 'primary');
   } else if (pd?.kind === 'shieldify') {
     prompt = `<b>Shieldify</b>: choose a card from your hand to put into your Shield Zone (${pd.remaining} left).`;
+  } else if (pd?.kind === 'exploitSwap') {
+    prompt = `<b>Exploit</b>: choose a card from your hand to plant face down in the opponent's Shield Zone.`;
   } else if (pd?.kind === 'shieldTrigger') {
     prompt = 'Shield Trigger!';
   } else if (pd?.kind === 'pick') {
@@ -854,7 +858,7 @@ function onClick(e) {
     return render();
   }
   if (pd?.kind === 'block') { const a = legal.find(x => x.type === 'block' && x.uid === uid); return a ? act(a) : null; }
-  if (pd?.kind === 'shieldify') { const a = legal.find(x => x.uid === uid); return a ? act(a) : null; }
+  if (pd?.kind === 'shieldify' || pd?.kind === 'exploitSwap') { const a = legal.find(x => x.uid === uid); return a ? act(a) : null; }
 
   const plays = legal.filter(a => (a.type === 'play' || a.type === 'activate') && a.uid === uid);
   if (plays.length) {

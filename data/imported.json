@@ -2078,6 +2078,43 @@
     }
   },
   {
+    "id": "OGN-L-laci",
+    "set": "OGN",
+    "number": "L-laci",
+    "name": "Aspect of R̵̨̗̜̭͖̳̘̰̰̣̳̤̹̅͌̑̉̏Ȩ̷̡̲̺̲̞̮͚̞̎̈́͒̐̏̅Ḑ̴̢̙̰͎̠̬̲̗͓̳̎̿͂̐̀̿A̶̼̹͎͎͍͍̺͐̋̐̿͝C̷̨̛̪̟͕̪̥̫̟͚̾͑̐͐͑̈́͊̇͗̒̕͠T̸̻̓̔̓̋̔́͒͗Ȇ̶̡̖͙̖̪̹̖͇͛̌̅́͛ͅD̶͈̟̯̬͖͕̻̖̝̮̰̑̂̓̽̿͜ͅ",
+    "type": "legend",
+    "subname": "Laci",
+    "owners": [
+      "Laci"
+    ],
+    "colors": [
+      "Fury",
+      "Chaos"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Side Channel",
+      "Exploit"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "[T]: {Side Channel#930090}: You may turn one of your opponent's face-down Shields.\n[T][2]: {Exploit#CE356B} — Swap a card face-down from your hand with one of your opponent's face-up Shields. If you took a Shield Trigger, you may play it for free.",
+    "flavor": "",
+    "rarity": "epic",
+    "illustrator": "Lui",
+    "setInfo": "L09 OGN",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-L-laci.jpg",
+    "imageCrop": {
+      "x": 2.380046919666744,
+      "y": 0.5323207529235585,
+      "width": 95.14747859181732,
+      "height": 99.17474994518909
+    }
+  },
+  {
     "id": "OGN-L-lui",
     "set": "OGN",
     "number": "L-lui",

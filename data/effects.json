@@ -860,5 +860,33 @@
    "Aron Yeager",
    "Kozeke Yeager"
   ]
+ },
+ "OGN-L-laci": {
+  "keywords": [],
+  "activateCost": 0,
+  "championNames": [
+   "Mr. Anders",
+   "Anonymus",
+   "Godfather alter ego"
+  ],
+  "modes": [
+   {
+    "name": "Side Channel — turn a Shield face up"
+   },
+   {
+    "name": "Exploit (2) — swap a hand card with a face-up Shield"
+   }
+  ],
+  "effects": [
+   {
+    "on": "activate",
+    "do": "sideChannel"
+   },
+   {
+    "on": "activate",
+    "do": "exploit",
+    "cost": 2
+   }
+  ]
  }
 }
