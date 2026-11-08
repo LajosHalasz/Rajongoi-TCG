@@ -923,3 +923,6 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 .card .ft-doms .dom { width: 4.4cqw; height: 4.4cqw; }
 .card .ft-doms .dom-svg { width: 72%; height: 72%; filter: none; }
 .card .typeline .domain { display: inline-grid; place-items: center; } .card .typeline .domain .dom-svg { width: 62%; height: 62%; }
+.card .badge-seizure { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%) rotate(-8deg); z-index: 6; padding: 1.5cqw 4cqw;
+  background: #8e4fc4; color: #fff; font-family: 'Lexend'; font-weight: 800; font-size: 9cqw; letter-spacing: .08em; border-radius: 2cqw;
+  box-shadow: 0 0 0 1cqw rgba(255,255,255,.85), 0 0 5cqw rgba(142,79,196,.9); animation: pulse .9s infinite alternate; }

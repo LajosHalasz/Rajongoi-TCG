@@ -339,6 +339,8 @@ function activateOptions(s, pi) {
     if (d.activateNoTap) { if (g.activatedTurn === s.turn) continue; }
     else if (g.tapped || (p.battle.includes(g) && !canAttackNow(s, g))) continue;
     if (g === p.legend && !(d.effects || []).some(e => e.on === 'activate' && (!e.tribes || p.graveyard.some(c => e.tribes.some(t => hasTribe(getDef(c.id), t)))))) continue;
+    // conditional tap abilities: "If you are in Seizure, ..." / Shieldify needs a card in hand
+    if (!(d.effects || []).some(e => e.on === 'activate' && (e.requires !== 'seizure' || p.seizure) && (e.do !== 'shieldify' || p.hand.length))) continue;
     if (!canAfford(p, d.activateCost || 0, null)) continue;
     acts.push(...withTargets(s, pi, d, { type: 'activate', uid: g.uid }, true, 'activate'));
   }
@@ -453,6 +455,7 @@ function settle(s) {
   for (let guard = 0; guard < 100; guard++) {
     if (s.winner != null) { s.pending = null; return; }
     checkDeaths(s);
+    checkLowShields(s);
     if (s.winner != null) continue;
     // auto-skip shieldify when hand is empty
     if (s.queue.length && s.queue[0].kind === 'shieldify' && !s.players[s.queue[0].player].hand.length) {
@@ -502,6 +505,21 @@ function checkDeaths(s) {
       log(s, `${nm(u)} has 0 Might and is destroyed.`);
       destroyUnit(s, u);
     }
+  }
+}
+
+// Legend states that switch on when a player is low on Shields
+// (Aspect of Science: "When you are down to 1 shield or less, banish all Units on the Field, and enter Seizure.")
+function checkLowShields(s) {
+  for (const p of s.players) {
+    if (p.seizure || !p.legend) continue;
+    const e = (getDef(p.legend.id).effects || []).find(x => x.on === 'lowShields' && x.do === 'seizure');
+    if (!e || p.shields.length > (e.threshold ?? 1)) continue;
+    p.seizure = true;
+    const gone = s.players.reduce((n, q) => n + q.battle.length, 0);
+    for (const q of s.players) q.battle = [];
+    log(s, `${p.name} enters Seizure! ${gone ? `All ${gone} Unit${gone > 1 ? 's' : ''} on the Field are banished.` : 'The Field is empty.'}`);
+    emit(s, 'seizure', { player: p.idx, banished: gone });
   }
 }
 

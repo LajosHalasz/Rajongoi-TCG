@@ -139,6 +139,7 @@ const TRIGGER_TEXT = {
   unitPlayed: () => 'Whenever you play a Unit: ',
   spellCast: () => 'Whenever you cast a Spell: ',
   static: () => '',
+  lowShields: () => 'When you are down to 1 shield or less: ',
   activate: (d) => `[T]${d.activateCost ? ` + [${d.activateCost}]` : ''}: `,
 };
 
@@ -169,6 +170,7 @@ export function describeEffect(e, def) {
     case 'channel': return `Channel ${n} extra rune${n > 1 ? 's' : ''}${e.tapped ? ' tapped' : ''}.`;
     case 'discard': return `Your opponent discards ${n} random card${n > 1 ? 's' : ''}.`;
     case 'recover': return `Return a Unit from your Graveyard to your hand.`;
+    case 'seizure': return 'Banish all Units on the Field, and enter Seizure.';
     case 'cantLose': return "You can't lose the game this turn.";
     case 'grantKeyword': return `Give ${t} ${e.keyword}${dur}.`;
     case 'copyUnit': return `Copy ${t}${pw}; the copy has Haste and dies at the end of this turn.`;

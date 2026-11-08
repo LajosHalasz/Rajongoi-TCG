@@ -7,7 +7,8 @@ import { getDef } from '../js/engine/cards.js';
 
 const { decks } = loadData();
 setClock(() => 10);
-const deck = decks[0];
+// Lui's deck: its Legend has no automatic triggers that would interfere with scripted states
+const deck = decks.find(d => d.id === 'ogn-lui');
 
 function fresh() {
   const s = createGame({ decks: [deck, deck], ai: [false, false], seed: 7, firstPlayer: 0 });
@@ -27,6 +28,34 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Aspect of Science: Seizure at 1 shield banishes the Field, then [T] Shieldify 1'() {
+    const anna = decks.find(d => d.id === 'ogn-anna');
+    const s = createGame({ decks: [anna, deck], ai: [false, false], seed: 7, firstPlayer: 1 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const A = s.players[0], B = s.players[1];
+    A.hand = []; A.battle = []; B.battle = []; B.hand = [];
+    A.shields = A.shields.slice(0, 2);
+    const mine = card(s, 0, 'OGN-016', 'battle');
+    const att = card(s, 1, 'OGN-181', 'battle');
+    assert(!legalActions(s, 0).length || !legalActions(s, 0).some(a => a.type === 'activate'), 'no Seizure yet');
+    s.active = 1; s.phase = 'combat';
+    step(s, { type: 'attack', uid: att.uid, target: { kind: 'shield' } });
+    for (let i = 0; i < 20 && s.pending && ['priority', 'block'].includes(s.pending.kind); i++) step(s, { type: s.pending.kind === 'block' ? 'noBlock' : 'pass' });
+    while (s.pending?.kind === 'shieldTrigger') step(s, legalActions(s, 0).find(a => !a.use) || legalActions(s, 0)[0]);
+    assert.equal(A.shields.length, 1);
+    assert(A.seizure, 'in Seizure');
+    assert.equal(A.battle.length + B.battle.length, 0, 'the Field is banished');
+    assert(!A.graveyard.some(c => c.uid === mine.uid), 'banished, not destroyed');
+    // Anna's turn: tap the Legend to Shieldify 1
+    s.active = 0; s.phase = 'play'; s.pending = null; A.legend.tapped = false;
+    const c = card(s, 0, 'OGN-016');
+    const act = legalActions(s, 0).find(a => a.type === 'activate' && a.uid === A.legend.uid);
+    assert(act, 'Legend ability offered in Seizure');
+    step(s, act);
+    step(s, legalActions(s, 0).find(a => a.type === 'shieldify' && a.uid === c.uid));
+    assert.equal(A.shields.length, 2);
+    assert(A.legend.tapped);
+  },
   "The ULTIMATE FLEX: you can't lose the game this turn"() {
     const s = fresh();
     const a1 = card(s, 1, 'OGN-181', 'battle'); const a2 = card(s, 1, 'OGN-181', 'battle');

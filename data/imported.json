@@ -1849,6 +1849,49 @@
     }
   },
   {
+    "id": "OGN-L-anna",
+    "set": "OGN",
+    "number": "L-anna",
+    "name": "Aspect of Science",
+    "type": "legend",
+    "subname": "Anna",
+    "owners": [
+      "Anna"
+    ],
+    "colors": [
+      "Chaos",
+      "Order"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Pro-seizure Procedure",
+      "Shieldify"
+    ],
+    "effects": [
+      {
+        "on": "play",
+        "do": "shieldify",
+        "amount": 1
+      }
+    ],
+    "tribes": [],
+    "text": "{Pro-seizure Procedure#CE356B}: When you are down to 1 shield or less, banish all Units on the Field, and enter Seizure.\n[T]: If you are in Seizure, you may {Shieldify 1#21705B} from hand.",
+    "flavor": "",
+    "rarity": "epic",
+    "illustrator": "Lui",
+    "setInfo": "L03 OGN",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-L-anna.jpg",
+    "imageCrop": {
+      "x": 5.432332172151481,
+      "y": 2.639627331072766,
+      "width": 90.74410163339384,
+      "height": 94.58499291505784
+    }
+  },
+  {
     "id": "OGN-L-balu",
     "set": "OGN",
     "number": "L-balu",

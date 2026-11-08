@@ -6,10 +6,11 @@ import { getDef } from '../js/engine/cards.js';
 import { checkAchievements, ACHIEVEMENTS } from '../js/engine/achievements.js';
 
 const { decks } = loadData();
+const LUI = decks.find(d => d.id === 'ogn-lui');
 setClock(() => 10);
 let n = 0;
 function fresh() {
-  const s = createGame({ decks: [decks[0], decks[0]], ai: [false, false], seed: 3, firstPlayer: 0 });
+  const s = createGame({ decks: [LUI, LUI], ai: [false, false], seed: 3, firstPlayer: 0 });
   step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
   for (const p of s.players) {
     p.hand = []; p.battle = []; p.gear = [];

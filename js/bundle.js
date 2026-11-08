@@ -194,6 +194,7 @@ ${def.text}`;
     unitPlayed: () => "Whenever you play a Unit: ",
     spellCast: () => "Whenever you cast a Spell: ",
     static: () => "",
+    lowShields: () => "When you are down to 1 shield or less: ",
     activate: (d) => `[T]${d.activateCost ? ` + [${d.activateCost}]` : ""}: `
   };
   function describeEffect(e, def) {
@@ -232,6 +233,8 @@ ${def.text}`;
         return `Your opponent discards ${n} random card${n > 1 ? "s" : ""}.`;
       case "recover":
         return `Return a Unit from your Graveyard to your hand.`;
+      case "seizure":
+        return "Banish all Units on the Field, and enter Seizure.";
       case "cantLose":
         return "You can't lose the game this turn.";
       case "grantKeyword":
@@ -1359,6 +1362,7 @@ ${def.text}`;
         if (g.activatedTurn === s.turn) continue;
       } else if (g.tapped || p.battle.includes(g) && !canAttackNow(s, g)) continue;
       if (g === p.legend && !(d.effects || []).some((e) => e.on === "activate" && (!e.tribes || p.graveyard.some((c) => e.tribes.some((t2) => hasTribe(getDef(c.id), t2)))))) continue;
+      if (!(d.effects || []).some((e) => e.on === "activate" && (e.requires !== "seizure" || p.seizure) && (e.do !== "shieldify" || p.hand.length))) continue;
       if (!canAfford(p, d.activateCost || 0, null)) continue;
       acts.push(...withTargets(s, pi, d, { type: "activate", uid: g.uid }, true, "activate"));
     }
@@ -1488,6 +1492,7 @@ ${def.text}`;
         return;
       }
       checkDeaths(s);
+      checkLowShields(s);
       if (s.winner != null) continue;
       if (s.queue.length && s.queue[0].kind === "shieldify" && !s.players[s.queue[0].player].hand.length) {
         s.queue.shift();
@@ -1537,6 +1542,18 @@ ${def.text}`;
         log(s, `${nm(u)} has 0 Might and is destroyed.`);
         destroyUnit(s, u);
       }
+    }
+  }
+  function checkLowShields(s) {
+    for (const p of s.players) {
+      if (p.seizure || !p.legend) continue;
+      const e = (getDef(p.legend.id).effects || []).find((x) => x.on === "lowShields" && x.do === "seizure");
+      if (!e || p.shields.length > (e.threshold ?? 1)) continue;
+      p.seizure = true;
+      const gone = s.players.reduce((n, q) => n + q.battle.length, 0);
+      for (const q of s.players) q.battle = [];
+      log(s, `${p.name} enters Seizure! ${gone ? `All ${gone} Unit${gone > 1 ? "s" : ""} on the Field are banished.` : "The Field is empty."}`);
+      emit(s, "seizure", { player: p.idx, banished: gone });
     }
   }
   function doMulligan(s, pi, uids) {
@@ -3304,7 +3321,7 @@ ${def.text}`;
       power: pw,
       cost,
       classes: cls.join(" "),
-      badges: iconCol + tapHint + uses
+      badges: iconCol + tapHint + uses + (opts.seizure ? '<div class="badge-seizure" title="Seizure: all Units were banished; [T] to Shieldify 1">SEIZURE</div>' : "")
     });
   }
   function playerRow(s, p, mine, hl) {
@@ -3324,7 +3341,7 @@ ${def.text}`;
       <span>Runes <b>${free}</b>/${p.mana.length} \xB7 Mana deck ${p.manaDeck.length}</span>
       <div class="runes">${runes}</div>
     </div>
-    ${zone("Legend", unitCard(s, p.legend, hl, { slot: true }))}
+    ${zone("Legend", unitCard(s, p.legend, hl, { slot: true, seizure: p.seizure }))}
     ${zone("Champion", p.championSlot ? unitCard(s, p.championSlot, hl, { slot: true, inHand: true }) : "", "", "played")}
     ${zone("Signature", p.signatureSlot ? unitCard(s, p.signatureSlot, hl, { slot: true, inHand: true }) : "", "", "played")}
     ${zone(`Gear ${p.gear.length}/${RULES.GEAR_SLOTS}`, p.gear.map((g) => unitCard(s, g, hl, { slot: true })).join(""), "", "empty")}

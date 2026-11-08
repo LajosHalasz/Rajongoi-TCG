@@ -733,5 +733,25 @@
     "tokenName": "Whiskey"
    }
   ]
+ },
+ "OGN-L-anna": {
+  "keywords": [],
+  "activateCost": 0,
+  "effects": [
+   {
+    "on": "lowShields",
+    "do": "seizure",
+    "threshold": 1
+   },
+   {
+    "on": "activate",
+    "do": "shieldify",
+    "amount": 1,
+    "requires": "seizure"
+   }
+  ],
+  "championNames": [
+   "Dagadt Idzi"
+  ]
  }
 }
