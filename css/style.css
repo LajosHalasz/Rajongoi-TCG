@@ -1028,3 +1028,8 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 .dv-rune { display: flex; gap: 10px; align-items: center; }
 .dv-rune .card { --w: 46px; flex: none; }
 .dv-rune select { display: block; margin-top: 4px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; color: inherit; max-width: 100%; }
+/* in-game cost changes: green = cheaper than printed, red = more expensive */
+.card .cost.cheaper { background: radial-gradient(circle at 35% 30%, #eafff0, #6fd38a); border-color: #23a24a; box-shadow: 0 0 0 .8cqw #111, 0 0 4cqw rgba(47,200,90,.85); }
+.card .cost.cheaper span { color: #0b4d1c; }
+.card .cost.pricier { background: radial-gradient(circle at 35% 30%, #ffecec, #f07b74); border-color: #c8322b; box-shadow: 0 0 0 .8cqw #111, 0 0 4cqw rgba(220,60,50,.85); }
+.card .cost.pricier span { color: #5d0d0a; }

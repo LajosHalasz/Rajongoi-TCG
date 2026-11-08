@@ -144,8 +144,10 @@ export function cardHtml(def, opts = {}) {
   const art = def.image
     ? `<div class="art ${full || rare ? 'art-full' : 'art-window'}">${cardImg(def, opts.size)}</div>`
     : `<div class="art ${full ? 'art-full' : 'art-window'}">${placeholderArt(def)}</div>`;
+  // current cost vs printed cost: green when cheaper, red when more expensive
+  const costCls = opts.cost != null && opts.cost !== def.cost ? (opts.cost < def.cost ? 'cheaper' : 'pricier') : '';
   const cost = legend || def.type === 'rune' || def.type === 'token' ? ''
-    : `<div class="cost ${prov.includes('cost') ? 'prov' : ''}" title="${prov.includes('cost') ? 'Provisional cost' : 'Cost'}"><span>${opts.cost ?? def.cost}</span></div>`;
+    : `<div class="cost ${prov.includes('cost') ? 'prov' : ''} ${costCls}" title="${prov.includes('cost') ? 'Provisional cost' : costCls ? `Cost ${opts.cost} (printed ${def.cost})` : 'Cost'}"><span>${opts.cost ?? def.cost}</span></div>`;
   const domainsTopLeft = full && legend
     ? `<div class="fa-domains">${def.colors.map(c => domainIcon(c, 'big')).join('')}</div>` : '';
   const mightHtml = showMight
