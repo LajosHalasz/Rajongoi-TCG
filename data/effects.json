@@ -769,5 +769,19 @@
     "thisTurn": true
    }
   ]
+ },
+ "OGN-L-chris": {
+  "keywords": [],
+  "effects": [
+   {
+    "on": "tribeCombo",
+    "tribes": [
+     "Movie",
+     "Game"
+    ],
+    "do": "channel",
+    "amount": 2
+   }
+  ]
  }
 }

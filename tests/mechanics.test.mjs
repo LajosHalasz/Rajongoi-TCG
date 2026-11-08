@@ -28,6 +28,25 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Aspect of Lore: Movie + Game played this turn channels 2 runes, once per turn'() {
+    const chris = decks.find(d => d.id === 'ogn-chris');
+    const s = createGame({ decks: [chris, deck], ai: [false, false], seed: 7, firstPlayer: 0 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const p = s.players[0]; p.hand = []; p.battle = [];
+    p.mana = Array.from({ length: 10 }, (_, i) => ({ uid: 'c' + i, color: 'Order', tapped: false }));
+    card(s, 0, 'OGN-016', 'battle'); // a Unit for The Law to target
+    // mana after a play = before - its Recycle (+2 when the combo fires)
+    const playAndDelta = (id) => {
+      const m = p.mana.length;
+      const c = card(s, 0, id);
+      step(s, legalActions(s, 0).find(a => a.type === 'play' && a.uid === c.uid));
+      while (s.pending?.kind === 'pick') step(s, { type: 'pick', uids: [] });
+      return p.mana.length - m + (getDef(id).recycle || 0);
+    };
+    assert.equal(playAndDelta('OGN-174'), 0, 'Game alone: nothing');      // Amateur Dungeon Master
+    assert.equal(playAndDelta('OGN-173'), 2, 'Movie + Game: channel 2');  // Movie Night at Chris
+    assert.equal(playAndDelta('OGN-171'), 0, 'only once per turn');       // The Law
+  },
   'Aspect of Kindness: [T] next Cat or Train card this turn costs 1 less'() {
     const bea = decks.find(d => d.id === 'ogn-bea');
     const s = createGame({ decks: [bea, deck], ai: [false, false], seed: 7, firstPlayer: 0 });

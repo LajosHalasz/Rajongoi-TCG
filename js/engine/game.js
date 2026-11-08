@@ -671,6 +671,22 @@ function runTwiceIfDoubled(s, pi, src, effects, target) {
 function notePlay(s, pi, id, via) {
   s.plays = [...(s.plays || []), { player: pi, id, via, turn: s.turn, n: (s.playCount = (s.playCount || 0) + 1) }].slice(-12);
   emit(s, 'play', { player: pi, id, via });
+  checkTribeCombo(s, pi, id);
+}
+
+// Aspect of Lore: "Once per turn, if you have played both a Movie and a Game card, Channel [P][P]."
+function checkTribeCombo(s, pi, id) {
+  const p = s.players[pi];
+  if (p.comboTurn !== s.turn) { p.comboTurn = s.turn; p.comboTribes = []; p.comboDone = false; }
+  for (const t of getDef(id).tribes || []) if (!p.comboTribes.includes(t.toLowerCase())) p.comboTribes.push(t.toLowerCase());
+  if (p.comboDone || !p.legend) return;
+  const effs = (getDef(p.legend.id).effects || []).filter(e => e.on === 'tribeCombo');
+  for (const e of effs) {
+    if (!(e.tribes || []).every(t => p.comboTribes.includes(t.toLowerCase()))) continue;
+    p.comboDone = true;
+    log(s, `${nm(p.legend)}: ${e.tribes.join(' + ')} played this turn.`);
+    runEffects(s, pi, p.legend, [{ ...e, on: 'play' }]);
+  }
 }
 
 function putIntoPlay(s, pi, inst, target, modes = null, replace = null) {

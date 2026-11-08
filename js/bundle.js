@@ -195,6 +195,7 @@ ${def.text}`;
     spellCast: () => "Whenever you cast a Spell: ",
     static: () => "",
     lowShields: () => "When you are down to 1 shield or less: ",
+    tribeCombo: () => "Once per turn, if you have played both a Movie and a Game card: ",
     activate: (d) => `[T]${d.activateCost ? ` + [${d.activateCost}]` : ""}: `
   };
   function describeEffect(e, def) {
@@ -1726,6 +1727,24 @@ ${def.text}`;
   function notePlay(s, pi, id, via) {
     s.plays = [...s.plays || [], { player: pi, id, via, turn: s.turn, n: s.playCount = (s.playCount || 0) + 1 }].slice(-12);
     emit(s, "play", { player: pi, id, via });
+    checkTribeCombo(s, pi, id);
+  }
+  function checkTribeCombo(s, pi, id) {
+    const p = s.players[pi];
+    if (p.comboTurn !== s.turn) {
+      p.comboTurn = s.turn;
+      p.comboTribes = [];
+      p.comboDone = false;
+    }
+    for (const t2 of getDef(id).tribes || []) if (!p.comboTribes.includes(t2.toLowerCase())) p.comboTribes.push(t2.toLowerCase());
+    if (p.comboDone || !p.legend) return;
+    const effs = (getDef(p.legend.id).effects || []).filter((e) => e.on === "tribeCombo");
+    for (const e of effs) {
+      if (!(e.tribes || []).every((t2) => p.comboTribes.includes(t2.toLowerCase()))) continue;
+      p.comboDone = true;
+      log(s, `${nm(p.legend)}: ${e.tribes.join(" + ")} played this turn.`);
+      runEffects(s, pi, p.legend, [{ ...e, on: "play" }]);
+    }
   }
   function putIntoPlay(s, pi, inst, target, modes = null, replace = null) {
     const p = s.players[pi];

@@ -1965,6 +1965,43 @@
     }
   },
   {
+    "id": "OGN-L-chris",
+    "set": "OGN",
+    "number": "L-chris",
+    "name": "Aspect of Lore",
+    "type": "legend",
+    "subname": "Chris",
+    "owners": [
+      "Chris"
+    ],
+    "colors": [
+      "Mind",
+      "Order"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Movie",
+      "Game"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "Once per turn, if you have played both a {Movie#6D6E6B}and a {Game#6D6E6B}card, Channel [P][P].",
+    "flavor": "",
+    "rarity": "epic",
+    "illustrator": "Lui",
+    "setInfo": "L05 OGN",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-L-chris.jpg",
+    "imageCrop": {
+      "x": 3.713379618353194,
+      "y": 1.7510610878785744,
+      "width": 90.74410163339384,
+      "height": 94.58499291505784
+    }
+  },
+  {
     "id": "OGN-L-lui",
     "set": "OGN",
     "number": "L-lui",

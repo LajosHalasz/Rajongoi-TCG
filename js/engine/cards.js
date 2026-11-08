@@ -140,6 +140,7 @@ const TRIGGER_TEXT = {
   spellCast: () => 'Whenever you cast a Spell: ',
   static: () => '',
   lowShields: () => 'When you are down to 1 shield or less: ',
+  tribeCombo: () => 'Once per turn, if you have played both a Movie and a Game card: ',
   activate: (d) => `[T]${d.activateCost ? ` + [${d.activateCost}]` : ''}: `,
 };
 
