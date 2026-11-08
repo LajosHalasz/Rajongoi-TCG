@@ -28,6 +28,19 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Defensive is inactive while a Unit is Indestructible'() {
+    const s = fresh();
+    const wall = card(s, 0, 'OGN-182', 'battle'); // The Solar Boat Team: Defensive
+    const att = card(s, 1, 'OGN-181', 'battle');
+    assert(hasKw(s, wall, 'Defensive'));
+    wall.mods.push({ keyword: 'Indestructible', until: 'eot' });
+    assert(!hasKw(s, wall, 'Defensive'), 'no Defensive while Indestructible');
+    s.active = 1; s.phase = 'combat';
+    step(s, { type: 'attack', uid: att.uid, target: { kind: 'shield' } });
+    assert(s.pending?.kind !== 'block', 'cannot redirect the attack');
+    wall.mods = [];
+    assert(hasKw(s, wall, 'Defensive'), 'back once Indestructible is gone');
+  },
   'Aspect of Fuck You: Red Cubes Units may Accelerate (+1 Fury, enter ready)'() {
     const matyi = decks.find(d => d.id === 'ogn-matyi');
     const s = createGame({ decks: [matyi, deck], ai: [false, false], seed: 7, firstPlayer: 0 });

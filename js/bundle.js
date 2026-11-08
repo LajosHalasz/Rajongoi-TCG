@@ -1968,6 +1968,7 @@ ${def.text}`;
   }
   function hasKeyword(s, inst, kw2) {
     const d = getDef(inst.id);
+    if (kw2 === "Defensive" && hasKeyword(s, inst, "Indestructible")) return false;
     if ((d.keywords || []).includes(kw2)) return true;
     if (kw2 === "Unstoppable" && d.unstoppableIfTribe) {
       const p = s.players[inst.owner];
@@ -4836,7 +4837,7 @@ ${def.text}`;
   var KW = [
     ["Shield Trigger", "Ha Shieldb\xF3l ker\xFCl a kezedbe, azonnal ingyen kij\xE1tszhatod.", "If you get it from your Shield Zone, you may play it for free right away."],
     ["Shieldify N", "Kij\xE1tsz\xE1skor N lapot teszel a kezedb\u0151l a Shield Zone-ba.", "When played, put N cards from your hand into your Shield Zone."],
-    ["Defensive", "Ha egy ellens\xE9ges Unit t\xE1mad, ezt leford\xEDtva magadra ir\xE1ny\xEDthatod a t\xE1mad\xE1st.", "When an enemy Unit attacks, tap this to redirect the attack to it."],
+    ["Defensive", "Ha egy ellens\xE9ges Unit t\xE1mad, ezt leford\xEDtva magadra ir\xE1ny\xEDthatod a t\xE1mad\xE1st. Am\xEDg a Unit Indestructible, a Defensive nem \xE9l.", "When an enemy Unit attacks, tap this to redirect the attack to it. Inactive while the Unit is Indestructible."],
     ["Deathtouch", "Ha harcban elpusztul, azt a Unitot is elpuszt\xEDtja, amelyik meg\xF6lte.", "If it loses a fight, it also destroys the Unit that killed it."],
     ["Haste", "M\xE1r a kij\xE1tsz\xE1s k\xF6r\xE9ben t\xE1madhat.", "Can attack the turn it is played."],
     ["Nostalgia Line", "Este 16:00 \xE9s 22:00 k\xF6z\xF6tt a kij\xE1tsz\xE1s k\xF6r\xE9ben is t\xE1madhat (a val\xF3s id\u0151 sz\xE1m\xEDt).", "Between 16:00 and 22:00 (real local time) it can attack the turn it is played."],

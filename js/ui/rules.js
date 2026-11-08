@@ -122,7 +122,7 @@ const SECTIONS = [
 const KW = [
   ['Shield Trigger', 'Ha Shieldból kerül a kezedbe, azonnal ingyen kijátszhatod.', 'If you get it from your Shield Zone, you may play it for free right away.'],
   ['Shieldify N', 'Kijátszáskor N lapot teszel a kezedből a Shield Zone-ba.', 'When played, put N cards from your hand into your Shield Zone.'],
-  ['Defensive', 'Ha egy ellenséges Unit támad, ezt lefordítva magadra irányíthatod a támadást.', 'When an enemy Unit attacks, tap this to redirect the attack to it.'],
+  ['Defensive', 'Ha egy ellenséges Unit támad, ezt lefordítva magadra irányíthatod a támadást. Amíg a Unit Indestructible, a Defensive nem él.', 'When an enemy Unit attacks, tap this to redirect the attack to it. Inactive while the Unit is Indestructible.'],
   ['Deathtouch', 'Ha harcban elpusztul, azt a Unitot is elpusztítja, amelyik megölte.', 'If it loses a fight, it also destroys the Unit that killed it.'],
   ['Haste', 'Már a kijátszás körében támadhat.', 'Can attack the turn it is played.'],
   ['Nostalgia Line', 'Este 16:00 és 22:00 között a kijátszás körében is támadhat (a valós idő számít).', 'Between 16:00 and 22:00 (real local time) it can attack the turn it is played.'],

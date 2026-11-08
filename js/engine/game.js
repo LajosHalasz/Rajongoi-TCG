@@ -98,6 +98,8 @@ export function findInst(s, uid) {
 
 export function hasKeyword(s, inst, kw) {
   const d = getDef(inst.id);
+  // rule: Defensive is inactive while a Unit is Indestructible (it can't redirect attacks to itself)
+  if (kw === 'Defensive' && hasKeyword(s, inst, 'Indestructible')) return false;
   if ((d.keywords || []).includes(kw)) return true;
   if (kw === 'Unstoppable' && d.unstoppableIfTribe) {
     const p = s.players[inst.owner];
