@@ -930,3 +930,37 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 .card .art-full .art-ph { left: 0; right: 0; top: 0; height: 100%; }
 .card .art-full .art-ph .ph-glyph, .card .art-full .art-ph .ph-initials { transform: translateY(-26cqw); }
 .card .art-full .art-ph .ph-label { top: 44%; bottom: auto; }
+
+/* ---------------------------------------------- deck view */
+.deck-tile.clickable { cursor: pointer; transition: border-color .15s, transform .15s; }
+.deck-tile.clickable:hover { border-color: var(--copper-hi); transform: translateY(-2px); }
+.deck-view { max-width: 1500px; margin: 0 auto; }
+.deck-view .row { gap: 10px; flex-wrap: wrap; align-items: center; }
+.dv-layout { display: grid; grid-template-columns: minmax(260px, 380px) auto minmax(260px, 1fr); gap: 20px; align-items: start; }
+.dv-list { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; max-height: calc(100vh - 150px); overflow-y: auto; }
+.dv-list h4 { margin: 10px 0 4px; font-family: 'Lexend'; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--copper-hi); }
+.dv-list h4:first-child { margin-top: 0; }
+.dv-list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.dv-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; border-left: 4px solid var(--rc); background: rgba(0,0,0,.18); outline: none; }
+.dv-row.r-common { --rc: #8a8f96; } .dv-row.r-uncommon { --rc: #a9c4dc; } .dv-row.r-rare { --rc: #e0b040; } .dv-row.r-epic { --rc: #c26bff; }
+.dv-row:hover, .dv-row.on, .dv-row:focus-visible { border-color: var(--copper-hi); border-left-color: var(--rc); background: rgba(224,164,99,.1); }
+.dv-cost { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: #eee; color: #111; font-weight: 800; font-size: 14px; }
+.dv-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.dv-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.dv-type { flex: none; font-size: 12px; color: var(--muted); }
+.dv-runes { display: flex; gap: 12px; flex-wrap: wrap; font-size: 14px; }
+.dv-runes i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+.dv-card { position: sticky; top: 70px; }
+.dv-card .card { --w: min(360px, 28vw); }
+.dv-info { position: sticky; top: 70px; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; line-height: 1.45; }
+.dv-info h4 { margin: 0 0 8px; font-family: 'Lexend'; color: var(--copper-hi); }
+@media (max-width: 1100px) {
+  .dv-layout { grid-template-columns: minmax(240px, 1fr) auto; }
+  .dv-info { grid-column: 1 / -1; position: static; }
+}
+@media (max-width: 720px) {
+  .dv-layout { grid-template-columns: 1fr; }
+  .dv-card { position: static; order: -1; justify-self: center; }
+  .dv-card .card { --w: min(300px, 80vw); }
+  .dv-list { max-height: none; }
+}

@@ -107,12 +107,13 @@ export function renderCollection(app, set) {
 const toggle = (set, v) => (set.has(v) ? set.delete(v) : set.add(v));
 
 // ----------------------------------------------------------------- decks --
-export function renderDecks(app) {
+export function renderDecks(app, arg) {
+  if (arg && findDeck(arg)) return renderDeckView(app, findDeck(arg));
   const decks = allDecks();
   const tile = (d) => {
     const v = validateDeck(d);
     const legend = hasDef(d.legend) ? getDef(d.legend) : null;
-    return `<div class="deck-tile">
+    return `<div class="deck-tile clickable" data-view="${esc(d.id)}" title="Show the cards in this deck">
       ${legend ? cardHtml(legend, { size: 'xs' }) : ''}
       <div style="flex:1;min-width:0">
         <h3>${esc(deckName(d))}</h3>
@@ -130,6 +131,10 @@ export function renderDecks(app) {
     <p class="muted" style="margin-top:0">${RULES.DECK_SIZE} cards, 1 copy each, ${RULES.MIN_CHAMPIONS}-${RULES.MAX_CHAMPIONS} Champions (one sharing the Legend's name), max ${RULES.MAX_SIGNATURES} Signatures, ${RULES.RUNE_DECK_SIZE}-rune Mana Deck. The Legend isn't counted.</p>
     <div class="decks">${decks.map(tile).join('')}</div></div>`;
   app.querySelector('#new').onclick = () => (location.hash = '#/deck/new');
+  app.querySelectorAll('[data-view]').forEach(t => t.onclick = (e) => {
+    if (e.target.closest('button')) return; // the tile's own buttons keep working
+    location.hash = '#/decks/' + encodeURIComponent(t.dataset.view);
+  });
   app.querySelector('#imp').onclick = () => {
     const txt = prompt('Paste deck JSON:');
     if (!txt) return;
@@ -152,6 +157,55 @@ export function renderDecks(app) {
     const json = JSON.stringify({ ...d, premade: undefined }, null, 2);
     try { await navigator.clipboard.writeText(json); b.textContent = 'Copied!'; } catch { prompt('Deck JSON:', json); }
   });
+}
+
+// ------------------------------------------------------------- deck view --
+const RARITY_GROUPS = [['epic', 'Epic'], ['rare', 'Rare'], ['uncommon', 'Uncommon'], ['common', 'Common']];
+
+/** One deck: its cards by rarity on the left, the hovered card in the middle, what it does on the right. */
+function renderDeckView(app, d) {
+  const v = validateDeck(d);
+  const legend = hasDef(d.legend) ? getDef(d.legend) : null;
+  const ids = Object.keys(d.cards || {}).filter(hasDef);
+  const defs = ids.map(getDef);
+  const row = (c, extra = '') => `<li class="dv-row r-${rarityOf(c)}" data-cid="${esc(c.id)}" tabindex="0">
+      <span class="dv-cost">${c.type === 'legend' ? '♛' : c.cost}</span>
+      <span class="dv-dot" style="background:${(c.colors || []).map(x => COLORS[x]?.hex).filter(Boolean).length > 1
+        ? `linear-gradient(90deg, ${COLORS[c.colors[0]].hex} 50%, ${COLORS[c.colors[1]].hex} 50%)` : COLORS[c.colors?.[0]]?.hex || '#777'}"></span>
+      <span class="dv-name">${esc(c.name)}</span>
+      <span class="dv-type">${esc(TYPE_INFO[c.type]?.label || c.type)}${extra}</span></li>`;
+  const slotTag = (c) => (c.id === d.champion ? ' · start' : c.id === d.signature ? ' · start' : '');
+  const groups = RARITY_GROUPS.map(([r, label]) => [label, defs.filter(c => rarityOf(c) === r)
+    .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name))]).filter(([, l]) => l.length);
+  const first = legend || defs[0];
+  app.innerHTML = `<div class="page deck-view">
+    <div class="row" style="margin-bottom:10px"><a class="btn ghost" href="#/decks">← Decks</a>
+      <h2 style="margin:0 0 0 6px">${esc(deckName(d))}</h2><span class="spacer"></span>
+      <span class="muted">${legend ? esc(legend.colors.join(' / ')) + ' · ' : ''}${v.stats.total} cards · avg ${v.stats.avgCost.toFixed(1)}${d.comingSoon ? ' · <span class="soon-tag">COMING SOON</span>' : ''}</span>
+      ${d.comingSoon ? '' : d.premade ? `<a class="btn" href="#/deck/copy:${esc(d.id)}">Copy &amp; edit</a>` : `<a class="btn" href="#/deck/${esc(d.id)}">Edit</a>`}</div>
+    <div class="dv-layout">
+      <div class="dv-list">
+        ${legend ? `<h4>Legend</h4><ul>${row(legend)}</ul>` : ''}
+        ${groups.map(([label, list]) => `<h4>${label} <span class="muted">${list.length}</span></h4><ul>${list.map(c => row(c, slotTag(c))).join('')}</ul>`).join('')}
+        ${d.runes ? `<h4>Mana Deck</h4><div class="dv-runes">${Object.entries(d.runes).map(([c, n]) => `<span><i style="background:${COLORS[c]?.hex}"></i>${n} ${esc(c)}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="dv-card" id="dv-card"></div>
+      <div class="dv-info" id="dv-info"></div>
+    </div></div>`;
+  const show = (id) => {
+    if (!hasDef(id)) return;
+    const c = getDef(id);
+    app.querySelector('#dv-card').innerHTML = cardHtml(c, { size: 'lg' });
+    app.querySelector('#dv-info').innerHTML = `<h4>What it does</h4>${cardDetailsHtml(c)}
+      ${c.id === d.champion ? '<p class="muted">Starts in the Champion Slot.</p>' : c.id === d.signature ? '<p class="muted">Starts in the Signature Slot.</p>' : ''}`;
+    app.querySelectorAll('.dv-row').forEach(r => r.classList.toggle('on', r.dataset.cid === id));
+  };
+  app.querySelectorAll('.dv-row').forEach(r => {
+    r.onmouseenter = () => show(r.dataset.cid);
+    r.onfocus = () => show(r.dataset.cid);
+    r.onclick = () => show(r.dataset.cid); // touch screens
+  });
+  if (first) show(first.id);
 }
 
 // --------------------------------------------------------------- builder --

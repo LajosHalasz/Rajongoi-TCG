@@ -507,6 +507,7 @@ ${def.text}`;
       (_, label, bg, fg) => `<span class="kw" style="background:#${bg};color:#${fg || "fff"}">${label.trim()}</span>`
     );
     h = h.replace(/__(.+?)__/gs, "<i>$1</i>");
+    h = h.replace(/__/g, "");
     h = h.replace(/\[([A-Za-z])#([0-9a-fA-F]{6})\]/g, (_, k, c) => `<span class="ico" style="background:#${c}">${k.toUpperCase()}</span>`);
     h = h.replace(/\[([TMR])\]/g, (_, k) => ICONS[k]);
     h = h.replace(/\[U\]/g, '<span class="ico" title="Unit">\u2694</span>');
@@ -827,12 +828,13 @@ ${def.text}`;
     draw2();
   }
   var toggle = (set, v) => set.has(v) ? set.delete(v) : set.add(v);
-  function renderDecks(app2) {
+  function renderDecks(app2, arg) {
+    if (arg && findDeck(arg)) return renderDeckView(app2, findDeck(arg));
     const decks = allDecks();
     const tile = (d) => {
       const v = validateDeck(d);
       const legend = hasDef(d.legend) ? getDef(d.legend) : null;
-      return `<div class="deck-tile">
+      return `<div class="deck-tile clickable" data-view="${esc(d.id)}" title="Show the cards in this deck">
       ${legend ? cardHtml(legend, { size: "xs" }) : ""}
       <div style="flex:1;min-width:0">
         <h3>${esc(deckName(d))}</h3>
@@ -850,6 +852,10 @@ ${def.text}`;
     <p class="muted" style="margin-top:0">${RULES.DECK_SIZE} cards, 1 copy each, ${RULES.MIN_CHAMPIONS}-${RULES.MAX_CHAMPIONS} Champions (one sharing the Legend's name), max ${RULES.MAX_SIGNATURES} Signatures, ${RULES.RUNE_DECK_SIZE}-rune Mana Deck. The Legend isn't counted.</p>
     <div class="decks">${decks.map(tile).join("")}</div></div>`;
     app2.querySelector("#new").onclick = () => location.hash = "#/deck/new";
+    app2.querySelectorAll("[data-view]").forEach((t2) => t2.onclick = (e) => {
+      if (e.target.closest("button")) return;
+      location.hash = "#/decks/" + encodeURIComponent(t2.dataset.view);
+    });
     app2.querySelector("#imp").onclick = () => {
       const txt = prompt("Paste deck JSON:");
       if (!txt) return;
@@ -880,6 +886,49 @@ ${def.text}`;
         prompt("Deck JSON:", json);
       }
     });
+  }
+  var RARITY_GROUPS = [["epic", "Epic"], ["rare", "Rare"], ["uncommon", "Uncommon"], ["common", "Common"]];
+  function renderDeckView(app2, d) {
+    const v = validateDeck(d);
+    const legend = hasDef(d.legend) ? getDef(d.legend) : null;
+    const ids = Object.keys(d.cards || {}).filter(hasDef);
+    const defs2 = ids.map(getDef);
+    const row = (c, extra = "") => `<li class="dv-row r-${rarityOf(c)}" data-cid="${esc(c.id)}" tabindex="0">
+      <span class="dv-cost">${c.type === "legend" ? "\u265B" : c.cost}</span>
+      <span class="dv-dot" style="background:${(c.colors || []).map((x) => COLORS[x]?.hex).filter(Boolean).length > 1 ? `linear-gradient(90deg, ${COLORS[c.colors[0]].hex} 50%, ${COLORS[c.colors[1]].hex} 50%)` : COLORS[c.colors?.[0]]?.hex || "#777"}"></span>
+      <span class="dv-name">${esc(c.name)}</span>
+      <span class="dv-type">${esc(TYPE_INFO[c.type]?.label || c.type)}${extra}</span></li>`;
+    const slotTag = (c) => c.id === d.champion ? " \xB7 start" : c.id === d.signature ? " \xB7 start" : "";
+    const groups = RARITY_GROUPS.map(([r, label]) => [label, defs2.filter((c) => rarityOf(c) === r).sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name))]).filter(([, l]) => l.length);
+    const first = legend || defs2[0];
+    app2.innerHTML = `<div class="page deck-view">
+    <div class="row" style="margin-bottom:10px"><a class="btn ghost" href="#/decks">\u2190 Decks</a>
+      <h2 style="margin:0 0 0 6px">${esc(deckName(d))}</h2><span class="spacer"></span>
+      <span class="muted">${legend ? esc(legend.colors.join(" / ")) + " \xB7 " : ""}${v.stats.total} cards \xB7 avg ${v.stats.avgCost.toFixed(1)}${d.comingSoon ? ' \xB7 <span class="soon-tag">COMING SOON</span>' : ""}</span>
+      ${d.comingSoon ? "" : d.premade ? `<a class="btn" href="#/deck/copy:${esc(d.id)}">Copy &amp; edit</a>` : `<a class="btn" href="#/deck/${esc(d.id)}">Edit</a>`}</div>
+    <div class="dv-layout">
+      <div class="dv-list">
+        ${legend ? `<h4>Legend</h4><ul>${row(legend)}</ul>` : ""}
+        ${groups.map(([label, list]) => `<h4>${label} <span class="muted">${list.length}</span></h4><ul>${list.map((c) => row(c, slotTag(c))).join("")}</ul>`).join("")}
+        ${d.runes ? `<h4>Mana Deck</h4><div class="dv-runes">${Object.entries(d.runes).map(([c, n]) => `<span><i style="background:${COLORS[c]?.hex}"></i>${n} ${esc(c)}</span>`).join("")}</div>` : ""}
+      </div>
+      <div class="dv-card" id="dv-card"></div>
+      <div class="dv-info" id="dv-info"></div>
+    </div></div>`;
+    const show = (id) => {
+      if (!hasDef(id)) return;
+      const c = getDef(id);
+      app2.querySelector("#dv-card").innerHTML = cardHtml(c, { size: "lg" });
+      app2.querySelector("#dv-info").innerHTML = `<h4>What it does</h4>${cardDetailsHtml(c)}
+      ${c.id === d.champion ? '<p class="muted">Starts in the Champion Slot.</p>' : c.id === d.signature ? '<p class="muted">Starts in the Signature Slot.</p>' : ""}`;
+      app2.querySelectorAll(".dv-row").forEach((r) => r.classList.toggle("on", r.dataset.cid === id));
+    };
+    app2.querySelectorAll(".dv-row").forEach((r) => {
+      r.onmouseenter = () => show(r.dataset.cid);
+      r.onfocus = () => show(r.dataset.cid);
+      r.onclick = () => show(r.dataset.cid);
+    });
+    if (first) show(first.id);
   }
   function renderBuilder(app2, arg) {
     let draft;
@@ -5210,7 +5259,7 @@ ${def.text}`;
       case "collection":
         return renderCollection(app, arg || "OGN");
       case "decks":
-        return renderDecks(app);
+        return renderDecks(app, arg);
       case "deck":
         return renderBuilder(app, arg || "new");
       case "boosters":

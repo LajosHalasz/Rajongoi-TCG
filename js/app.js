@@ -61,7 +61,7 @@ function route() {
   switch (page) {
     case 'play': return renderSetup(app);
     case 'collection': return renderCollection(app, arg || 'OGN');
-    case 'decks': return renderDecks(app);
+    case 'decks': return renderDecks(app, arg);
     case 'deck': return renderBuilder(app, arg || 'new');
     case 'boosters': return renderBoosters(app);
     case 'achievements': return renderAchievements(app);

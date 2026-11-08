@@ -22,6 +22,7 @@ export function markup(text) {
   h = h.replace(/\{([^#}]+)#([0-9a-fA-F]{6})(?:#([0-9a-fA-F]{6}))?\}/g,
     (_, label, bg, fg) => `<span class="kw" style="background:#${bg};color:#${fg || 'fff'}">${label.trim()}</span>`);
   h = h.replace(/__(.+?)__/gs, '<i>$1</i>');
+  h = h.replace(/__/g, ''); // an unpaired italic marker (riftcardmaker texts sometimes leave one)
   h = h.replace(/\[([A-Za-z])#([0-9a-fA-F]{6})\]/g, (_, k, c) => `<span class="ico" style="background:#${c}">${k.toUpperCase()}</span>`);
   h = h.replace(/\[([TMR])\]/g, (_, k) => ICONS[k]);
   h = h.replace(/\[U\]/g, '<span class="ico" title="Unit">⚔</span>');
