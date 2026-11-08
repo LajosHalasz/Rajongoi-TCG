@@ -1015,3 +1015,8 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 .rune-show.none .card { opacity: .35; filter: grayscale(.6); }
 .rs-count { margin-top: 2px; font-size: 12px; color: var(--muted); line-height: 1; white-space: nowrap; }
 .rs-count b { color: #fff; font-size: 14px; }
+/* "AI played" cards always fit the side panel's width (it is narrower on smaller screens) */
+@media (min-width: 981px) {
+  .played-panel .pp-card .card { --w: 100%; }
+  .played-panel { overflow-x: hidden; }
+}
