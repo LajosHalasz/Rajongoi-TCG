@@ -50,7 +50,7 @@ function drawShop(app, sets) {
       <p class="muted">Click the pack to tear it open.</p>
     </div>
     <div class="booster-odds muted">
-      Each pack: ${PACK_RULES.commons} Commons · 1 Rune or Token · ${PACK_RULES.uncommons} Uncommons · 1 Rare (Legends and Champions are Rares) · 1 Epic (Signatures, full-art cards, EPIC: The Musical).
+      Each pack: ${PACK_RULES.commons} Commons · 1 Rune of the set · ${PACK_RULES.uncommons} Uncommons · 1 Rare (Legends and Champions are Rares) · 1 Epic (Signatures, full-art cards, EPIC: The Musical).
       <br>✨ <b>God pack</b> in ~1 of ${Math.round(1 / PACK_RULES.godChance)} packs: no Commons and much better Rare / Epic odds in every slot.
       <br>Pool: ${P.commons.length} commons, ${P.uncommons.length} uncommons, ${P.rares.length} rares (incl. ${P.legends.length} legends), ${P.epics.length} epics.
       ${state.opened ? `<br>Packs opened this session: <b>${state.opened}</b>` : ''}

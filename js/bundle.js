@@ -589,9 +589,9 @@ ${def.text}`;
       opts.classes || ""
     ].join(" ");
     return `<div class="${cls}" data-cid="${esc(def.id)}" style="--c1:${colorHex(def)};--c2:${colorHex(def)}">
-    <div class="art art-full">${def.image ? cardImg(def, opts.size) : placeholderArt(def)}</div>
+    <div class="art art-full">${def.image ? cardImg(def, opts.size) : `<div class="rune-tpl">${domainSvg(def.colors[0])}</div>`}</div>
     <div class="frame"></div>
-    <div class="typeline"><span class="domains"><span class="domain" style="background:${colorHex(def)}"></span></span><span class="type-badge">Rune</span></div>
+    <div class="typeline"><span class="domains"><span class="domain" style="background:${colorHex(def)}">${domainSvg(def.colors[0])}</span></span><span class="type-badge">Rune</span></div>
     <div class="rune-name">${esc(def.name)}</div>
     <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || "")}</span></div>
     ${isFoil(def) ? '<div class="foil-layer"></div>' : ""}
@@ -4317,7 +4317,7 @@ ${def.text}`;
       epics: [...of("epic"), ...fullArtRunes],
       legends: cards.filter((c) => c.type === "legend"),
       // part of the Rare pool, listed for the odds text
-      extras: allCards().filter((c) => c.type === "rune" && !c.fullArtRune || c.type === "token")
+      runes: allCards().filter((c) => c.type === "rune" && !c.fullArtRune && String(c.setInfo || "").toUpperCase().startsWith(set))
     };
   }
   function openPack(set, rand2 = Math.random) {
@@ -4339,13 +4339,13 @@ ${def.text}`;
     };
     const out = [];
     for (let i = 0; i < PACK_RULES.commons; i++) out.push(god ? upgraded(PACK_RULES.god.common) : slot("common"));
-    out.push({ def: pick2(P.extras, P.commons), slot: "extra" });
+    out.push({ def: pick2(P.runes, P.commons), slot: "rune" });
     for (let i = 0; i < PACK_RULES.uncommons; i++) out.push(god ? upgraded(PACK_RULES.god.uncommon) : slot("uncommon"));
     out.push(god ? upgraded(PACK_RULES.god.rare) : slot("rare"));
     out.push(slot("epic"));
     const res = out.filter((e) => e.def);
     if (god) {
-      const rank = (e) => e.slot === "extra" ? -1 : ["common", "uncommon", "rare", "epic"].indexOf(rarityOf(e.def));
+      const rank = (e) => e.slot === "rune" ? -1 : ["common", "uncommon", "rare", "epic"].indexOf(rarityOf(e.def));
       res.sort((a, b) => rank(a) - rank(b));
       res.god = true;
     }
@@ -4402,7 +4402,7 @@ ${def.text}`;
       <p class="muted">Click the pack to tear it open.</p>
     </div>
     <div class="booster-odds muted">
-      Each pack: ${PACK_RULES.commons} Commons \xB7 1 Rune or Token \xB7 ${PACK_RULES.uncommons} Uncommons \xB7 1 Rare (Legends and Champions are Rares) \xB7 1 Epic (Signatures, full-art cards, EPIC: The Musical).
+      Each pack: ${PACK_RULES.commons} Commons \xB7 1 Rune of the set \xB7 ${PACK_RULES.uncommons} Uncommons \xB7 1 Rare (Legends and Champions are Rares) \xB7 1 Epic (Signatures, full-art cards, EPIC: The Musical).
       <br>\u2728 <b>God pack</b> in ~1 of ${Math.round(1 / PACK_RULES.godChance)} packs: no Commons and much better Rare / Epic odds in every slot.
       <br>Pool: ${P.commons.length} commons, ${P.uncommons.length} uncommons, ${P.rares.length} rares (incl. ${P.legends.length} legends), ${P.epics.length} epics.
       ${state.opened ? `<br>Packs opened this session: <b>${state.opened}</b>` : ""}

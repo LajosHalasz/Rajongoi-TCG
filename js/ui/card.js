@@ -114,9 +114,10 @@ function runeHtml(def, opts) {
   const cls = ['card', 'rune-card', def.name && !/^\s*$/.test(def.name) && !def.fullArtRune ? '' : 'rune-bare', isFoil(def) ? 'foil' : '',
     `size-${opts.size || 'md'}`, opts.mini ? 'mini' : '', opts.classes || ''].join(' ');
   return `<div class="${cls}" data-cid="${esc(def.id)}" style="--c1:${colorHex(def)};--c2:${colorHex(def)}">
-    <div class="art art-full">${def.image ? cardImg(def, opts.size) : placeholderArt(def)}</div>
+    <div class="art art-full">${def.image ? cardImg(def, opts.size)
+      : `<div class="rune-tpl">${domainSvg(def.colors[0])}</div>`}</div>
     <div class="frame"></div>
-    <div class="typeline"><span class="domains"><span class="domain" style="background:${colorHex(def)}"></span></span><span class="type-badge">Rune</span></div>
+    <div class="typeline"><span class="domains"><span class="domain" style="background:${colorHex(def)}">${domainSvg(def.colors[0])}</span></span><span class="type-badge">Rune</span></div>
     <div class="rune-name">${esc(def.name)}</div>
     <div class="footer"><span>${esc(def.setInfo || def.id)}</span><span>${esc(def.illustrator || '')}</span></div>
     ${isFoil(def) ? '<div class="foil-layer"></div>' : ''}
