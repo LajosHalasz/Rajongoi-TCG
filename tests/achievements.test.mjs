@@ -65,7 +65,7 @@ const tests = {
     const s = fresh();
     card(s, 0, 'OGN-188', 'battle'); const g = card(s, 0, 'OGN-179', 'gear');
     for (let i = 0; i < 3; i++) { g.tapped = false; step(s, { type: 'activate', uid: g.uid }); }
-    assert(got(s).includes('painter'));
+    assert(got(s).includes('painter-1') && got(s).includes('painter') && !got(s).includes('painter-5'), 'bronze + silver, not gold');
   },
   'Manyika can rest finally'() {
     const s = fresh();
@@ -85,7 +85,7 @@ const tests = {
       while (s.pending?.kind === 'pick') step(s, { type: 'pick', uids: [] });
     }
     step(s, { type: 'endPhase' }); step(s, { type: 'endPhase' });
-    assert(got(s).includes('art-destruction'));
+    assert(['art-destruction-1', 'art-destruction-3', 'art-destruction'].every(id => got(s).includes(id)), 'all three tiers');
   },
   'Came Prepared (Shieldify a Shield Trigger card)'() {
     const s = fresh();
@@ -149,8 +149,8 @@ const tests = {
     step(s, { type: 'endPhase' });
     assert(got(s).includes('art-of-deal') && !got(s).includes('art-of-deal-3'));
   },
-  'All 14 achievements are defined'() {
-    assert.equal(ACHIEVEMENTS.length, 14);
+  'All 18 achievements are defined'() {
+    assert.equal(ACHIEVEMENTS.length, 18);
   },
 };
 let fail = 0;

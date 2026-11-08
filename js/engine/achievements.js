@@ -11,6 +11,13 @@ const withTribe = (ids, t) => [...ids].filter(id => (defOf(id)?.tribes || []).so
 const names = (ids) => ids.map(id => defOf(id)?.name || id).join(', ');
 const playedThisTurn = (events, ev, me, id) => events.some(e => e.type === 'play' && e.player === me && e.id === id && e.turn === ev.turn);
 
+/** A tiered achievement: bronze / silver / gold levels of the same count (ids stay stable for saved unlocks). */
+const tiers = ({ name, icon, levels, desc, hint, count }) => levels.map(([id, n, tier], i) => ({
+  id, name: name + ['', ' II', ' III'][i], icon, tier, desc: desc(n),
+  ...(hint ? { hint: (ctx) => hint(ctx, n) } : {}),
+  check: (ctx) => count(ctx) >= n,
+}));
+
 export const ACHIEVEMENTS = [
   {
     id: 'funniest', name: 'Funniest shit I have ever seen', icon: '🤣',
@@ -34,15 +41,16 @@ export const ACHIEVEMENTS = [
       : { hu: 'Benne van a pakliban a The ULTIMATE FLEX. Reméld, hogy Shieldbe kerül.', en: 'You run The ULTIMATE FLEX — hope it lands in your shields.' },
     check: ({ ev, me }) => ev.type === 'play' && ev.player === me && ev.id === 'OGN-186' && ev.via === 'shieldTrigger',
   },
-  {
-    id: 'painter', name: 'Speed Painting', icon: '🖌️',
-    desc: 'Accelerate 3 Miniatures with the Miniature Painter in a single turn.',
-    hint: ({ mine }) => mine.has('OGN-188') && (mine.has('OGN-179') || mine.has('OGN-189'))
-      ? { hu: 'Egy nagy körben készíts és gyorsíts (Accelerate) 3 Miniature-t a 3D Printerekkel, miközben a Painter lent van.',
-        en: 'In one big turn make and accelerate 3 Miniatures with your 3D Printers while the Painter is on the field.' } : null,
-    check: ({ ev, me, events }) => ev.type === 'accelerate' && ev.player === me && !ev.via
-      && sameTurn(events, ev, e => e.type === 'accelerate' && e.player === me && !e.via).length >= 3,
-  },
+  // Speed Painting I / II / III: Accelerate 1 / 3 / 5 Miniatures with the Painter in one turn
+  ...tiers({
+    name: 'Speed Painting', icon: '🖌️', levels: [['painter-1', 1, 'bronze'], ['painter', 3, 'silver'], ['painter-5', 5, 'gold']],
+    desc: (n) => `Accelerate ${n} Miniature${n > 1 ? 's' : ''} with the Miniature Painter in a single turn.`,
+    hint: ({ mine }, n) => mine.has('OGN-188') && (mine.has('OGN-179') || mine.has('OGN-189'))
+      ? { hu: `Egy körben készíts és gyorsíts (Accelerate) ${n} Miniature-t a 3D Printerekkel, miközben a Painter lent van.`,
+        en: `In one turn make and accelerate ${n} Miniature${n > 1 ? 's' : ''} with your 3D Printers while the Painter is on the field.` } : null,
+    count: ({ ev, me, events }) => (ev.type === 'accelerate' && ev.player === me && !ev.via
+      ? sameTurn(events, ev, e => e.type === 'accelerate' && e.player === me && !e.via).length : 0),
+  }),
   {
     id: 'manyika-rest', name: 'Manyika can rest finally', icon: '🪦',
     desc: 'Watch a Manyika Dreadnought die from a Burst-Pouch (either of you may control them).',
@@ -58,18 +66,19 @@ export const ACHIEVEMENTS = [
     },
     check: ({ ev }) => ev.type === 'kill' && ev.victim === 'OGN-176' && ev.killer === 'TKN-005',
   },
-  {
-    id: 'art-destruction', name: 'Art of Destruction', icon: '🎨',
-    desc: 'Banish 5 cards in a turn with The Chronicler.',
-    hint: ({ mine }) => {
+  // Art of Destruction I / II / III: banish 1 / 3 / 5 cards in a turn with The Chronicler
+  ...tiers({
+    name: 'Art of Destruction', icon: '🎨', levels: [['art-destruction-1', 1, 'bronze'], ['art-destruction-3', 3, 'silver'], ['art-destruction', 5, 'gold']],
+    desc: (n) => `Banish ${n} card${n > 1 ? 's' : ''} in a turn with The Chronicler.`,
+    hint: ({ mine }, n) => {
       if (!mine.has('OGN-178')) return null;
-      const n = withTribe(mine, 'Art').filter(id => id !== 'OGN-178').length;
-      return n >= 5 ? { hu: `Gyűjts össze 5 Art lapot a kezedben, játszd ki a The Chroniclert, majd mindet 1-ért (${n} Art lap van a pakliban).`,
-        en: `Hold 5 Art cards, play The Chronicler, then cast them all for 1 (${n} Art cards in your deck).` } : null;
+      const k = withTribe(mine, 'Art').filter(id => id !== 'OGN-178').length;
+      return k >= n ? { hu: `Gyűjts ${n} Art lapot a kezedbe, játszd ki a The Chroniclert, majd őket 1-ért (${k} Art lap van a pakliban).`,
+        en: `Hold ${n} Art card${n > 1 ? 's' : ''}, play The Chronicler, then cast ${n > 1 ? 'them' : 'it'} for 1 (${k} Art cards in your deck).` } : null;
     },
-    check: ({ ev, me, events }) => ev.type === 'banish' && ev.player === me
-      && sameTurn(events, ev, e => e.type === 'banish' && e.player === me).length >= 5,
-  },
+    count: ({ ev, me, events }) => (ev.type === 'banish' && ev.player === me
+      ? sameTurn(events, ev, e => e.type === 'banish' && e.player === me).length : 0),
+  }),
   {
     id: 'came-prepared', name: 'Came Prepared', icon: '🛡️',
     desc: 'Shieldify a Shield Trigger card.',

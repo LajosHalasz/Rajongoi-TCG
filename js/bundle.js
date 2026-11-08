@@ -778,6 +778,15 @@ ${def.text}`;
   var withTribe = (ids, t2) => [...ids].filter((id) => (defOf(id)?.tribes || []).some((x) => x.toLowerCase() === t2.toLowerCase()));
   var names = (ids) => ids.map((id) => defOf(id)?.name || id).join(", ");
   var playedThisTurn = (events, ev, me, id) => events.some((e) => e.type === "play" && e.player === me && e.id === id && e.turn === ev.turn);
+  var tiers = ({ name, icon, levels, desc, hint, count }) => levels.map(([id, n, tier2], i) => ({
+    id,
+    name: name + ["", " II", " III"][i],
+    icon,
+    tier: tier2,
+    desc: desc(n),
+    ...hint ? { hint: (ctx2) => hint(ctx2, n) } : {},
+    check: (ctx2) => count(ctx2) >= n
+  }));
   var ACHIEVEMENTS = [
     {
       id: "funniest",
@@ -809,17 +818,18 @@ ${def.text}`;
       } : { hu: "Benne van a pakliban a The ULTIMATE FLEX. Rem\xE9ld, hogy Shieldbe ker\xFCl.", en: "You run The ULTIMATE FLEX \u2014 hope it lands in your shields." },
       check: ({ ev, me }) => ev.type === "play" && ev.player === me && ev.id === "OGN-186" && ev.via === "shieldTrigger"
     },
-    {
-      id: "painter",
+    // Speed Painting I / II / III: Accelerate 1 / 3 / 5 Miniatures with the Painter in one turn
+    ...tiers({
       name: "Speed Painting",
       icon: "\u{1F58C}\uFE0F",
-      desc: "Accelerate 3 Miniatures with the Miniature Painter in a single turn.",
-      hint: ({ mine }) => mine.has("OGN-188") && (mine.has("OGN-179") || mine.has("OGN-189")) ? {
-        hu: "Egy nagy k\xF6rben k\xE9sz\xEDts \xE9s gyors\xEDts (Accelerate) 3 Miniature-t a 3D Printerekkel, mik\xF6zben a Painter lent van.",
-        en: "In one big turn make and accelerate 3 Miniatures with your 3D Printers while the Painter is on the field."
+      levels: [["painter-1", 1, "bronze"], ["painter", 3, "silver"], ["painter-5", 5, "gold"]],
+      desc: (n) => `Accelerate ${n} Miniature${n > 1 ? "s" : ""} with the Miniature Painter in a single turn.`,
+      hint: ({ mine }, n) => mine.has("OGN-188") && (mine.has("OGN-179") || mine.has("OGN-189")) ? {
+        hu: `Egy k\xF6rben k\xE9sz\xEDts \xE9s gyors\xEDts (Accelerate) ${n} Miniature-t a 3D Printerekkel, mik\xF6zben a Painter lent van.`,
+        en: `In one turn make and accelerate ${n} Miniature${n > 1 ? "s" : ""} with your 3D Printers while the Painter is on the field.`
       } : null,
-      check: ({ ev, me, events }) => ev.type === "accelerate" && ev.player === me && !ev.via && sameTurn(events, ev, (e) => e.type === "accelerate" && e.player === me && !e.via).length >= 3
-    },
+      count: ({ ev, me, events }) => ev.type === "accelerate" && ev.player === me && !ev.via ? sameTurn(events, ev, (e) => e.type === "accelerate" && e.player === me && !e.via).length : 0
+    }),
     {
       id: "manyika-rest",
       name: "Manyika can rest finally",
@@ -843,21 +853,22 @@ ${def.text}`;
       },
       check: ({ ev }) => ev.type === "kill" && ev.victim === "OGN-176" && ev.killer === "TKN-005"
     },
-    {
-      id: "art-destruction",
+    // Art of Destruction I / II / III: banish 1 / 3 / 5 cards in a turn with The Chronicler
+    ...tiers({
       name: "Art of Destruction",
       icon: "\u{1F3A8}",
-      desc: "Banish 5 cards in a turn with The Chronicler.",
-      hint: ({ mine }) => {
+      levels: [["art-destruction-1", 1, "bronze"], ["art-destruction-3", 3, "silver"], ["art-destruction", 5, "gold"]],
+      desc: (n) => `Banish ${n} card${n > 1 ? "s" : ""} in a turn with The Chronicler.`,
+      hint: ({ mine }, n) => {
         if (!mine.has("OGN-178")) return null;
-        const n = withTribe(mine, "Art").filter((id) => id !== "OGN-178").length;
-        return n >= 5 ? {
-          hu: `Gy\u0171jts \xF6ssze 5 Art lapot a kezedben, j\xE1tszd ki a The Chroniclert, majd mindet 1-\xE9rt (${n} Art lap van a pakliban).`,
-          en: `Hold 5 Art cards, play The Chronicler, then cast them all for 1 (${n} Art cards in your deck).`
+        const k = withTribe(mine, "Art").filter((id) => id !== "OGN-178").length;
+        return k >= n ? {
+          hu: `Gy\u0171jts ${n} Art lapot a kezedbe, j\xE1tszd ki a The Chroniclert, majd \u0151ket 1-\xE9rt (${k} Art lap van a pakliban).`,
+          en: `Hold ${n} Art card${n > 1 ? "s" : ""}, play The Chronicler, then cast ${n > 1 ? "them" : "it"} for 1 (${k} Art cards in your deck).`
         } : null;
       },
-      check: ({ ev, me, events }) => ev.type === "banish" && ev.player === me && sameTurn(events, ev, (e) => e.type === "banish" && e.player === me).length >= 5
-    },
+      count: ({ ev, me, events }) => ev.type === "banish" && ev.player === me ? sameTurn(events, ev, (e) => e.type === "banish" && e.player === me).length : 0
+    }),
     {
       id: "came-prepared",
       name: "Came Prepared",
