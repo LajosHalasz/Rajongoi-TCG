@@ -1,10 +1,13 @@
 // Browser data loading: placeholders + imported (real) cards + logic overrides.
 import { setCardDb, allCards, mergeSources } from './engine/cards.js';
 import { validateDeck } from './engine/deck.js';
+import { loadCustomCards, putCustomCard, removeCustomCard } from './cardstore.js';
 
 const LS_KEY = 'riftmasters.decks.v1'; // kept so decks saved before the rename still load
 let premade = [];
 let guides = {};
+let sources = null; // kept so the card database can be rebuilt after the Card Editor saves
+let custom = [];
 
 async function getJson(url, fallback) {
   try {
@@ -23,10 +26,34 @@ export async function loadData() {
       Promise.all([getJson('data/cards.json', []), getJson('data/tokens.json', [])]).then(([a, b]) => [...a, ...b]), getJson('data/imported.json', []),
       getJson('data/effects.json', {}), getJson('data/decks.json', []), getJson('data/deck-guides.json', {}),
     ]);
-  setCardDb(mergeSources(placeholders, imported), overrides);
+  custom = await loadCustomCards().catch(() => []);
+  sources = { placeholders, imported, overrides };
+  rebuild();
   premade = decks;
   guides = deckGuides || {};
   return allCards();
+}
+
+function rebuild() {
+  const { placeholders, imported, overrides } = sources;
+  // editor cards win over everything with the same id (that's how existing cards get edited)
+  const over = { ...overrides };
+  for (const c of custom) delete over[c.id];
+  setCardDb([...mergeSources(placeholders, imported).filter(c => !custom.some(x => x.id === c.id)), ...custom], over);
+}
+
+/** Cards made or edited in the Card Editor (this browser only). */
+export function customCards() { return custom; }
+export const isCustomCard = (id) => custom.some(c => c.id === id);
+export async function saveCustomCard(card) {
+  await putCustomCard(card);
+  custom = [...custom.filter(c => c.id !== card.id), card];
+  rebuild();
+}
+export async function deleteCustomCard(id) {
+  await removeCustomCard(id);
+  custom = custom.filter(c => c.id !== id);
+  rebuild();
 }
 
 export function customDecks() {

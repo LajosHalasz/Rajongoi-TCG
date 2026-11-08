@@ -18,6 +18,25 @@ The **Achievements** tab lists 12 achievements. They are unlocked in Play vs AI 
 
 The engine emits structured events (`play`, `kill`, `banish`, `shieldify`, `gearReplace`, `accelerate`, `finalBlow`, `win`). `js/engine/achievements.js` checks them; each achievement is a small `check()` function, so new ones are easy to add. *Art of the Deal* can't be unlocked yet, because the AI never accepts a Dealmaker deal; it will work with online play.
 
+## Card Editor
+The **Editor** tab (`js/ui/editor.js`) builds cards in the game's own schema with a live preview (the real card renderer):
+name, type (Unit, Champion, Spell, Gear, Signature, Legend, Token), set/number, colors, cost, Might, Recycle, rarity, tags, keywords, Shieldify, Saga uses,
+artwork (upload or drop a picture, drag it on the preview to move it, scroll or use the slider to zoom), and **abilities built from the engine's effect
+primitives** (trigger + action + target + amount), so the card works in the game. The rules text is written automatically from keywords and abilities,
+or by hand with the `{Keyword#HEX}` / `__italic__` / `[T]` markup.
+
+- **Save** stores the card in this browser (IndexedDB, `js/cardstore.js`). It shows up in the Collection and the deck builder at once, and can be
+  added to an own deck from the editor. Saving with an existing id replaces that card in this browser (that's how existing cards are edited:
+  *Collection → card → Edit in Card Editor*).
+- **Import** accepts riftcardmaker JSON exports (opened in the editor; a card that is already in the game keeps its game logic) and editor exports.
+- **Download card file / Export all** writes `{ "format": "rajongoi-cards", "cards": [...] }` with the artwork inline. To make cards permanent for everyone:
+
+  ```bash
+  node tools/import-editor-cards.mjs exported.json
+  ```
+
+  It writes the artwork to `data/img/<id>.jpg`, the card to `data/imported.json`, its keywords/tags/abilities to `data/effects.json`, and rebuilds `data/data.js`.
+
 ## Rules page and languages
 The **Rules** tab (`js/ui/rules.js`) is a short summary of the game in Hungarian (default) and English, with a Magyar / English switch. The same switch sits above the deck tips on the Play vs AI page. The choice is saved in the browser (`rajongoi.lang`). Deck strategy notes live in `data/deck-guides.json` as `{ "hu": …, "en": … }` per deck id; card and keyword names stay in English.
 

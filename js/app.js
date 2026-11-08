@@ -7,6 +7,7 @@ import { renderBoosters } from './ui/boosters.js';
 import { renderAchievements, unlockedMap } from './ui/achievements.js';
 import { ACHIEVEMENTS } from './engine/achievements.js';
 import { renderRules } from './ui/rules.js';
+import { renderEditor } from './ui/editor.js';
 import { sfx, isMuted, setMuted } from './ui/sfx.js';
 
 const app = document.getElementById('app');
@@ -65,6 +66,7 @@ function route() {
     case 'boosters': return renderBoosters(app);
     case 'achievements': return renderAchievements(app);
     case 'rules': return renderRules(app);
+    case 'editor': return renderEditor(app, arg);
     default: return renderHome();
   }
 }

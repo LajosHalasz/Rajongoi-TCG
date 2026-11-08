@@ -308,9 +308,9 @@ ${def.text}`;
       return { errors, warnings, stats: deckStats(deck) };
     }
     const legend = getDef(deck.legend);
-    const st = deckStats(deck);
+    const st2 = deckStats(deck);
     for (const id of Object.keys(deck.cards || {})) if (!hasDef(id)) errors.push(`Unknown card ${id}.`);
-    if (st.total !== RULES.DECK_SIZE) errors.push(`Deck must have exactly ${RULES.DECK_SIZE} cards (has ${st.total}).`);
+    if (st2.total !== RULES.DECK_SIZE) errors.push(`Deck must have exactly ${RULES.DECK_SIZE} cards (has ${st2.total}).`);
     for (const [id, n] of Object.entries(deck.cards || {})) if (n > RULES.MAX_COPIES && hasDef(id)) errors.push(`Only ${RULES.MAX_COPIES} copy allowed: ${getDef(id).name}.`);
     const ids = Object.keys(deck.cards || {}).filter(hasDef);
     const defs2 = ids.map(getDef);
@@ -322,31 +322,91 @@ ${def.text}`;
         errors.push(`${d.name} is outside your Legend's colors (${legend.colors.join("/")}).`);
       }
     }
-    if (st.champions < RULES.MIN_CHAMPIONS || st.champions > RULES.MAX_CHAMPIONS)
-      errors.push(`Deck needs ${RULES.MIN_CHAMPIONS}-${RULES.MAX_CHAMPIONS} Champion Units (has ${st.champions}).`);
+    if (st2.champions < RULES.MIN_CHAMPIONS || st2.champions > RULES.MAX_CHAMPIONS)
+      errors.push(`Deck needs ${RULES.MIN_CHAMPIONS}-${RULES.MAX_CHAMPIONS} Champion Units (has ${st2.champions}).`);
     if (!defs2.some((d) => d.type === "champion" && championMatchesLegend(d, legend)))
       errors.push(`At least one Champion must share the Legend's name (${legend.name.split(",")[0]}).`);
-    if (st.signatures > RULES.MAX_SIGNATURES) errors.push(`Max ${RULES.MAX_SIGNATURES} Signature cards.`);
+    if (st2.signatures > RULES.MAX_SIGNATURES) errors.push(`Max ${RULES.MAX_SIGNATURES} Signature cards.`);
     if (!deck.champion || !ids.includes(deck.champion)) errors.push("Choose the Champion that starts in the Champion Slot.");
     else if (!championMatchesLegend(getDef(deck.champion), legend)) errors.push("The Champion Slot card must share the Legend's name.");
-    if (st.signatures > 0 && (!deck.signature || !ids.includes(deck.signature))) errors.push("Choose the Signature card that starts in the Signature Slot.");
-    if (st.runes !== RULES.RUNE_DECK_SIZE) errors.push(`Mana Deck must have ${RULES.RUNE_DECK_SIZE} runes (has ${st.runes}).`);
+    if (st2.signatures > 0 && (!deck.signature || !ids.includes(deck.signature))) errors.push("Choose the Signature card that starts in the Signature Slot.");
+    if (st2.runes !== RULES.RUNE_DECK_SIZE) errors.push(`Mana Deck must have ${RULES.RUNE_DECK_SIZE} runes (has ${st2.runes}).`);
     for (const c of Object.keys(deck.runes || {})) if (deck.runes[c] > 0 && !legend.colors.includes(c)) errors.push(`${c} runes don't match your Legend.`);
     const range = (k, label) => {
       const [lo, hi] = GUIDE[k];
-      if (st[k] < lo || st[k] > hi) warnings.push(`Guide: ${lo}-${hi} ${label} (has ${st[k]}).`);
+      if (st2[k] < lo || st2[k] > hi) warnings.push(`Guide: ${lo}-${hi} ${label} (has ${st2[k]}).`);
     };
     range("units", "Units");
     range("spells", "Spells");
     range("gears", "Gears");
-    if (Math.abs(st.avgCost - GUIDE.avgCost) > 0.6) warnings.push(`Guide: average cost ~${GUIDE.avgCost} (is ${st.avgCost.toFixed(1)}).`);
-    return { errors, warnings, stats: st };
+    if (Math.abs(st2.avgCost - GUIDE.avgCost) > 0.6) warnings.push(`Guide: average cost ~${GUIDE.avgCost} (is ${st2.avgCost.toFixed(1)}).`);
+    return { errors, warnings, stats: st2 };
+  }
+
+  // js/cardstore.js
+  var DB_NAME = "rajongoi-cards";
+  var STORE = "cards";
+  var LS = "rajongoi.customCards.v1";
+  function open() {
+    return new Promise((res, rej) => {
+      if (typeof indexedDB === "undefined") return rej(new Error("no indexedDB"));
+      const r = indexedDB.open(DB_NAME, 1);
+      r.onupgradeneeded = () => r.result.createObjectStore(STORE, { keyPath: "id" });
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+  }
+  async function tx(mode, fn) {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const t2 = db.transaction(STORE, mode);
+      const out = fn(t2.objectStore(STORE));
+      t2.oncomplete = () => {
+        db.close();
+        res(out?.result ?? out);
+      };
+      t2.onerror = () => {
+        db.close();
+        rej(t2.error);
+      };
+    });
+  }
+  var lsGet = () => {
+    try {
+      return JSON.parse(localStorage.getItem(LS)) || [];
+    } catch {
+      return [];
+    }
+  };
+  var lsSet = (l) => localStorage.setItem(LS, JSON.stringify(l));
+  async function loadCustomCards() {
+    try {
+      return await tx("readonly", (s) => s.getAll());
+    } catch {
+      return lsGet();
+    }
+  }
+  async function putCustomCard(card) {
+    try {
+      await tx("readwrite", (s) => s.put(card));
+    } catch {
+      lsSet([...lsGet().filter((c) => c.id !== card.id), card]);
+    }
+  }
+  async function removeCustomCard(id) {
+    try {
+      await tx("readwrite", (s) => s.delete(id));
+    } catch {
+      lsSet(lsGet().filter((c) => c.id !== id));
+    }
   }
 
   // js/data.js
   var LS_KEY = "riftmasters.decks.v1";
   var premade = [];
   var guides = {};
+  var sources = null;
+  var custom = [];
   async function getJson(url, fallback) {
     try {
       const r = await fetch(url, { cache: "no-cache" });
@@ -365,10 +425,32 @@ ${def.text}`;
       getJson("data/decks.json", []),
       getJson("data/deck-guides.json", {})
     ]);
-    setCardDb(mergeSources(placeholders, imported), overrides);
+    custom = await loadCustomCards().catch(() => []);
+    sources = { placeholders, imported, overrides };
+    rebuild();
     premade = decks;
     guides = deckGuides || {};
     return allCards();
+  }
+  function rebuild() {
+    const { placeholders, imported, overrides } = sources;
+    const over = { ...overrides };
+    for (const c of custom) delete over[c.id];
+    setCardDb([...mergeSources(placeholders, imported).filter((c) => !custom.some((x) => x.id === c.id)), ...custom], over);
+  }
+  function customCards() {
+    return custom;
+  }
+  var isCustomCard = (id) => custom.some((c) => c.id === id);
+  async function saveCustomCard(card) {
+    await putCustomCard(card);
+    custom = [...custom.filter((c) => c.id !== card.id), card];
+    rebuild();
+  }
+  async function deleteCustomCard(id) {
+    await removeCustomCard(id);
+    custom = custom.filter((c) => c.id !== id);
+    rebuild();
   }
   function customDecks() {
     try {
@@ -633,7 +715,7 @@ ${def.text}`;
       <dt>Keywords</dt><dd>${esc(kws)}</dd>
       <dt>Card id</dt><dd><code>${esc(def.id)}</code></dd>
       <dt>Game logic</dt><dd><code style="font-size:12px;white-space:pre-wrap">${esc(JSON.stringify(def.effects || []))}</code></dd>
-      <dd style="margin-top:14px"><button class="close">Close</button></dd>
+      <dd style="margin-top:14px"><button class="close">Close</button> <a class="btn ghost" href="#/editor/${encodeURIComponent(def.id)}">\u270E Edit in Card Editor</a></dd>
     </dl></div></div>`;
     m.addEventListener("click", (e) => {
       if (e.target === m || e.target.closest(".close")) m.remove();
@@ -665,7 +747,7 @@ ${def.text}`;
     const owners = [...new Set(inSet.flatMap((c) => c.owners || []))].sort((a, b) => a.localeCompare(b));
     if (filt.owner && !owners.includes(filt.owner)) filt.owner = "";
     const status = (c) => c.image ? "art" : c.wip || c.placeholder ? "wip" : "designed";
-    const draw = () => {
+    const draw2 = () => {
       const sortKey = filt.sort === "auto" ? filt.owner ? "deck" : "number" : filt.sort;
       const shown = inSet.filter((c) => (!filt.types.size || filt.types.has(c.type)) && (!filt.colors.size || c.colors.some((x) => filt.colors.has(x))) && (!filt.owner || (c.owners || []).includes(filt.owner)) && (!filt.status || status(c) === filt.status) && (!filt.q || (c.name + " " + c.text).toLowerCase().includes(filt.q.toLowerCase()))).sort(SORTS[sortKey].fn);
       const nArt = inSet.filter((c) => status(c) === "art").length;
@@ -692,35 +774,35 @@ ${def.text}`;
       app2.querySelectorAll("[data-set]").forEach((b) => b.onclick = () => location.hash = "#/collection/" + b.dataset.set);
       app2.querySelectorAll("[data-type]").forEach((b) => b.onclick = () => {
         toggle(filt.types, b.dataset.type);
-        draw();
+        draw2();
       });
       app2.querySelectorAll("[data-color]").forEach((b) => b.onclick = () => {
         toggle(filt.colors, b.dataset.color);
-        draw();
+        draw2();
       });
       if (app2.querySelector("#owner")) app2.querySelector("#owner").onchange = (e) => {
         filt.owner = e.target.value;
-        draw();
+        draw2();
       };
       app2.querySelector("#status").onchange = (e) => {
         filt.status = e.target.value;
-        draw();
+        draw2();
       };
       app2.querySelector("#sort").onchange = (e) => {
         filt.sort = e.target.value;
-        draw();
+        draw2();
       };
       const q = app2.querySelector("#q");
       q.oninput = () => {
         filt.q = q.value;
-        draw();
+        draw2();
         const nq = app2.querySelector("#q");
         nq.focus();
         nq.setSelectionRange(nq.value.length, nq.value.length);
       };
       app2.querySelectorAll(".grid .card").forEach((el) => el.onclick = () => showCardModal(getDef(el.dataset.cid)));
     };
-    draw();
+    draw2();
   }
   var toggle = (set, v) => set.has(v) ? set.delete(v) : set.add(v);
   function renderDecks(app2) {
@@ -820,16 +902,16 @@ ${def.text}`;
       const sigs = ids.map(getDef).filter((d) => d.type === "signature");
       if (!ids.includes(draft.signature)) draft.signature = sigs[0]?.id || null;
     };
-    const draw = () => {
+    const draw2 = () => {
       const L2 = draft.legend ? getDef(draft.legend) : null;
       const v = validateDeck(draft);
-      const st = v.stats;
+      const st2 = v.stats;
       const shown = pool().filter((c) => (bf.set === "ALL" || c.set === bf.set) && (bf.type === "ALL" || c.type === bf.type) && (!bf.q || (c.name + " " + c.text).toLowerCase().includes(bf.q.toLowerCase())));
       const inDeck = Object.keys(draft.cards).map(getDef).sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || a.cost - b.cost);
       const groups = TYPE_ORDER.map((t2) => [t2, inDeck.filter((d) => d.type === t2)]).filter(([, l]) => l.length);
       const champs = inDeck.filter((d) => d.type === "champion" && championMatchesLegend(d, L2));
       const sigs = inDeck.filter((d) => d.type === "signature");
-      const maxBar = Math.max(4, ...Object.values(st.curve), ...Object.values(GUIDE.curve));
+      const maxBar = Math.max(4, ...Object.values(st2.curve), ...Object.values(GUIDE.curve));
       const sets = [...new Set(pool().map((c) => c.set))].sort();
       const runeA = L2?.colors[0], runeB = L2?.colors[1];
       app2.innerHTML = `<div class="page"><div class="builder">
@@ -856,9 +938,9 @@ ${def.text}`;
           ${sigs.length ? sigs.map((c) => `<option value="${c.id}" ${c.id === draft.signature ? "selected" : ""}>${esc(c.name)}</option>`).join("") : '<option value="">none</option>'}</select></div>
         <div class="field"><label>Mana Deck: ${runeB ? `${runeA} ${draft.runes[runeA] || 0} \xB7 ${runeB} ${draft.runes[runeB] || 0}` : `${runeA} ${RULES.RUNE_DECK_SIZE}`}</label>
           ${runeB ? `<input type="range" id="runes" min="0" max="${RULES.RUNE_DECK_SIZE}" value="${draft.runes[runeA] || 0}" style="width:100%">` : ""}</div>
-        <div class="row"><b>${st.total}/${RULES.DECK_SIZE}</b><span class="muted">U ${st.units} \xB7 C ${st.champions} \xB7 S ${st.spells} \xB7 G ${st.gears} \xB7 Sig ${st.signatures} \xB7 avg ${st.avgCost.toFixed(1)}</span></div>
-        <div class="curve">${Array.from({ length: 10 }, (_, i) => i + 1).map((c) => `<div class="bar" title="cost ${c}: ${st.curve[c] || 0} (guide ${GUIDE.curve[c] || 0})">
-          <div class="fill" style="height:${(st.curve[c] || 0) / maxBar * 100}%"></div>
+        <div class="row"><b>${st2.total}/${RULES.DECK_SIZE}</b><span class="muted">U ${st2.units} \xB7 C ${st2.champions} \xB7 S ${st2.spells} \xB7 G ${st2.gears} \xB7 Sig ${st2.signatures} \xB7 avg ${st2.avgCost.toFixed(1)}</span></div>
+        <div class="curve">${Array.from({ length: 10 }, (_, i) => i + 1).map((c) => `<div class="bar" title="cost ${c}: ${st2.curve[c] || 0} (guide ${GUIDE.curve[c] || 0})">
+          <div class="fill" style="height:${(st2.curve[c] || 0) / maxBar * 100}%"></div>
           <div class="target" style="bottom:${(GUIDE.curve[c] || 0) / maxBar * 100}%"></div></div>`).join("")}</div>
         <div class="curve-labels">${Array.from({ length: 10 }, (_, i) => `<span>${i + 1}${i === 9 ? "+" : ""}</span>`).join("")}</div>
         <p class="muted" style="font-size:13px;margin:2px 0 8px">Bars = your curve, dashed = Assembly Guide.</p>
@@ -873,32 +955,32 @@ ${def.text}`;
       $("#dname").oninput = (e) => draft.name = e.target.value;
       $("#legend").onchange = (e) => {
         setLegend(e.target.value);
-        draw();
+        draw2();
       };
       if (L2) {
         $("#champ").onchange = (e) => {
           draft.champion = e.target.value;
-          draw();
+          draw2();
         };
         $("#sig").onchange = (e) => {
           draft.signature = e.target.value;
-          draw();
+          draw2();
         };
         if ($("#runes")) $("#runes").oninput = (e) => {
           draft.runes = { [runeA]: +e.target.value, [runeB]: RULES.RUNE_DECK_SIZE - e.target.value };
-          draw();
+          draw2();
         };
         app2.querySelectorAll("[data-bset]").forEach((b) => b.onclick = () => {
           bf.set = b.dataset.bset;
-          draw();
+          draw2();
         });
         app2.querySelectorAll("[data-btype]").forEach((b) => b.onclick = () => {
           bf.type = b.dataset.btype;
-          draw();
+          draw2();
         });
         $("#bq").oninput = (e) => {
           bf.q = e.target.value;
-          draw();
+          draw2();
           const n = $("#bq");
           n.focus();
           n.setSelectionRange(n.value.length, n.value.length);
@@ -908,7 +990,7 @@ ${def.text}`;
             const id = el.dataset.cid;
             draft.cards[id] ? delete draft.cards[id] : draft.cards[id] = 1;
             fixSlots();
-            draw();
+            draw2();
           };
           el.oncontextmenu = (e) => {
             e.preventDefault();
@@ -918,7 +1000,7 @@ ${def.text}`;
         app2.querySelectorAll("[data-rm]").forEach((li) => li.onclick = () => {
           delete draft.cards[li.dataset.rm];
           fixSlots();
-          draw();
+          draw2();
         });
       }
       $("#save").onclick = () => {
@@ -927,7 +1009,7 @@ ${def.text}`;
         location.hash = "#/decks";
       };
     };
-    draw();
+    draw2();
   }
 
   // js/engine/game.js
@@ -2292,7 +2374,7 @@ ${def.text}`;
   }
 
   // js/ui/sfx.js
-  var LS = "rajongoi.sound.v1";
+  var LS2 = "rajongoi.sound.v1";
   var ctx = null;
   var master;
   var verbIn;
@@ -2300,7 +2382,7 @@ ${def.text}`;
   var muted = false;
   var volume = 0.7;
   try {
-    const s = JSON.parse(localStorage.getItem(LS));
+    const s = JSON.parse(localStorage.getItem(LS2));
     if (s) {
       muted = !!s.muted;
       volume = s.volume ?? volume;
@@ -2309,7 +2391,7 @@ ${def.text}`;
   }
   function save() {
     try {
-      localStorage.setItem(LS, JSON.stringify({ muted, volume }));
+      localStorage.setItem(LS2, JSON.stringify({ muted, volume }));
     } catch {
     }
   }
@@ -2676,10 +2758,10 @@ ${def.text}`;
       icon: "\u{1F6E1}\uFE0F",
       desc: "Shieldify a Shield Trigger card.",
       hint: ({ mine }) => {
-        const sh = withKw(mine, "Shieldify"), st = withKw(mine, "Shield Trigger");
-        return sh.length && st.length ? {
-          hu: `J\xE1tszd ki ezt: ${names(sh)}, mik\xF6zben egy Shield Trigger lap van a kezedben (${names(st)}), \xE9s azt tedd a Shieldek k\xF6z\xE9.`,
-          en: `Play ${names(sh)} with a Shield Trigger card in hand (${names(st)}).`
+        const sh = withKw(mine, "Shieldify"), st2 = withKw(mine, "Shield Trigger");
+        return sh.length && st2.length ? {
+          hu: `J\xE1tszd ki ezt: ${names(sh)}, mik\xF6zben egy Shield Trigger lap van a kezedben (${names(st2)}), \xE9s azt tedd a Shieldek k\xF6z\xE9.`,
+          en: `Play ${names(sh)} with a Shield Trigger card in hand (${names(st2)}).`
         } : null;
       },
       check: ({ ev, me }) => ev.type === "shieldify" && ev.player === me && (getDef(ev.id).keywords || []).includes("Shield Trigger")
@@ -2772,17 +2854,17 @@ ${def.text}`;
   }
 
   // js/ui/achievements.js
-  var LS2 = "rajongoi.achievements.v1";
+  var LS3 = "rajongoi.achievements.v1";
   function unlockedMap() {
     try {
-      return JSON.parse(localStorage.getItem(LS2)) || {};
+      return JSON.parse(localStorage.getItem(LS3)) || {};
     } catch {
       return {};
     }
   }
   function save2(m) {
     try {
-      localStorage.setItem(LS2, JSON.stringify(m));
+      localStorage.setItem(LS3, JSON.stringify(m));
     } catch {
     }
   }
@@ -2825,17 +2907,17 @@ ${def.text}`;
   }
 
   // js/ui/lang.js
-  var LS3 = "rajongoi.lang";
+  var LS4 = "rajongoi.lang";
   function getLang() {
     try {
-      return localStorage.getItem(LS3) === "en" ? "en" : "hu";
+      return localStorage.getItem(LS4) === "en" ? "en" : "hu";
     } catch {
       return "hu";
     }
   }
   function setLang(l) {
     try {
-      localStorage.setItem(LS3, l);
+      localStorage.setItem(LS4, l);
     } catch {
     }
   }
@@ -3024,10 +3106,10 @@ ${def.text}`;
       dd.querySelector(".dd-btn").onclick = (e) => {
         e.stopPropagation();
         const list = dd.querySelector(".dd-list");
-        const open = list.hidden;
+        const open2 = list.hidden;
         closeAll();
-        list.hidden = !open;
-        if (open) list.querySelector(".dd-opt.on")?.scrollIntoView({ block: "nearest" });
+        list.hidden = !open2;
+        if (open2) list.querySelector(".dd-opt.on")?.scrollIntoView({ block: "nearest" });
       };
     });
     app2.querySelectorAll(".dd-opt[data-id]").forEach((el) => el.onclick = (e) => {
@@ -3486,7 +3568,7 @@ ${def.text}`;
     document.body.appendChild(cv);
     const g = cv.getContext("2d");
     g.scale(dpr, dpr);
-    const tx = r.left + r.width / 2, ty = r.top + r.height * 0.32;
+    const tx2 = r.left + r.width / 2, ty = r.top + r.height * 0.32;
     const hexes = (colors && colors.length ? colors : ["Mind"]).map((c) => COLORS[c]?.hex || "#6be3ff");
     const rgb = (hex) => {
       const n = parseInt(hex.slice(1), 16);
@@ -3531,7 +3613,7 @@ ${def.text}`;
     const spawn = () => {
       bolts = hexes.map((hex, i) => ({
         col: rgb(hex),
-        segs: makeBolt(tx + (Math.random() - 0.5) * W * 0.25 + (hexes.length > 1 ? (i ? 1 : -1) * 60 : 0), tx + (hexes.length > 1 ? (i ? 1 : -1) * 6 : 0), ty)
+        segs: makeBolt(tx2 + (Math.random() - 0.5) * W * 0.25 + (hexes.length > 1 ? (i ? 1 : -1) * 60 : 0), tx2 + (hexes.length > 1 ? (i ? 1 : -1) * 6 : 0), ty)
       }));
     };
     spawn();
@@ -3541,7 +3623,7 @@ ${def.text}`;
         const a = -Math.PI * (0.05 + Math.random() * 0.9);
         const v = 2 + Math.random() * 7;
         const c = bolts[i % bolts.length].col;
-        sparks.push({ x: tx, y: ty + r.height * 0.15, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, c });
+        sparks.push({ x: tx2, y: ty + r.height * 0.15, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, c });
       }
     };
     const LEADER = 150, END = 1150;
@@ -3617,13 +3699,13 @@ ${def.text}`;
       if (t2 >= LEADER) {
         const [cr, cg, cb] = bolts[bolts.length - 1].col;
         const rad = r.width * (1.6 + inten);
-        const gr = g.createRadialGradient(tx, ty + r.height * 0.2, 0, tx, ty + r.height * 0.2, rad);
+        const gr = g.createRadialGradient(tx2, ty + r.height * 0.2, 0, tx2, ty + r.height * 0.2, rad);
         gr.addColorStop(0, `rgba(255,255,255,${0.75 * inten})`);
         gr.addColorStop(0.25, `rgba(${cr},${cg},${cb},${0.55 * inten})`);
         gr.addColorStop(1, "rgba(0,0,0,0)");
         g.fillStyle = gr;
         g.beginPath();
-        g.ellipse(tx, ty + r.height * 0.2, rad, rad * 0.55, 0, 0, Math.PI * 2);
+        g.ellipse(tx2, ty + r.height * 0.2, rad, rad * 0.55, 0, 0, Math.PI * 2);
         g.fill();
       }
       for (const p of sparks) {
@@ -4249,6 +4331,769 @@ ${def.text}`;
     bindLangToggle(app2, () => renderRules(app2));
   }
 
+  // js/ui/editor.js
+  var CARD_ASPECT = 5 / 7;
+  var SETS = ["OGN", "DND", "TKN"];
+  var TYPES = [["unit", "Unit"], ["champion", "Champion Unit"], ["spell", "Spell"], ["gear", "Gear"], ["signature", "Signature"], ["legend", "Legend"], ["token", "Token Unit"]];
+  var RARITIES = ["common", "uncommon", "rare", "epic"];
+  var KW_LIST = Object.keys(KEYWORDS).filter((k) => k !== "Shieldify");
+  var TRIGGERS = [
+    ["play", "When played"],
+    ["attack", "When this attacks"],
+    ["destroyed", "When this is destroyed"],
+    ["turnStart", "At the start of your turn"],
+    ["unitPlayed", "Whenever you play a Unit"],
+    ["spellCast", "Whenever you cast a Spell"],
+    ["activate", "[T] Tap ability"],
+    ["static", "Always (static)"]
+  ];
+  var TARGETS = [
+    ["enemyUnit", "target enemy Unit"],
+    ["friendlyUnit", "target friendly Unit"],
+    ["anyUnit", "target Unit"],
+    ["enemyTappedUnit", "target tapped enemy Unit"],
+    ["enemyGear", "target enemy Gear"],
+    ["allEnemyUnits", "all enemy Units"],
+    ["allFriendlyUnits", "all your Units"],
+    ["allUnits", "all Units"],
+    ["self", "this Unit"]
+  ];
+  var ACTIONS = {
+    draw: { label: "Draw cards", p: ["amount", "who"] },
+    destroy: { label: "Destroy", p: ["target", "maxPower"] },
+    buff: { label: "+/- Might", p: ["target", "amount", "duration"] },
+    grantKeyword: { label: "Give a keyword", p: ["target", "keyword", "duration"] },
+    tap: { label: "Tap", p: ["target", "maxPower"] },
+    untap: { label: "Ready (untap)", p: ["target"] },
+    bounce: { label: "Return to hand", p: ["target", "maxPower"] },
+    copyUnit: { label: "Copy a Unit (Haste, dies at end of turn)", p: ["target", "maxPower"] },
+    token: { label: "Create a token", p: ["tokenId", "amount"] },
+    breakShield: { label: "Break opponent's Shields", p: ["amount"] },
+    addShield: { label: "Add Shields from your deck", p: ["amount"] },
+    channel: { label: "Channel extra runes", p: ["amount"] },
+    discard: { label: "Opponent discards (random)", p: ["amount"] },
+    recover: { label: "Unit from Graveyard to hand", p: [] },
+    cantLose: { label: "You can't lose this turn", p: [] }
+  };
+  var DRAFT_LS = "rajongoi.editorDraft.v1";
+  var slug = (x) => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  var pad3 = (n) => String(n).padStart(3, "0");
+  function nextNumber(set) {
+    const nums = allCards().filter((c) => c.set === set && /^\d+$/.test(String(c.number))).map((c) => +c.number);
+    return pad3((nums.length ? Math.max(...nums) : 0) + 1);
+  }
+  function blankState() {
+    return {
+      editing: null,
+      set: "OGN",
+      number: nextNumber("OGN"),
+      name: "",
+      subname: "",
+      type: "unit",
+      sigType: "spell",
+      legend: "",
+      colors: ["Fury"],
+      cost: 2,
+      power: 2,
+      recycle: 0,
+      rarity: "common",
+      tribes: "",
+      keywords: [],
+      shieldify: 0,
+      uses: 0,
+      activateCost: 0,
+      autoText: true,
+      text: "",
+      flavor: "",
+      illustrator: "",
+      image: null,
+      iw: 0,
+      ih: 0,
+      zoom: 1,
+      cx: 50,
+      cy: 50,
+      effects: []
+    };
+  }
+  function stateFromDef(d) {
+    const st2 = blankState();
+    Object.assign(st2, {
+      editing: d.id,
+      set: d.set || "OGN",
+      number: String(d.number || ""),
+      name: d.name || "",
+      subname: d.subname || "",
+      type: d.type,
+      sigType: d.sigType || "spell",
+      legend: d.legend || "",
+      colors: [...d.colors || []],
+      cost: d.cost || 0,
+      power: d.power || 0,
+      recycle: d.recycle || 0,
+      rarity: ["epic", "legendary", "showcase"].includes(d.rarity) ? "epic" : d.rarity || "common",
+      tribes: (d.tribes || []).join(", "),
+      keywords: (d.keywords || []).filter((k) => k !== "Shieldify"),
+      shieldify: (d.effects || []).find((e) => e.do === "shieldify")?.amount || 0,
+      uses: d.uses || 0,
+      activateCost: d.activateCost || 0,
+      effects: (d.effects || []).filter((e) => e.do !== "shieldify").map((e) => ({ ...e })),
+      flavor: d.flavor || "",
+      illustrator: d.illustrator || "",
+      image: d.image || null
+    });
+    const generated = normalize({ ...d, text: "" }).text;
+    st2.autoText = !d.text || d.text === generated;
+    st2.text = st2.autoText ? "" : d.text;
+    if (d.imageCrop?.width) {
+      st2.cropFromDef = d.imageCrop;
+    }
+    return st2;
+  }
+  function cropOf(st2) {
+    if (!st2.iw || !st2.ih) return { x: 0, y: 0, width: 100, height: 100 };
+    const r = st2.iw / st2.ih;
+    let w, h;
+    if (r > CARD_ASPECT) {
+      h = 100 / st2.zoom;
+      w = h * CARD_ASPECT / r;
+    } else {
+      w = 100 / st2.zoom;
+      h = w * r / CARD_ASPECT;
+    }
+    return { x: st2.cx - w / 2, y: st2.cy - h / 2, width: w, height: h };
+  }
+  function zoomFromCrop(st2, c) {
+    const r = st2.iw / st2.ih;
+    st2.zoom = r > CARD_ASPECT ? 100 / c.height : 100 / c.width;
+    const k = cropOf({ ...st2, cx: 0, cy: 0 });
+    st2.cx = c.x + k.width / 2;
+    st2.cy = c.y + k.height / 2;
+  }
+  function imgStyle(c) {
+    return {
+      width: `${(1e4 / c.width).toFixed(2)}%`,
+      height: `${(1e4 / c.height).toFixed(2)}%`,
+      left: `${(-c.x / c.width * 100).toFixed(2)}%`,
+      top: `${(-c.y / c.height * 100).toFixed(2)}%`
+    };
+  }
+  function cardId(st2) {
+    if (st2.type === "legend") return `${st2.set}-L-${slug(st2.subname || st2.name) || "new"}`;
+    return `${st2.type === "token" ? "TKN" : st2.set}-${pad3(st2.number || "0")}`;
+  }
+  function buildDef(st2) {
+    const id = cardId(st2);
+    const set = st2.type === "token" ? "TKN" : st2.set;
+    const effects = st2.effects.map((e) => {
+      const o = { ...e };
+      if (o.do === "token") o.tokenName = hasDef(o.tokenId) ? getDef(o.tokenId).name : "token";
+      for (const k of Object.keys(o)) if (o[k] === "" || o[k] == null) delete o[k];
+      return o;
+    });
+    if (st2.shieldify > 0) effects.unshift({ on: "play", do: "shieldify", amount: +st2.shieldify });
+    const keywords = [...st2.keywords, ...st2.shieldify > 0 ? ["Shieldify"] : []];
+    const def = {
+      id,
+      set,
+      number: st2.type === "legend" ? id.split("-").slice(1).join("-") : pad3(st2.number || "0"),
+      name: st2.name.trim() || "Untitled card",
+      type: st2.type,
+      colors: [...st2.colors],
+      cost: +st2.cost || 0,
+      power: +st2.power || 0,
+      recycle: +st2.recycle || 0,
+      rarity: st2.rarity,
+      keywords,
+      effects,
+      tribes: st2.tribes.split(",").map((t2) => t2.trim()).filter(Boolean),
+      text: st2.autoText ? "" : st2.text,
+      flavor: st2.flavor,
+      illustrator: st2.illustrator,
+      setInfo: st2.type === "legend" ? `${set} Legend` : `${set} ${pad3(st2.number || "0")}/300`,
+      source: "editor",
+      custom: true
+    };
+    if (st2.subname.trim()) def.subname = st2.subname.trim();
+    if (st2.type === "signature") {
+      def.sigType = st2.sigType;
+      if (st2.legend) def.legend = st2.legend;
+    }
+    if (st2.type === "legend") def.owners = [st2.subname.trim() || st2.name.trim()];
+    if (st2.type === "token") def.token = true;
+    if (+st2.uses > 0) def.uses = +st2.uses;
+    if (effects.some((e) => e.on === "activate") && +st2.activateCost > 0) def.activateCost = +st2.activateCost;
+    if (st2.image) {
+      def.image = st2.image;
+      def.imageCrop = cropOf(st2);
+    }
+    return def;
+  }
+  function loadImage(src) {
+    return new Promise((res, rej) => {
+      const im = new Image();
+      im.onload = () => res(im);
+      im.onerror = rej;
+      im.src = src;
+    });
+  }
+  async function fileToDataUrl(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const im = await loadImage(url);
+      const k = Math.min(1, 1e3 / Math.max(im.naturalWidth, im.naturalHeight));
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(im.naturalWidth * k);
+      cv.height = Math.round(im.naturalHeight * k);
+      cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height);
+      return { src: cv.toDataURL("image/jpeg", 0.86), iw: cv.width, ih: cv.height };
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+  var RC_TYPES = { 1: "legend", 2: "champion", 3: "unit", 4: "spell", 5: "gear", 6: "rune", 7: "token" };
+  var RC_COLORS = { 1: "Fury", 2: "Calm", 3: "Mind", 4: "Body", 5: "Chaos", 6: "Order" };
+  var RC_RARITY = { 1: "common", 2: "common", 3: "common", 4: "uncommon", 5: "rare", 6: "epic", 7: "epic" };
+  var dec = (v, m) => v != null && /^\d+$/.test(String(v)) ? m[+v] : v;
+  async function stateFromRiftcardmaker(j) {
+    const st2 = blankState();
+    const info = String(j.setInfo || "").trim().match(/^([A-Za-z]+)[\s-]*(\d+)/);
+    let set = info ? info[1].toUpperCase() : "OGN";
+    if (set === "TOKEN") set = "TKN";
+    let type = String(dec(j.type, RC_TYPES) || "unit").toLowerCase();
+    if (type.includes("champion")) type = "champion";
+    if (set === "TKN") type = "token";
+    if (type === "rune") throw new Error("Runes are not supported in the editor.");
+    const colors = [dec(j.color, RC_COLORS), dec(j.secondColor, RC_COLORS)].map((c) => String(c || "").trim()).filter((c) => c && c.toLowerCase() !== "neutral").map((c) => c[0].toUpperCase() + c.slice(1).toLowerCase()).filter((c) => COLORS[c]);
+    const kws = [];
+    let shieldify = 0;
+    for (const m of String(j.description || "").matchAll(/\{([^#}]+)#[^}]*\}/g)) {
+      const raw = m[1].trim(), num2 = raw.match(/^(.*?)\s+(\d+)$/);
+      if (raw === "Double Breaker") kws.push("Breaker");
+      else if (num2 && num2[1] === "Shieldify") shieldify = +num2[2];
+      else if (KEYWORDS[raw]) kws.push(raw);
+    }
+    Object.assign(st2, {
+      set: SETS.includes(set) ? set : "OGN",
+      number: info ? pad3(info[2]) : st2.number,
+      type,
+      colors: colors.length ? colors : ["Fury"],
+      name: (j.name || "").trim(),
+      subname: (j.subname || "").trim(),
+      cost: j.energy ?? 0,
+      power: j.might ?? 0,
+      recycle: j.power > 0 ? j.power : 0,
+      rarity: dec(j.rarity, RC_RARITY) || "common",
+      tribes: (j.tribes || j.tags || []).map((t2) => t2.text || t2).filter(Boolean).join(", "),
+      keywords: [...new Set(kws)],
+      shieldify,
+      text: j.description || "",
+      autoText: !j.description,
+      flavor: j.flavorText || "",
+      illustrator: j.illustrator || ""
+    });
+    const layers = (j.images || []).filter((im) => /^data:image\//.test(im.src || "")).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    if (layers.length === 1) {
+      const im = await loadImage(layers[0].src);
+      Object.assign(st2, { image: layers[0].src, iw: im.naturalWidth, ih: im.naturalHeight });
+      if (layers[0].croppedArea) zoomFromCrop(st2, layers[0].croppedArea);
+    } else if (layers.length > 1) {
+      const W = 900, H = Math.round(W / CARD_ASPECT);
+      const cv = document.createElement("canvas");
+      cv.width = W;
+      cv.height = H;
+      const g = cv.getContext("2d");
+      g.fillStyle = "#000";
+      g.fillRect(0, 0, W, H);
+      for (const L2 of layers) {
+        const im = await loadImage(L2.src);
+        const c = L2.croppedArea || { x: 0, y: 0, width: 100, height: 100 };
+        const sx = W / (im.naturalWidth * c.width / 100), sy = H / (im.naturalHeight * c.height / 100);
+        g.globalAlpha = L2.opacity ?? 1;
+        g.drawImage(im, -c.x / 100 * im.naturalWidth * sx, -c.y / 100 * im.naturalHeight * sy, im.naturalWidth * sx, im.naturalHeight * sy);
+      }
+      Object.assign(st2, { image: cv.toDataURL("image/jpeg", 0.86), iw: W, ih: H, zoom: 1, cx: 50, cy: 50 });
+    }
+    return st2;
+  }
+  var st = null;
+  function saveDraft() {
+    try {
+      localStorage.setItem(DRAFT_LS, JSON.stringify(st));
+    } catch {
+    }
+  }
+  function loadDraft() {
+    try {
+      return JSON.parse(localStorage.getItem(DRAFT_LS));
+    } catch {
+      return null;
+    }
+  }
+  function download(name, obj) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 1)], { type: "application/json" }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2e3);
+  }
+  var bundle = (cards) => ({ format: "rajongoi-cards", version: 1, exported: (/* @__PURE__ */ new Date()).toISOString(), cards });
+  function flash(app2, msg, bad = false) {
+    const el = app2.querySelector("#ed-msg");
+    if (!el) return;
+    el.textContent = msg;
+    el.className = "ed-msg " + (bad ? "bad" : "good");
+    clearTimeout(flash.t);
+    flash.t = setTimeout(() => el.textContent = "", 5e3);
+  }
+  var opt = (v, label, cur) => `<option value="${esc(v)}" ${String(cur) === String(v) ? "selected" : ""}>${esc(label)}</option>`;
+  var num = (k, label, min = 0, max = 20) => `<label class="ed-f"><span>${label}</span><input type="number" data-k="${k}" min="${min}" max="${max}" value="${esc(st[k])}"></label>`;
+  function effectRow(e, i) {
+    if (!ACTIONS[e.do]) {
+      let txt = "";
+      try {
+        txt = describeEffect(e, buildDef(st)) || e.do;
+      } catch {
+        txt = e.do;
+      }
+      return `<div class="ed-eff ed-eff-special"><div class="ed-eff-row"><span class="ed-special">Special</span>
+      <span>${esc((TRIGGERS.find((t2) => t2[0] === (e.on || "play")) || [, e.on])[1])}: <code>${esc(e.do)}</code></span>
+      <button class="ghost ed-x" data-del-eff="${i}" title="Remove">\u2715</button></div>
+      <div class="ed-eff-text muted">${markup(txt)} <i>(existing game logic \u2014 kept as it is)</i></div></div>`;
+    }
+    const a = ACTIONS[e.do];
+    const tokens = allCards().filter((c) => c.type === "token" || c.token);
+    const params = a.p.map((p) => {
+      if (p === "target") return `<select data-e="${i}" data-ek="target">${TARGETS.map(([v, l]) => opt(v, l, e.target)).join("")}</select>`;
+      if (p === "amount") return `<label class="ed-inline">\xD7<input type="number" data-e="${i}" data-ek="amount" value="${esc(e.amount ?? 1)}" min="-10" max="10"></label>`;
+      if (p === "maxPower") return `<label class="ed-inline">max Might<input type="number" data-e="${i}" data-ek="maxPower" value="${esc(e.maxPower ?? "")}" min="0" max="20" placeholder="any"></label>`;
+      if (p === "duration") return `<select data-e="${i}" data-ek="duration">${opt("turn", "this turn", e.duration || "turn")}${opt("permanent", "permanently", e.duration)}</select>`;
+      if (p === "keyword") return `<select data-e="${i}" data-ek="keyword">${KW_LIST.map((k) => opt(k, k, e.keyword)).join("")}</select>`;
+      if (p === "who") return `<select data-e="${i}" data-ek="who">${opt("", "you", e.who || "")}${opt("opponent", "your opponent", e.who)}</select>`;
+      if (p === "tokenId") return `<select data-e="${i}" data-ek="tokenId">${tokens.map((t2) => opt(t2.id, `${t2.name} (${t2.power} Might)`, e.tokenId)).join("")}</select>`;
+      return "";
+    }).join("");
+    let preview = "";
+    try {
+      preview = describeEffect(e, buildDef(st));
+    } catch {
+    }
+    return `<div class="ed-eff">
+    <div class="ed-eff-row">
+      <select data-e="${i}" data-ek="on">${TRIGGERS.map(([v, l]) => opt(v, l, e.on || "play")).join("")}</select>
+      <select data-e="${i}" data-ek="do">${Object.entries(ACTIONS).map(([v, x]) => opt(v, x.label, e.do)).join("")}</select>
+      ${params}
+      <button class="ghost ed-x" data-del-eff="${i}" title="Remove">\u2715</button>
+    </div>
+    <div class="ed-eff-text muted">${markup(preview)}</div></div>`;
+  }
+  function formHtml() {
+    const legends = allCards().filter((c) => c.type === "legend").sort((a, b) => a.name.localeCompare(b.name));
+    const unit = ["unit", "champion", "token"].includes(st.type) || st.type === "signature" && st.sigType === "unit";
+    const hasActivate = st.effects.some((e) => e.on === "activate");
+    const def = buildDef(st);
+    const exists = hasDef(def.id) && !isCustomCard(def.id) && st.editing !== def.id;
+    const decks = customDecks();
+    return `
+  <section class="ed-sec"><h3>Basics</h3>
+    <div class="ed-grid">
+      <label class="ed-f ed-wide"><span>Name</span><input data-k="name" value="${esc(st.name)}" placeholder="Card name" maxlength="60"></label>
+      <label class="ed-f"><span>Subname / owner</span><input data-k="subname" value="${esc(st.subname)}" placeholder="e.g. Lui"></label>
+      <label class="ed-f"><span>Type</span><select data-k="type">${TYPES.map(([v, l]) => opt(v, l, st.type)).join("")}</select></label>
+      ${st.type === "signature" ? `<label class="ed-f"><span>Signature kind</span><select data-k="sigType">${opt("spell", "Spell", st.sigType)}${opt("unit", "Unit", st.sigType)}${opt("gear", "Gear", st.sigType)}</select></label>
+        <label class="ed-f"><span>Belongs to Legend</span><select data-k="legend">${opt("", "\u2014 choose \u2014", st.legend)}${legends.map((l) => opt(l.id, `${l.name}${l.owners?.[0] ? " (" + l.owners[0] + ")" : ""}`, st.legend)).join("")}</select></label>` : ""}
+      ${st.type !== "token" ? `<label class="ed-f"><span>Set</span><select data-k="set">${SETS.filter((x) => x !== "TKN").map((x) => opt(x, x, st.set)).join("")}</select></label>` : ""}
+      ${st.type !== "legend" ? `<label class="ed-f"><span>Number</span><input data-k="number" value="${esc(st.number)}" inputmode="numeric" maxlength="3"></label>` : ""}
+      <label class="ed-f"><span>Rarity</span><select data-k="rarity">${RARITIES.map((r) => opt(r, r[0].toUpperCase() + r.slice(1), st.rarity)).join("")}</select></label>
+    </div>
+    <div class="ed-id">Card id: <code>${esc(def.id)}</code>${exists ? ` <span class="warn">\u26A0 replaces the existing card \u201C${esc(getDef(def.id).name)}\u201D in this browser</span>` : ""}
+      ${st.type === "champion" ? '<div class="muted">A Champion belongs to a Legend through its name or subname (e.g. subname \u201CLui\u201D).</div>' : ""}</div>
+  </section>
+
+  <section class="ed-sec"><h3>Colors &amp; stats</h3>
+    <div class="ed-colors">${Object.keys(COLORS).map((c) => `<button type="button" class="ed-color ${st.colors.includes(c) ? "on" : ""}" data-color="${c}" style="--c:${COLORS[c].hex}">${c}</button>`).join("")}
+      <span class="muted">max. 2</span></div>
+    <div class="ed-grid">
+      ${st.type !== "legend" && st.type !== "token" ? num("cost", "Mana cost", 0, 15) : ""}
+      ${unit ? num("power", "Might", 0, 20) : ""}
+      ${st.type !== "legend" && st.type !== "token" ? num("recycle", "Recycle", 0, 6) : ""}
+      <label class="ed-f ed-wide"><span>Tags (comma separated)</span><input data-k="tribes" value="${esc(st.tribes)}" placeholder="e.g. Art, Movie"></label>
+    </div>
+  </section>
+
+  <section class="ed-sec"><h3>Artwork</h3>
+    <div class="ed-art">
+      <label class="ed-drop" id="ed-drop"><input type="file" id="ed-file" accept="image/*" hidden>
+        <b>${st.image ? "Change picture" : "Upload picture"}</b><span class="muted">click or drop an image here</span></label>
+      ${st.image ? `<label class="ed-f ed-wide"><span>Zoom</span><input type="range" id="ed-zoom" min="0.4" max="4" step="0.01" value="${st.zoom}"></label>
+        <div class="row"><button type="button" class="ghost" id="ed-center">Center</button><button type="button" class="ghost" id="ed-noimg">Remove picture</button>
+        <span class="muted">Drag the picture on the preview to move it, scroll to zoom.</span></div>` : ""}
+    </div>
+  </section>
+
+  <section class="ed-sec"><h3>Keywords</h3>
+    <div class="ed-kws">${KW_LIST.map((k) => `<button type="button" class="ed-kw ${st.keywords.includes(k) ? "on" : ""}" data-kw="${esc(k)}" style="--c:${KEYWORDS[k].hex}" title="${esc(KEYWORDS[k].reminder)}">${esc(k)}</button>`).join("")}</div>
+    <div class="ed-grid">${num("shieldify", "Shieldify N (0 = none)", 0, 3)}${st.type === "gear" ? num("uses", "Saga: expires after N uses (0 = never)", 0, 9) : ""}</div>
+  </section>
+
+  <section class="ed-sec"><h3>Abilities <span class="muted">(these actually work in the game)</span></h3>
+    ${st.effects.map(effectRow).join("") || '<p class="muted">No abilities yet \u2014 vanilla card, or keywords only.</p>'}
+    <div class="row"><button type="button" class="ghost" id="ed-add-eff">+ Add ability</button>
+      ${hasActivate ? num("activateCost", "Extra mana for [T] abilities", 0, 9) : ""}</div>
+  </section>
+
+  <section class="ed-sec"><h3>Card text</h3>
+    <label class="ed-check"><input type="checkbox" data-k="autoText" ${st.autoText ? "checked" : ""}> Write the text automatically from keywords and abilities</label>
+    ${st.autoText ? `<div class="ed-autotext muted">${esc(normalize(def).text) || "\u2014"}</div><button type="button" class="ghost" id="ed-edit-text">Edit this text by hand</button>` : `<div class="ed-tools">${["[T]", "[M]", "[1]", "[2]", "[U]", "__(reminder)__"].map((t2) => `<button type="button" class="ghost" data-ins="${esc(t2)}">${esc(t2)}</button>`).join("")}
+          <select id="ed-ins-kw"><option value="">+ keyword badge\u2026</option>${Object.keys(KEYWORDS).map((k) => `<option>${esc(k)}</option>`).join("")}</select></div>
+        <textarea data-k="text" rows="6" placeholder="Rules text. {Keyword#HEX} = colored badge, __text__ = italic, [T] tap, [M] might, [2] mana">${esc(st.text)}</textarea>
+        <div class="muted ed-hint">The text is only what is printed \u2014 the game logic comes from Keywords and Abilities above.</div>`}
+    <div class="ed-grid">
+      <label class="ed-f ed-wide"><span>Flavor text</span><input data-k="flavor" value="${esc(st.flavor)}" maxlength="140"></label>
+      <label class="ed-f"><span>Illustrator</span><input data-k="illustrator" value="${esc(st.illustrator)}"></label>
+    </div>
+  </section>
+
+  <section class="ed-sec ed-actions">
+    <div class="row"><button class="primary" id="ed-save">\u{1F4BE} Save card</button><button class="ghost" id="ed-new">New card</button>
+      <button class="ghost" id="ed-export">\u2B07 Download card file</button><span id="ed-msg" class="ed-msg"></span></div>
+    ${isCustomCard(def.id) ? `<div class="row ed-deckrow"><span>Add to deck:</span>
+      ${decks.length ? `<select id="ed-deck">${decks.map((d) => opt(d.id, d.name, "")).join("")}</select><button class="ghost" id="ed-add-deck">Add</button>` : `<span class="muted">No own deck yet \u2014 in <a href="#/decks">Decks</a> make a copy of a deck (e.g. Lui's) first.</span>`}</div>` : ""}
+  </section>`;
+  }
+  function listHtml() {
+    const mine = customCards().slice().sort((a, b) => a.id.localeCompare(b.id));
+    return `<div class="ed-list-head"><b>My cards</b> <span class="muted">${mine.length}</span><span class="spacer"></span>
+      <label class="ghost ed-btn-sm">Import<input type="file" id="ed-import" accept=".json,application/json" multiple hidden></label>
+      ${mine.length ? '<button class="ghost ed-btn-sm" id="ed-export-all">Export all</button>' : ""}</div>
+    ${mine.length ? `<div class="ed-list">${mine.map((c) => `<div class="ed-item ${st.editing === c.id ? "on" : ""}" data-edit="${esc(c.id)}">
+        ${cardHtml(getDef(c.id), { size: "xs" })}<div><b>${esc(c.name)}</b><div class="muted">${esc(c.id)}</div></div>
+        <button class="ghost ed-x" data-del="${esc(c.id)}" title="Delete">\u2715</button></div>`).join("")}</div>` : '<p class="muted">Saved cards show up here. They are stored in this browser and can be used in your decks right away.</p>'}`;
+  }
+  function drawPreview(app2) {
+    const box = app2.querySelector("#ed-preview");
+    if (!box) return;
+    let def;
+    try {
+      def = normalize(buildDef(st));
+    } catch {
+      return;
+    }
+    box.innerHTML = cardHtml(def, { size: "lg", classes: st.image ? "ed-pannable" : "" });
+    const auto = app2.querySelector(".ed-autotext");
+    if (auto) auto.textContent = def.text || "\u2014";
+  }
+  function draw(app2) {
+    const y = app2.querySelector(".ed-form")?.scrollTop || 0;
+    app2.querySelector(".ed-form").innerHTML = formHtml();
+    app2.querySelector(".ed-side").innerHTML = listHtml();
+    app2.querySelector(".ed-form").scrollTop = y;
+    drawPreview(app2);
+    saveDraft();
+  }
+  async function setImageFromFile(app2, file) {
+    if (!file || !file.type.startsWith("image/")) return flash(app2, "That is not an image file.", true);
+    const { src, iw, ih } = await fileToDataUrl(file);
+    Object.assign(st, { image: src, iw, ih, zoom: 1, cx: 50, cy: 50 });
+    draw(app2);
+  }
+  async function ensureImageSize() {
+    if (st.image && (!st.iw || !st.ih)) {
+      try {
+        const im = await loadImage(st.image);
+        st.iw = im.naturalWidth;
+        st.ih = im.naturalHeight;
+      } catch {
+        st.image = null;
+      }
+    }
+    if (st.cropFromDef && st.iw) {
+      zoomFromCrop(st, st.cropFromDef);
+      delete st.cropFromDef;
+    }
+  }
+  async function importFiles(app2, files) {
+    let n = 0, last = null;
+    for (const f of files) {
+      let j;
+      try {
+        j = JSON.parse(await f.text());
+      } catch {
+        flash(app2, `${f.name}: not a JSON file.`, true);
+        continue;
+      }
+      try {
+        if (j.format === "rajongoi-cards") {
+          for (const c of j.cards || []) {
+            await saveCustomCard(c);
+            n++;
+            last = c;
+          }
+        } else if (j.card && j.format === "rajongoi-card") {
+          await saveCustomCard(j.card);
+          n++;
+          last = j.card;
+        } else {
+          st = await stateFromRiftcardmaker(j);
+          const id = cardId(st);
+          if (hasDef(id)) {
+            const old = getDef(id);
+            st.editing = id;
+            if (!st.effects.length) st.effects = (old.effects || []).filter((e) => e.do !== "shieldify").map((e) => ({ ...e }));
+            st.keywords = [.../* @__PURE__ */ new Set([...st.keywords, ...(old.keywords || []).filter((k) => k !== "Shieldify")])];
+            if (old.type === "signature") {
+              st.type = "signature";
+              st.sigType = old.sigType || "spell";
+              st.legend = old.legend || "";
+            }
+            if (old.activateCost) st.activateCost = old.activateCost;
+            if (old.uses) st.uses = old.uses;
+          }
+          draw(app2);
+          flash(app2, `Loaded \u201C${st.name}\u201D from riftcardmaker \u2014 add abilities if needed, then Save.`);
+          continue;
+        }
+      } catch (e) {
+        flash(app2, `${f.name}: ${e.message}`, true);
+      }
+    }
+    if (n) {
+      if (last) {
+        st = stateFromDef(getDef(last.id));
+        await ensureImageSize();
+      }
+      draw(app2);
+      flash(app2, `Imported ${n} card${n > 1 ? "s" : ""}.`);
+    }
+  }
+  async function renderEditor(app2, arg) {
+    if (arg && hasDef(arg)) st = stateFromDef(getDef(arg));
+    else if (!st) st = loadDraft() || blankState();
+    await ensureImageSize();
+    app2.innerHTML = `<div class="page editor-page">
+    <div class="row"><h2 style="margin:0">Card Editor</h2><span class="spacer"></span>
+      <span class="muted">Riftcardmaker JSON files can be imported too (My cards \u2192 Import).</span></div>
+    <div class="ed-layout">
+      <div class="ed-form"></div>
+      <div class="ed-preview-col"><div id="ed-preview" class="ed-preview"></div>
+        <p class="muted ed-prev-hint">Live preview \u2014 exactly as the card looks in the game.</p></div>
+      <aside class="ed-side"></aside>
+    </div></div>`;
+    draw(app2);
+    const form = app2.querySelector(".ed-form");
+    const set = (k, v) => {
+      if (k === "type" && v === "token") st.set = "TKN";
+      if (k === "type" && st.type === "token" && v !== "token") st.set = "OGN";
+      if (k === "set" || k === "type" && v === "token") st.number = st.editing ? st.number : nextNumber(k === "set" ? v : "TKN");
+      st[k] = v;
+    };
+    const structural = /* @__PURE__ */ new Set(["type", "sigType", "autoText", "set"]);
+    form.addEventListener("input", (e) => {
+      const t2 = e.target;
+      if (t2.dataset.k) {
+        const v = t2.type === "checkbox" ? t2.checked : t2.type === "number" ? t2.value === "" ? 0 : +t2.value : t2.value;
+        set(t2.dataset.k, v);
+        if (structural.has(t2.dataset.k) || t2.dataset.k === "shieldify" || t2.dataset.k === "number" || t2.dataset.k === "name" || t2.dataset.k === "subname") {
+          if (t2.tagName === "SELECT" || t2.type === "checkbox") return draw(app2);
+          const idEl = app2.querySelector(".ed-id code");
+          if (idEl) idEl.textContent = buildDef(st).id;
+        }
+        drawPreview(app2);
+        saveDraft();
+      } else if (t2.dataset.e != null) {
+        const e2 = st.effects[+t2.dataset.e];
+        const k = t2.dataset.ek;
+        e2[k] = t2.type === "number" ? t2.value === "" ? "" : +t2.value : t2.value;
+        if (k === "do") {
+          const p = ACTIONS[e2.do].p;
+          for (const x of ["target", "amount", "maxPower", "duration", "keyword", "who", "tokenId"]) if (!p.includes(x)) delete e2[x];
+          if (p.includes("target") && !e2.target) e2.target = e2.do === "buff" || e2.do === "untap" ? "friendlyUnit" : "enemyUnit";
+          if (p.includes("amount") && e2.amount == null) e2.amount = 1;
+          if (p.includes("keyword") && !e2.keyword) e2.keyword = "Haste";
+          if (p.includes("tokenId") && !e2.tokenId) e2.tokenId = allCards().find((c) => c.type === "token")?.id;
+          if (p.includes("duration") && !e2.duration) e2.duration = "turn";
+        }
+        if (t2.tagName === "SELECT") return draw(app2);
+        const row = t2.closest(".ed-eff")?.querySelector(".ed-eff-text");
+        if (row) {
+          try {
+            row.innerHTML = markup(describeEffect(e2, buildDef(st)));
+          } catch {
+          }
+        }
+        drawPreview(app2);
+        saveDraft();
+      } else if (t2.id === "ed-zoom") {
+        st.zoom = +t2.value;
+        drawPreview(app2);
+        saveDraft();
+      }
+    });
+    form.addEventListener("change", (e) => {
+      if (e.target.id === "ed-file") return setImageFromFile(app2, e.target.files[0]);
+      if (e.target.id === "ed-ins-kw" && e.target.value) {
+        const k = e.target.value;
+        insertText(app2, `{${k}#${KEYWORDS[k].hex.replace("#", "")}}`);
+        e.target.value = "";
+      }
+    });
+    form.addEventListener("click", async (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      if (b.dataset.color) {
+        const c = b.dataset.color;
+        st.colors = st.colors.includes(c) ? st.colors.filter((x) => x !== c) : [...st.colors, c].slice(-2);
+        return draw(app2);
+      }
+      if (b.dataset.kw) {
+        const k = b.dataset.kw;
+        st.keywords = st.keywords.includes(k) ? st.keywords.filter((x) => x !== k) : [...st.keywords, k];
+        return draw(app2);
+      }
+      if (b.dataset.delEff != null) {
+        st.effects.splice(+b.dataset.delEff, 1);
+        return draw(app2);
+      }
+      if (b.dataset.ins) return insertText(app2, b.dataset.ins);
+      switch (b.id) {
+        case "ed-add-eff":
+          st.effects.push({ on: st.type === "gear" ? "activate" : "play", do: "draw", amount: 1 });
+          return draw(app2);
+        case "ed-center":
+          Object.assign(st, { zoom: 1, cx: 50, cy: 50 });
+          return draw(app2);
+        case "ed-noimg":
+          st.image = null;
+          st.iw = st.ih = 0;
+          return draw(app2);
+        case "ed-edit-text":
+          st.text = normalize(buildDef(st)).text;
+          st.autoText = false;
+          return draw(app2);
+        case "ed-new":
+          st = blankState();
+          return draw(app2);
+        case "ed-export": {
+          const d = buildDef(st);
+          return download(`${d.id}.rajongoi-card.json`, bundle([d]));
+        }
+        case "ed-save":
+          return save3(app2);
+        case "ed-add-deck": {
+          const id = buildDef(st).id, decks = customDecks(), d = decks.find((x) => x.id === app2.querySelector("#ed-deck").value);
+          if (!d) return;
+          if (d.cards[id]) return flash(app2, `Already in \u201C${d.name}\u201D.`);
+          d.cards[id] = 1;
+          saveCustomDecks(decks);
+          const L2 = hasDef(d.legend) ? getDef(d.legend) : null;
+          const off = L2 && getDef(id).colors.some((c) => !L2.colors.includes(c));
+          return flash(app2, `Added to \u201C${d.name}\u201D.${off ? " \u26A0 Its color is outside that Legend\u2019s colors, so the deck is not legal with it." : ""}`, off);
+        }
+      }
+    });
+    const page = app2.querySelector(".editor-page");
+    page.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      app2.querySelector("#ed-drop")?.classList.add("over");
+    });
+    page.addEventListener("dragleave", () => app2.querySelector("#ed-drop")?.classList.remove("over"));
+    page.addEventListener("drop", (e) => {
+      e.preventDefault();
+      app2.querySelector("#ed-drop")?.classList.remove("over");
+      const files = [...e.dataTransfer?.files || []];
+      const img = files.find((f) => f.type.startsWith("image/"));
+      const json = files.filter((f) => /json/.test(f.type) || f.name.endsWith(".json"));
+      if (img) setImageFromFile(app2, img);
+      if (json.length) importFiles(app2, json);
+    });
+    const side2 = app2.querySelector(".ed-side");
+    side2.addEventListener("click", async (e) => {
+      const del = e.target.closest("[data-del]");
+      if (del) {
+        e.stopPropagation();
+        const id = del.dataset.del;
+        if (!confirm(`Delete \u201C${getDef(id).name}\u201D from this browser?`)) return;
+        await deleteCustomCard(id);
+        if (st.editing === id) st.editing = null;
+        return draw(app2);
+      }
+      const it = e.target.closest("[data-edit]");
+      if (it) {
+        st = stateFromDef(getDef(it.dataset.edit));
+        await ensureImageSize();
+        return draw(app2);
+      }
+      if (e.target.id === "ed-export-all") download(`rajongoi-cards-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`, bundle(customCards()));
+    });
+    side2.addEventListener("change", (e) => {
+      if (e.target.id === "ed-import") importFiles(app2, [...e.target.files]);
+    });
+    const prev = app2.querySelector("#ed-preview");
+    let drag = null;
+    prev.addEventListener("pointerdown", (e) => {
+      if (!st.image) return;
+      const card = prev.querySelector(".card");
+      drag = { x: e.clientX, y: e.clientY, cx: st.cx, cy: st.cy, w: card.offsetWidth, h: card.offsetHeight };
+      prev.setPointerCapture(e.pointerId);
+      prev.classList.add("dragging");
+    });
+    prev.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const c = cropOf(st);
+      st.cx = drag.cx - (e.clientX - drag.x) / drag.w * c.width;
+      st.cy = drag.cy - (e.clientY - drag.y) / drag.h * c.height;
+      const img = prev.querySelector(".card-img");
+      if (img) Object.assign(img.style, imgStyle(cropOf(st)));
+    });
+    const end = () => {
+      if (drag) {
+        drag = null;
+        prev.classList.remove("dragging");
+        saveDraft();
+      }
+    };
+    prev.addEventListener("pointerup", end);
+    prev.addEventListener("pointercancel", end);
+    prev.addEventListener("wheel", (e) => {
+      if (!st.image) return;
+      e.preventDefault();
+      st.zoom = Math.min(4, Math.max(0.4, st.zoom * (e.deltaY < 0 ? 1.06 : 1 / 1.06)));
+      const z = app2.querySelector("#ed-zoom");
+      if (z) z.value = st.zoom;
+      const img = prev.querySelector(".card-img");
+      if (img) Object.assign(img.style, imgStyle(cropOf(st)));
+      saveDraft();
+    }, { passive: false });
+  }
+  function insertText(app2, s) {
+    const ta = app2.querySelector("textarea[data-k=text]");
+    if (!ta) return;
+    const a = ta.selectionStart, b = ta.selectionEnd;
+    ta.value = ta.value.slice(0, a) + s + ta.value.slice(b);
+    ta.focus();
+    ta.selectionStart = ta.selectionEnd = a + s.length;
+    st.text = ta.value;
+    drawPreview(app2);
+    saveDraft();
+  }
+  async function save3(app2) {
+    const def = buildDef(st);
+    if (!st.name.trim()) return flash(app2, "Give the card a name first.", true);
+    if (!st.colors.length && st.type !== "token") return flash(app2, "Pick at least one color.", true);
+    if (st.type === "legend" && st.colors.length !== 2) return flash(app2, "A Legend needs exactly 2 colors.", true);
+    if (st.type === "signature" && !st.legend) return flash(app2, "Choose which Legend this Signature belongs to.", true);
+    if (hasDef(def.id) && !isCustomCard(def.id) && st.editing !== def.id && !confirm(`${def.id} is already \u201C${getDef(def.id).name}\u201D. Replace it in this browser?`)) return;
+    if (st.editing && st.editing !== def.id && isCustomCard(st.editing)) await deleteCustomCard(st.editing);
+    def.updatedAt = Date.now();
+    try {
+      await saveCustomCard(def);
+    } catch (e) {
+      return flash(app2, `Could not save (${e.message || "storage full?"}).`, true);
+    }
+    st.editing = def.id;
+    draw(app2);
+    flash(app2, `Saved ${def.id}. It is now in the Collection and the deck builder.`);
+  }
+
   // js/app.js
   var app = document.getElementById("app");
   function renderHome() {
@@ -4312,6 +5157,8 @@ ${def.text}`;
         return renderAchievements(app);
       case "rules":
         return renderRules(app);
+      case "editor":
+        return renderEditor(app, arg);
       default:
         return renderHome();
     }

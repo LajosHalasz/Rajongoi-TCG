@@ -26,7 +26,7 @@ export function showCardModal(def) {
       <dt>Keywords</dt><dd>${esc(kws)}</dd>
       <dt>Card id</dt><dd><code>${esc(def.id)}</code></dd>
       <dt>Game logic</dt><dd><code style="font-size:12px;white-space:pre-wrap">${esc(JSON.stringify(def.effects || []))}</code></dd>
-      <dd style="margin-top:14px"><button class="close">Close</button></dd>
+      <dd style="margin-top:14px"><button class="close">Close</button> <a class="btn ghost" href="#/editor/${encodeURIComponent(def.id)}">✎ Edit in Card Editor</a></dd>
     </dl></div></div>`;
   m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('.close')) m.remove(); });
   document.body.appendChild(m);
