@@ -16,7 +16,7 @@ const savePulls = (p) => { try { localStorage.setItem(LS_PULLS, JSON.stringify(p
 
 let state = { set: null, pack: null, revealed: new Set(), opened: 0, busy: false };
 
-const tier = (e) => (e.slot === 'hit' ? 'hit' : e.slot === 'legend' ? 'legend' : rarityOf(e.def));
+const tier = (e) => (e.slot === 'hit' ? 'hit' : rarityOf(e.def));
 
 export function renderBoosters(app) {
   const sets = boosterSets();
@@ -49,9 +49,10 @@ function drawShop(app, sets) {
       <p class="muted">Click the pack to tear it open.</p>
     </div>
     <div class="booster-odds muted">
-      Each pack: ${PACK_RULES.commons} Commons (a Legend may replace one) · ${PACK_RULES.uncommons} Uncommons · 1 Rune or Token ·
-      1 Champion or Signature in ~1 of ${Math.round(1 / PACK_RULES.hitChance)} packs (otherwise a Rare).
-      <br>Pool: ${P.commons.length} commons, ${P.uncommons.length} uncommons, ${P.rares.length} rares, ${P.hits.length} champions/signatures, ${P.legends.length} legends.
+      Each pack: ${PACK_RULES.commons} Commons · ${PACK_RULES.uncommons} Uncommons · 1 Rune or Token ·
+      1 Champion or Signature in ~1 of ${Math.round(1 / PACK_RULES.hitChance)} packs (otherwise a Rare — Legends are Rares too).
+      <br>✨ <b>God pack</b> in ~1 of ${Math.round(1 / PACK_RULES.godChance)} packs: no Commons, much better Rare / Epic odds and a guaranteed Champion or Signature.
+      <br>Pool: ${P.commons.length} commons, ${P.uncommons.length} uncommons, ${P.rares.length} rares (incl. ${P.legends.length} legends), ${P.epics.length} epics, ${P.hits.length} champions/signatures.
       ${state.opened ? `<br>Packs opened this session: <b>${state.opened}</b>` : ''}
     </div>
   </div>`;
@@ -96,7 +97,8 @@ function drawReveal(app, sets) {
       </div>
     </div>`;
   }).join('');
-  app.innerHTML = `<div class="page booster-page">
+  app.innerHTML = `<div class="page booster-page ${state.pack.god ? 'god-pack' : ''}">
+    ${state.pack.god ? '<div class="god-banner">✨ GOD PACK! ✨</div>' : ''}
     <div class="row" style="margin-bottom:10px"><h2 style="margin:0">${esc(SET_INFO[state.set]?.name || state.set)} booster</h2><span class="spacer"></span>
       <button id="all" class="primary">Reveal all</button></div>
     <p class="muted" style="margin-top:0">Click the cards to flip them. The best card is saved for last.</p>
@@ -114,7 +116,7 @@ function drawReveal(app, sets) {
     const t = tier(state.pack[i]);
     sfx.flip();
     if (t !== 'common') setTimeout(() => sfx.reveal(t), 200);
-    if (['rare', 'epic', 'hit', 'legend'].includes(t)) {
+    if (['rare', 'epic', 'hit'].includes(t)) {
       setTimeout(() => {
         burst(el, t === 'hit' || t === 'epic' ? ['#ff5fd2', '#6be3ff', '#ffe36b', '#8dff7a'] : ['#ffd36b', '#fff2b8', '#e6ad3c'], t === 'rare' ? 18 : 34);
         if (t !== 'rare') app.querySelector('.booster-page').classList.add('quake');

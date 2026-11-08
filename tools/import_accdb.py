@@ -336,16 +336,18 @@ def build_decks(cards, imported, overrides):
             legend = {'id': real['id']}
             ok_champ = lambda c, names=names: bool(champ_keys(c) & set(names))
         else:
-            match = next((c for c in champs if owner.lower() in champ_keys(c)), None)
-            lead = match or (champs[0] if champs else None)
-            lbase = (owner if match else base(lead['name'])) if lead else owner
-            ok_champ = lambda c, lbase=lbase: lbase.lower() in champ_keys(c)
+            # the placeholder Legend is named after the deck's owner ("Varon | Legend"); the owner's
+            # Champions belong to it even when they are other people ("Emese | Borsó" in Varon's deck)
+            lbase = owner
+            cnames = sorted({base(c['name']) for c in champs if owner.lower() not in champ_keys(c)})
+            names = {owner.lower(), *(n.lower() for n in cnames)}
+            ok_champ = lambda c, names=names: bool(champ_keys(c) & names)
         legend = legend if real else {
             'id': f'OGN-L-{slug(owner)}', 'set': 'OGN', 'number': f'L-{slug(owner)}', 'setInfo': f'OGN Legend',
             'name': f'{lbase} | Legend', 'type': 'legend', 'colors': lcolors, 'cost': 0, 'power': 0,
             'recycle': 0, 'keywords': [], 'effects': [], 'tribes': [owner], 'owners': [owner],
             'text': f"{{Placeholder Legend#7A7A7A}}__(The real Legend of {owner}'s deck is coming soon.)__",
-            'flavor': '', 'placeholder': True,
+            'flavor': '', 'placeholder': True, **({'championNames': cnames} if cnames else {}),
         }
         if not real:
             legends.append(legend)
@@ -382,7 +384,50 @@ def build_decks(cards, imported, overrides):
         })
         report.append(f"  {owner:8s} {'/'.join(lcolors):12s} own {len(own):2d}  used {len(picked) - added:2d}  fillers {added:2d}"
                       + (f"  dropped: {', '.join(dropped)}" if dropped else ''))
-    return legends, decks, report
+    legends_extra, decks_extra = extra_decks(cards, real_legends)
+    return legends + legends_extra, decks + decks_extra, report
+
+
+# Decks that don't come from the database's "Deck of" column.
+#   Emese: her own deck (separate from Varon's), placeholder Legend until her cards exist.
+#   Lutheria: the DnD DLC deck around the Lutheria Legend (DND-017), from the DND cards in her colors.
+EXTRA_DECKS = [
+    {'owner': 'Emese', 'colors': ['Calm', 'Fury']},
+    {'owner': 'Lutheria', 'set': 'DND', 'legend': 'DND-017'},
+]
+
+
+def extra_decks(cards, real_legends):
+    legends, decks = [], []
+    for x in EXTRA_DECKS:
+        owner = x['owner']
+        real = real_legends.get(owner.lower())
+        if real:
+            lid, lcolors = real['id'], real['colors']
+        else:
+            lid, lcolors = f'OGN-L-{slug(owner)}', x['colors']
+            legends.append({
+                'id': lid, 'set': 'OGN', 'number': f'L-{slug(owner)}', 'setInfo': 'OGN Legend',
+                'name': f'{owner} | Legend', 'type': 'legend', 'colors': lcolors, 'cost': 0, 'power': 0,
+                'recycle': 0, 'keywords': [], 'effects': [], 'tribes': [owner], 'owners': [owner],
+                'text': f"{{Placeholder Legend#7A7A7A}}__(The real Legend of {owner}'s deck is coming soon.)__",
+                'flavor': '', 'placeholder': True,
+            })
+        picked = []
+        if x.get('set'):
+            legal = [c for c in cards if c['set'] == x['set'] and c['type'] != 'legend' and c['colors']
+                     and all(col in lcolors for col in c['colors'])]
+            own = [c for c in legal if c['type'] == 'champion' and owner.lower() in champ_keys(c)]
+            picked = (own + [c for c in legal if c['type'] != 'champion'])[:20]
+        champ = next((c for c in picked if c['type'] == 'champion'), None)
+        decks.append({
+            'id': f"{(x.get('set') or 'OGN').lower()}-{slug(owner)}", 'name': f"{owner}'s deck", 'premade': True,
+            'owner': owner, 'legend': lid, 'champion': champ['id'] if champ else None, 'signature': None,
+            'cards': {c['id']: 1 for c in picked},
+            'runes': {lcolors[0]: 6, lcolors[1]: 6} if len(lcolors) > 1 else {lcolors[0]: 12},
+            'comingSoon': True,
+        })
+    return legends, decks
 
 
 def main():

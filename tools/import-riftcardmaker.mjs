@@ -166,7 +166,10 @@ function convert(j) {
     source: 'riftcardmaker',
   };
   if (type === 'token') card.token = true;
-  if (type === 'legend') card.rarity = 'rare'; // ground rule: every Legend is Rare
+  // riftcardmaker's Epic template is the full-art frame
+  if (card.rarity === 'epic' && type !== 'legend' && type !== 'rune') card.fullArt = true;
+  if (type === 'legend') card.rarity = 'rare'; // ground rule (the game re-applies all rarity rules on load)
+  card.tribes = card.tribes.map(t => (/^video ?game$/i.test(t.trim()) ? 'Game' : t));
   card.recycle = j.power != null && j.power > 0 ? j.power : 0; // riftcardmaker 'power' = runes to recycle
 
   const layers = (j.images || []).filter(im => /^data:image\//.test(im.src || ''))

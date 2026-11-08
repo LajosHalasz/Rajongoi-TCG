@@ -130,6 +130,7 @@ export function buildDef(st) {
   if (+st.uses > 0) def.uses = +st.uses;
   if (effects.some(e => e.on === 'activate') && +st.activateCost > 0) def.activateCost = +st.activateCost;
   if (st.image) { def.image = st.image; def.imageCrop = cropOf(st); }
+  if (st.rarity === 'epic' && !['legend', 'rune'].includes(st.type)) def.fullArt = true; // Epic = full-art frame (as in riftcardmaker)
   return def;
 }
 

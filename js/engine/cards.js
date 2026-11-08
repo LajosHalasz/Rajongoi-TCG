@@ -66,11 +66,28 @@ export function normalize(c) {
   };
   def.colors = (def.colors || []).map(cap);
   def.type = (def.type || 'unit').toLowerCase();
-  if (def.type === 'legend') def.rarity = 'rare'; // ground rule: every Legend is Rare
+  applyRarityRules(def);
+  // "Videogame" is just "Game"
+  def.tribes = (def.tribes || []).map(t => (/^video ?game$/i.test(String(t).trim()) ? 'Game' : t));
   if (def.type === 'signature' && !def.sigType) def.sigType = 'spell';
   def.recycle = def.recycle || 0;
   def.text = def.text && def.text.trim() ? def.text : describe(def);
   if (def.provisionalEffect) def.text = `{Provisional#7A7A7A}__(placeholder effect until this card is designed)__\n${def.text}`;
+  return def;
+}
+
+/** EPIC: The Musical cards ("EPIC - The Ithaca Saga", ...). */
+export const isEpicMusical = (def) => /^EPIC\b/.test(String(def.name || ''));
+
+/**
+ * Rarity ground rules (they win over whatever a card was added with):
+ *   Legend -> Rare · Signature, EPIC: The Musical, full-art cards and full-art Runes -> Epic ·
+ *   any other card listed as Epic -> Rare.
+ */
+export function applyRarityRules(def) {
+  if (def.type === 'legend') def.rarity = 'rare';
+  else if (def.type === 'signature' || isEpicMusical(def) || def.fullArtRune || (def.fullArt && def.image)) def.rarity = 'epic';
+  else if (rarityOf(def) === 'epic') def.rarity = 'rare';
   return def;
 }
 

@@ -1,5 +1,23 @@
 [
   {
+    "id": "dnd-lutheria",
+    "name": "Lutheria's deck",
+    "premade": true,
+    "owner": "Lutheria",
+    "legend": "DND-017",
+    "champion": "DND-002",
+    "signature": null,
+    "cards": {
+      "DND-002": 1,
+      "DND-003": 1
+    },
+    "runes": {
+      "Mind": 6,
+      "Chaos": 6
+    },
+    "comingSoon": true
+  },
+  {
     "id": "ogn-anna",
     "name": "Anna's deck",
     "premade": true,
@@ -173,6 +191,21 @@
     "runes": {
       "Mind": 6,
       "Calm": 6
+    },
+    "comingSoon": true
+  },
+  {
+    "id": "ogn-emese",
+    "name": "Emese's deck",
+    "premade": true,
+    "owner": "Emese",
+    "legend": "OGN-L-emese",
+    "champion": null,
+    "signature": null,
+    "cards": {},
+    "runes": {
+      "Calm": 6,
+      "Fury": 6
     },
     "comingSoon": true
   },

@@ -31,7 +31,8 @@
       "y": 11.567127156275404,
       "width": 98.27188871493153,
       "height": 76.5683265904383
-    }
+    },
+    "fullArt": true
   },
   {
     "id": "DND-003",
@@ -66,7 +67,8 @@
       "y": 10.13662844040594,
       "width": 94.57854580818024,
       "height": 73.6906665638264
-    }
+    },
+    "fullArt": true
   },
   {
     "id": "DND-017",
@@ -556,7 +558,8 @@
       "y": 5.006465164702918,
       "width": 98.27188871493153,
       "height": 76.5683265904383
-    }
+    },
+    "fullArt": true
   },
   {
     "id": "OGN-015",
@@ -745,7 +748,8 @@
       "y": 3.5328237539879104,
       "width": 38.744672607516456,
       "height": 96.15381837271795
-    }
+    },
+    "fullArt": true
   },
   {
     "id": "OGN-021",
@@ -924,7 +928,7 @@
     ],
     "effects": [],
     "tribes": [
-      "Videogame"
+      "Game"
     ],
     "text": "{Action#21705B} Choose a boon for target Unit:\n{Boon of Athena#6D6E6B} Can't be targeted by Spells, +[1][M]\n{Boon of Poseidon#6D6E6B} [T]: Tap an enemy Unit, +[2][M]\n{Boon of Ares#6D6E6B} Can attack untapped Units, +[3][M].",
     "flavor": "In the name of Hades, Olympus I accept this message.",
@@ -960,7 +964,7 @@
     ],
     "effects": [],
     "tribes": [
-      "Videogame"
+      "Game"
     ],
     "text": "{Shield Trigger#CE356B} Choose 1 Gift of the moon:\n{Crescent#6D6E6B} Morph [5] Units into [1M] Sheeps.\n{Half#6D6E6B} Give [3] enemy Units [-2][M].\n{Full#6D6E6B} Your Shields are unbreakable until your next turn. Banish this.",
     "flavor": "Moonlight guide us.",
@@ -994,7 +998,7 @@
     ],
     "effects": [],
     "tribes": [
-      "Videogame"
+      "Game"
     ],
     "text": "{Defensive#CE356B}__(When an enemy Unit attacks, you may [T] this to redirect the attack to this Unit.)__\n{Vigilance#21705B}__(You may untap this at the end of your turn.)__",
     "flavor": "Ruin has come to our family.",
@@ -1110,7 +1114,8 @@
       "y": 6.050466048717486,
       "width": 98.27188871493153,
       "height": 76.5683265904383
-    }
+    },
+    "fullArt": true
   },
   {
     "id": "OGN-124",
@@ -1177,7 +1182,8 @@
       "y": 22.50066062617065,
       "width": 94.57854580818024,
       "height": 73.6906665638264
-    }
+    },
+    "fullArt": true
   },
   {
     "id": "OGN-169",
@@ -1242,7 +1248,8 @@
       "y": 3.5440918404402035,
       "width": 90.74410163339384,
       "height": 94.58499291505784
-    }
+    },
+    "fullArt": true
   },
   {
     "id": "OGN-172",
@@ -1279,7 +1286,8 @@
       "y": 17.204646587781152,
       "width": 84.99542163026533,
       "height": 66.22399637557116
-    }
+    },
+    "fullArt": true
   },
   {
     "id": "OGN-173",
@@ -1644,7 +1652,8 @@
       "y": 10.784172119169611,
       "width": 98.27188871493153,
       "height": 76.5683265904383
-    }
+    },
+    "fullArt": true
   },
   {
     "id": "OGN-184",
@@ -1748,7 +1757,8 @@
       "y": 4.004383457757268,
       "width": 98.27396623667875,
       "height": 76.56994528695182
-    }
+    },
+    "fullArt": true
   },
   {
     "id": "OGN-187",
@@ -1779,7 +1789,8 @@
       "y": 21.044901172613418,
       "width": 94.57854580818024,
       "height": 73.6906665638264
-    }
+    },
+    "fullArt": true
   },
   {
     "id": "OGN-188",

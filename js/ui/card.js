@@ -58,7 +58,8 @@ const color2 = (def) => (def.colors[1] ? COLORS[def.colors[1]].hex : colorHex(de
 /** Full-art gold frame: Signatures, Legends and EPIC cards (with artwork). */
 export function isFullArt(def) {
   // Legends always use the Legend template (two big runes), even before their artwork exists
-  return def.type === 'legend' || (!!def.image && def.type !== 'rune' && (rarityOf(def) === 'epic' || def.type === 'signature'));
+  // full-art is a property of the card's design (riftcardmaker's Epic template), not of its rarity
+  return def.type === 'legend' || (!!def.image && def.type !== 'rune' && (!!def.fullArt || def.type === 'signature'));
 }
 /** Foil finish: Champions, Legends and EPIC cards (Signatures are EPIC). */
 export const isFoil = (def) => ['champion', 'legend'].includes(def.type) || rarityOf(def) === 'epic' || !!def.fullArtRune;

@@ -1474,7 +1474,7 @@
    }
   ],
   "tribes": [
-   "Videogame"
+   "Game"
   ],
   "text": "",
   "flavor": "",
@@ -1510,7 +1510,7 @@
    }
   ],
   "tribes": [
-   "Videogame"
+   "Game"
   ],
   "text": "",
   "flavor": "",
@@ -1671,7 +1671,7 @@
   "keywords": [],
   "effects": [],
   "tribes": [
-   "Videogame"
+   "Game"
   ],
   "text": "",
   "flavor": "",
@@ -7276,6 +7276,33 @@
   "rarity": "rare"
  },
  {
+  "id": "OGN-L-emese",
+  "set": "OGN",
+  "number": "L-emese",
+  "setInfo": "OGN Legend",
+  "name": "Emese | Legend",
+  "type": "legend",
+  "colors": [
+   "Calm",
+   "Fury"
+  ],
+  "cost": 0,
+  "power": 0,
+  "recycle": 0,
+  "keywords": [],
+  "effects": [],
+  "tribes": [
+   "Emese"
+  ],
+  "owners": [
+   "Emese"
+  ],
+  "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Emese's deck is coming soon.)__",
+  "flavor": "",
+  "placeholder": true,
+  "rarity": "rare"
+ },
+ {
   "id": "OGN-L-kozi",
   "set": "OGN",
   "number": "L-kozi",
@@ -7361,7 +7388,7 @@
   "set": "OGN",
   "number": "L-varon",
   "setInfo": "OGN Legend",
-  "name": "Emese | Legend",
+  "name": "Varon | Legend",
   "type": "legend",
   "colors": [
    "Calm",
@@ -7381,7 +7408,11 @@
   "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Varon's deck is coming soon.)__",
   "flavor": "",
   "placeholder": true,
-  "rarity": "rare"
+  "rarity": "rare",
+  "championNames": [
+   "Emese",
+   "Mari"
+  ]
  },
  {
   "id": "OGN-L-vince",

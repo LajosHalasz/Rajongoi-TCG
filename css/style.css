@@ -970,3 +970,9 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 .shields .card.shield-faceup { box-shadow: 0 0 0 2px #930090, 0 0 14px rgba(147,0,144,.7); z-index: 1; }
 .shields .card.targetable { z-index: 3; cursor: pointer; }
 .shields .card.targetable:hover { transform: translateY(-14%); z-index: 4; }
+/* god pack */
+.god-banner { text-align: center; font-family: 'Lexend'; font-weight: 800; font-size: clamp(28px, 5vw, 54px); letter-spacing: .06em; margin: 0 0 8px;
+  background: linear-gradient(90deg, #ff5fd2, #ffe36b, #8dff7a, #6be3ff, #c26bff, #ff5fd2); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: god-shift 2.4s linear infinite, pulse 0.9s infinite alternate; filter: drop-shadow(0 0 14px rgba(255,220,120,.6)); }
+@keyframes god-shift { to { background-position: 300% 0; } }
+.booster-page.god-pack .flip:not(.flipped) .pack-back { box-shadow: 0 0 0 3px #ffe36b, 0 0 30px rgba(255,200,90,.9); animation: rainbow 1.6s linear infinite; }

@@ -62,12 +62,23 @@ The 🔊 button in the top bar mutes all sound. The setting is remembered.
 ## Booster packs
 
 The **Boosters** page opens 15-card packs with an animation: the pack tears open, the cards are dealt face down, and rarer cards glow before they flip. A pack contains:
-- 10 Commons. A Legend may replace one, in about 1 of 6 packs.
+- 10 Commons.
 - 3 Uncommons.
 - 1 Rune or Token.
-- 1 Champion or Signature in about 1 of 8 packs. Otherwise this slot is a Rare, or an Uncommon if the set has no Rares.
+- 1 Champion or Signature in about 1 of 8 packs. Otherwise this slot is a Rare (Legends are Rares and share this slot), or an Uncommon if the set has no Rares.
 
-Odds are set in `js/engine/booster.js`. The page remembers which cards you have pulled (in browser storage) and marks first-time pulls as **NEW**. The database has no rarity column, so its cards get a rarity from their type until a finished card sets the real one: Signatures and Legends are epic, Champions rare, cards costing 4 or more uncommon, and the rest common.
+**God pack** (about 1 in 300 packs, like the ~1 in 2,000 "rare packs" of Pokémon TCG Pocket but friendlier): no Commons, every Common slot becomes Uncommon 55% / Rare 30% / Epic 15%, every Uncommon slot Rare 60% / Epic 40%, and the last card is always a Champion, Signature or full-art Rune.
+
+Odds are set in `js/engine/booster.js`. The page remembers which cards you have pulled (in browser storage) and marks first-time pulls as **NEW**.
+
+### Rarity ground rules
+Applied on load (`applyRarityRules` in `js/engine/cards.js`), whatever a card was added with:
+- **Legends** are Rare.
+- **Signatures**, **EPIC: The Musical** cards (name starts with "EPIC"), **full-art** cards and full-art Runes are Epic. Full-art is the card's design (riftcardmaker's Epic template → `fullArt: true`), not its rarity.
+- Any other card listed as Epic becomes Rare.
+- The tag "Videogame" is read as "Game".
+
+The database has no rarity column, so its cards get one from their type until a finished card sets the real one: Champions rare, cards costing 4 or more uncommon, the rest common.
 
 ## Run
 
