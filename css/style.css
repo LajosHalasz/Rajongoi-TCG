@@ -952,11 +952,22 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 .dv-runes i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
 .dv-card { position: sticky; top: 70px; }
 .dv-card .card { --w: min(360px, 28vw); }
-.dv-info { position: sticky; top: 70px; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; line-height: 1.45; }
+.dv-side { position: sticky; top: 70px; display: grid; gap: 12px; min-width: 0; }
+.dv-box { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; line-height: 1.45; }
+.dv-box h4 { margin: 0 0 8px; font-family: 'Lexend'; color: var(--copper-hi); }
+.dv-box-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.dv-box-head h4 { margin: 0; flex: 1; }
+.dv-box .lang-toggle button { padding: 3px 10px; font-size: 12px; }
+.dv-curve { height: 90px; margin-top: 18px; }
+.dv-curve .fill .n { position: absolute; left: 0; right: 0; text-align: center; top: -18px; font-size: 13px; font-weight: 800; color: var(--copper-hi); }
+.dv-curve .bar { justify-content: flex-end; }
+.dv-curve .fill { position: relative; }
+.dv-note { font-size: 12px; margin: 4px 0 0; }
+.dv-info { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; line-height: 1.45; }
 .dv-info h4 { margin: 0 0 8px; font-family: 'Lexend'; color: var(--copper-hi); }
 @media (max-width: 1100px) {
   .dv-layout { grid-template-columns: minmax(240px, 1fr) auto; }
-  .dv-info { grid-column: 1 / -1; position: static; }
+  .dv-side { grid-column: 1 / -1; position: static; }
 }
 @media (max-width: 720px) {
   .dv-layout { grid-template-columns: 1fr; }

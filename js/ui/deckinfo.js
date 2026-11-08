@@ -84,6 +84,13 @@ function guideHtml(d, withStyle = true) {
 
 const styleHtml = (g) => `<div class="di-style"><span class="di-arch">${esc(g.archetype || '')}</span>${esc(g.style || '')}</div>`;
 
+/** Short strategy for the Decks page: archetype + one-paragraph style, the game plan folded away. */
+export function strategyHtml(d) {
+  const g = deckGuide(d.id, getLang());
+  if (!g) return `<p class="muted">${t('noGuide')}</p>`;
+  return `${styleHtml(g)}${g.plan?.length ? `<details class="di-sec"><summary>${t('plan')}</summary><ol class="di-plan">${g.plan.map(p => `<li>${esc(p)}</li>`).join('')}</ol></details>` : ''}`;
+}
+
 /** Info column for one side. `other` is the opposing deck (null = random AI deck). */
 export function deckInfoHtml(deck, other, side) {
   if (!deck) {

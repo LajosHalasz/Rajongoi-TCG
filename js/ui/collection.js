@@ -3,6 +3,8 @@ import { COLORS, TYPE_INFO, GUIDE, RULES } from '../engine/rules.js';
 import { validateDeck } from '../engine/deck.js';
 import { cardHtml, cardDetailsHtml, esc } from './card.js';
 import { allDecks, customDecks, saveCustomDecks, findDeck, deckName } from '../data.js';
+import { strategyHtml } from './deckinfo.js';
+import { getLang, langToggleHtml, bindLangToggle } from './lang.js';
 
 const SET_NAMES = { OGN: 'OGN 2026-01', DND: 'DND — DLC', TKN: 'Tokens', RUN: 'Runes' };
 const TYPE_ORDER = ['legend', 'champion', 'unit', 'spell', 'gear', 'signature', 'token', 'rune'];
@@ -160,6 +162,16 @@ export function renderDecks(app, arg) {
 }
 
 // ------------------------------------------------------------- deck view --
+/** Mana curve bars (1 … 10+) with the card count on top and the Assembly Guide as a dashed line. */
+function curveHtml(curve) {
+  const max = Math.max(4, ...Object.values(curve), ...Object.values(GUIDE.curve));
+  return `<div class="curve dv-curve">${Array.from({ length: 10 }, (_, i) => i + 1).map(c => `<div class="bar" title="cost ${c}${c === 10 ? '+' : ''}: ${curve[c] || 0} (guide ${GUIDE.curve[c] || 0})">
+      <div class="fill" style="height:${((curve[c] || 0) / max) * 100}%">${curve[c] ? `<span class="n">${curve[c]}</span>` : ''}</div>
+      <div class="target" style="bottom:${((GUIDE.curve[c] || 0) / max) * 100}%"></div></div>`).join('')}</div>
+    <div class="curve-labels">${Array.from({ length: 10 }, (_, i) => `<span>${i + 1}${i === 9 ? '+' : ''}</span>`).join('')}</div>
+    <p class="muted dv-note">${getLang() === 'hu' ? 'Oszlopok: a pakli · szaggatott: ajánlott görbe' : 'Bars: this deck · dashed: Assembly Guide'}</p>`;
+}
+
 const RARITY_GROUPS = [['epic', 'Epic'], ['rare', 'Rare'], ['uncommon', 'Uncommon'], ['common', 'Common']];
 
 /** One deck: its cards by rarity on the left, the hovered card in the middle, what it does on the right. */
@@ -190,8 +202,13 @@ function renderDeckView(app, d) {
         ${d.runes ? `<h4>Mana Deck</h4><div class="dv-runes">${Object.entries(d.runes).map(([c, n]) => `<span><i style="background:${COLORS[c]?.hex}"></i>${n} ${esc(c)}</span>`).join('')}</div>` : ''}
       </div>
       <div class="dv-card" id="dv-card"></div>
-      <div class="dv-info" id="dv-info"></div>
+      <div class="dv-side">
+        <div class="dv-box"><div class="dv-box-head"><h4>${getLang() === 'hu' ? 'Stratégia' : 'Strategy'}</h4>${langToggleHtml()}</div>${strategyHtml(d)}</div>
+        <div class="dv-box"><h4>${getLang() === 'hu' ? 'Mana-görbe' : 'Mana curve'} <span class="muted">· avg ${v.stats.avgCost.toFixed(1)}</span></h4>${curveHtml(v.stats.curve)}</div>
+        <div class="dv-info" id="dv-info"></div>
+      </div>
     </div></div>`;
+  bindLangToggle(app, () => renderDeckView(app, d));
   const show = (id) => {
     if (!hasDef(id)) return;
     const c = getDef(id);

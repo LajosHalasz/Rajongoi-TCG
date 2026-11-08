@@ -726,6 +726,667 @@ ${def.text}`;
     schedule();
   }
 
+  // js/engine/achievements.js
+  var sameTurn = (events, ev, f) => events.filter((e) => e.turn === ev.turn && f(e));
+  var defOf = (id) => {
+    try {
+      return getDef(id);
+    } catch {
+      return null;
+    }
+  };
+  var makesTokens = (ids) => [...ids].filter((id) => JSON.stringify(defOf(id)?.effects || []).includes('"do":"token"'));
+  var withKw = (ids, kw2) => [...ids].filter((id) => (defOf(id)?.keywords || []).includes(kw2));
+  var withTribe = (ids, t2) => [...ids].filter((id) => (defOf(id)?.tribes || []).some((x) => x.toLowerCase() === t2.toLowerCase()));
+  var names = (ids) => ids.map((id) => defOf(id)?.name || id).join(", ");
+  var playedThisTurn = (events, ev, me, id) => events.some((e) => e.type === "play" && e.player === me && e.id === id && e.turn === ev.turn);
+  var ACHIEVEMENTS = [
+    {
+      id: "funniest",
+      name: "Funniest shit I have ever seen",
+      icon: "\u{1F923}",
+      desc: "Destroy your opponent with a copy of a token creature they created, using the Parody Alchemist.",
+      hint: ({ mine, theirs }) => {
+        if (!mine.has("OGN-180")) return null;
+        if (!theirs) return {
+          hu: "Akkor siker\xFClhet, ha az AI paklija tokeneket csin\xE1l: m\xE1sold le az egyiket a Parody Alchemisttel, \xE9s azzal m\xE9rd a d\xF6nt\u0151 csap\xE1st.",
+          en: "Possible if the AI's deck makes tokens: copy one with Parody Alchemist and land the final blow with it."
+        };
+        const t2 = makesTokens(theirs);
+        return t2.length ? {
+          hu: `Az ellenf\xE9l tokeneket csin\xE1l (${names(t2)}). M\xE1sold le az egyiket a Parody Alchemisttel, \xE9s a m\xE1solattal vidd be a gy\u0151ztes Direct Attackot.`,
+          en: `They make tokens (${names(t2)}) \u2014 copy one with Parody Alchemist and deliver the final direct attack with the copy.`
+        } : null;
+      },
+      check: ({ ev, me }) => ev.type === "finalBlow" && ev.player === me && ev.copy && ev.token
+    },
+    {
+      id: "unexpected-flex",
+      name: "Unexpected FLEX",
+      icon: "\u{1F4AA}",
+      desc: "Play The Ultimate Flex from a triggered shield.",
+      hint: ({ mine }) => !mine.has("OGN-186") ? null : mine.has("OGN-182") ? {
+        hu: "Tedd a The ULTIMATE FLEX-et Shieldbe a The Solar Boat Team Shieldify-j\xE1val, hogy Shield Triggerk\xE9nt els\xFClhessen.",
+        en: "Shieldify The ULTIMATE FLEX with The Solar Boat Team so it can trigger from your shields."
+      } : { hu: "Benne van a pakliban a The ULTIMATE FLEX. Rem\xE9ld, hogy Shieldbe ker\xFCl.", en: "You run The ULTIMATE FLEX \u2014 hope it lands in your shields." },
+      check: ({ ev, me }) => ev.type === "play" && ev.player === me && ev.id === "OGN-186" && ev.via === "shieldTrigger"
+    },
+    {
+      id: "painter",
+      name: "Speed Painting",
+      icon: "\u{1F58C}\uFE0F",
+      desc: "Accelerate 3 Miniatures with the Miniature Painter in a single turn.",
+      hint: ({ mine }) => mine.has("OGN-188") && (mine.has("OGN-179") || mine.has("OGN-189")) ? {
+        hu: "Egy nagy k\xF6rben k\xE9sz\xEDts \xE9s gyors\xEDts (Accelerate) 3 Miniature-t a 3D Printerekkel, mik\xF6zben a Painter lent van.",
+        en: "In one big turn make and accelerate 3 Miniatures with your 3D Printers while the Painter is on the field."
+      } : null,
+      check: ({ ev, me, events }) => ev.type === "accelerate" && ev.player === me && sameTurn(events, ev, (e) => e.type === "accelerate" && e.player === me).length >= 3
+    },
+    {
+      id: "manyika-rest",
+      name: "Manyika can rest finally",
+      icon: "\u{1FAA6}",
+      desc: "Watch a Manyika Dreadnought die from a Burst-Pouch (either of you may control them).",
+      hint: ({ mine, theirs }) => {
+        const a = mine.has("OGN-176"), b = theirs?.has("OGN-176");
+        if (a && b) return {
+          hu: "Mindk\xE9t pakliban van Manyika Dreadnought. T\xE1madd meg az \xF6v\xE9t a Burst-Pouchoddal, vagy hagyd, hogy az \xF6v\xE9 belefusson a ti\xE9dbe.",
+          en: "Both decks run Manyika Dreadnought \u2014 attack theirs with your Burst-Pouch, or let theirs run into yours."
+        };
+        if (a && !theirs) return {
+          hu: "Mindk\xE9t oldalon kell egy Manyika. Akkor siker\xFClhet, ha az AI is Manyika Dreadnought-os paklit v\xE1laszt.",
+          en: "Needs a Manyika on both sides \u2014 possible if the AI also picks a deck with Manyika Dreadnought."
+        };
+        if ((a || b) && (mine.has("OGN-180") || theirs?.has("OGN-180"))) return {
+          hu: "M\xE1solj le egy Burst-Pouchot a Parody Alchemisttel, \xE9s t\xE1madj vele egy Manyika Dreadnoughtra.",
+          en: "Copy a Burst-Pouch with Parody Alchemist and attack into a Manyika Dreadnought."
+        };
+        return null;
+      },
+      check: ({ ev }) => ev.type === "kill" && ev.victim === "OGN-176" && ev.killer === "TKN-005"
+    },
+    {
+      id: "art-destruction",
+      name: "Art of Destruction",
+      icon: "\u{1F3A8}",
+      desc: "Banish 5 cards in a turn with The Chronicler.",
+      hint: ({ mine }) => {
+        if (!mine.has("OGN-178")) return null;
+        const n = withTribe(mine, "Art").filter((id) => id !== "OGN-178").length;
+        return n >= 5 ? {
+          hu: `Gy\u0171jts \xF6ssze 5 Art lapot a kezedben, j\xE1tszd ki a The Chroniclert, majd mindet 1-\xE9rt (${n} Art lap van a pakliban).`,
+          en: `Hold 5 Art cards, play The Chronicler, then cast them all for 1 (${n} Art cards in your deck).`
+        } : null;
+      },
+      check: ({ ev, me, events }) => ev.type === "banish" && ev.player === me && sameTurn(events, ev, (e) => e.type === "banish" && e.player === me).length >= 5
+    },
+    {
+      id: "came-prepared",
+      name: "Came Prepared",
+      icon: "\u{1F6E1}\uFE0F",
+      desc: "Shieldify a Shield Trigger card.",
+      hint: ({ mine }) => {
+        const sh = withKw(mine, "Shieldify"), st2 = withKw(mine, "Shield Trigger");
+        return sh.length && st2.length ? {
+          hu: `J\xE1tszd ki ezt: ${names(sh)}, mik\xF6zben egy Shield Trigger lap van a kezedben (${names(st2)}), \xE9s azt tedd a Shieldek k\xF6z\xE9.`,
+          en: `Play ${names(sh)} with a Shield Trigger card in hand (${names(st2)}).`
+        } : null;
+      },
+      check: ({ ev, me }) => ev.type === "shieldify" && ev.player === me && (getDef(ev.id).keywords || []).includes("Shield Trigger")
+    },
+    {
+      id: "art-of-deal",
+      name: "Art of the Deal",
+      icon: "\u{1F91D}",
+      desc: "Make a deal with your opponent using The Dealmaker.",
+      unobtainable: "Unlocks with online play \u2014 the AI never accepts a deal.",
+      check: () => false
+    },
+    {
+      id: "strawberry",
+      name: "Join the Strawberry Club",
+      icon: "\u{1F353}",
+      desc: "Have your opponent play Welcome to the Strawberry Club! against you as a Shield Trigger.",
+      hint: ({ theirs }) => !theirs ? { hu: "Akkor siker\xFClhet, ha az AI paklij\xE1ban van Welcome to the Strawberry Club!.", en: "Possible if the AI's deck runs Welcome to the Strawberry Club!." } : theirs.has("OGN-012") ? {
+        hu: "Az AI-n\xE1l van Welcome to the Strawberry Club!. T\xF6rd a Shieldjeit, \xE9s egyszer els\xFClhet.",
+        en: "The AI runs Welcome to the Strawberry Club! \u2014 keep breaking shields and it may trigger."
+      } : null,
+      check: ({ ev, op }) => ev.type === "play" && ev.player === op && ev.id === "OGN-012" && ev.via === "shieldTrigger"
+    },
+    {
+      id: "movie-night",
+      name: "Quality Movie Night",
+      icon: "\u{1F3AC}",
+      desc: "Play Movie Night at Chris and The Law on the same turn.",
+      hint: ({ mine }) => mine.has("OGN-173") && mine.has("OGN-171") ? { hu: "Movie Night at Chris, majd a The Law legyen az utols\xF3 lapod abban a k\xF6rben (4 mana).", en: "Cast Movie Night at Chris, then The Law as your last card that turn (4 mana)." } : null,
+      check: ({ ev, me, events }) => ev.type === "play" && ev.player === me && ["OGN-173", "OGN-171"].includes(ev.id) && playedThisTurn(events, ev, me, "OGN-173") && playedThisTurn(events, ev, me, "OGN-171")
+    },
+    {
+      id: "finale",
+      name: "Finale",
+      icon: "\u{1F404}",
+      desc: "Play Cowtrix and GOLDEN on the same turn.",
+      hint: ({ mine }) => mine.has("OGN-172") && mine.has("OGN-177") ? { hu: "J\xE1tszd ki a Cowtrixot Rumival (felh\xFAzza a GOLDEN-t), \xE9s m\xE9g ugyanabban a k\xF6rben a GOLDEN-t.", en: "Play Cowtrix choosing Rumi (draws GOLDEN), then cast GOLDEN the same turn." } : null,
+      check: ({ ev, me, events }) => ev.type === "play" && ev.player === me && ["OGN-172", "OGN-177"].includes(ev.id) && playedThisTurn(events, ev, me, "OGN-172") && playedThisTurn(events, ev, me, "OGN-177")
+    },
+    {
+      id: "printer-upgrade",
+      name: "Printer Upgrade",
+      icon: "\u{1F5A8}\uFE0F",
+      desc: "Replace 3D Printer - Lui's Forge with 3D Printer - X Forge 2.",
+      hint: ({ mine }) => mine.has("OGN-179") && mine.has("OGN-189") ? {
+        hu: "Ha mindk\xE9t Gear Slot foglalt (az egyikben a Lui's Forge), j\xE1tszd ki az X Forge 2-t, \xE9s v\xE1laszd a Lui's Forge cser\xE9j\xE9t.",
+        en: "With both Gear slots full (one of them Lui's Forge), play X Forge 2 and choose to replace Lui's Forge."
+      } : null,
+      check: ({ ev, me }) => ev.type === "gearReplace" && ev.player === me && ev.oldId === "OGN-179" && ev.newId === "OGN-189"
+    },
+    {
+      id: "dungeon-survivors",
+      name: "Dungeon Survivors",
+      icon: "\u{1F3F0}",
+      desc: "Win the game with Darkest Dungeoneers tapped on your side of the battlefield.",
+      hint: ({ mine }) => mine.has("OGN-045") ? {
+        hu: "A gy\u0151ztes k\xF6r\xF6dben a Darkest Dungeoneers legyen leford\xEDtva: v\xE9dekezzen (Defensive) vagy t\xE1madjon.",
+        en: "Have Darkest Dungeoneers tapped on your winning turn: use its Defensive or attack with it."
+      } : null,
+      check: ({ ev, me, s }) => ev.type === "win" && ev.player === me && s.players[me].battle.some((u) => u.id === "OGN-045" && u.tapped)
+    }
+  ];
+  function achievementHints(mine, theirs) {
+    const out = [];
+    for (const a of ACHIEVEMENTS) {
+      if (a.unobtainable || !a.hint) continue;
+      let tip = null;
+      try {
+        tip = a.hint({ mine, theirs });
+      } catch {
+      }
+      if (tip) out.push({ ...a, tip });
+    }
+    return out;
+  }
+  function checkAchievements(s, me, seen, already = /* @__PURE__ */ new Set()) {
+    const events = s.events || [];
+    const out = [];
+    for (const ev of events) {
+      if (ev.n <= seen) continue;
+      for (const a of ACHIEVEMENTS) {
+        if (already.has(a.id) || out.includes(a.id)) continue;
+        try {
+          if (a.check({ s, me, op: 1 - me, ev, events })) out.push(a.id);
+        } catch {
+        }
+      }
+    }
+    return out;
+  }
+
+  // js/ui/sfx.js
+  var LS2 = "rajongoi.sound.v1";
+  var ctx = null;
+  var master;
+  var verbIn;
+  var noiseBuf;
+  var muted = false;
+  var volume = 0.7;
+  try {
+    const s = JSON.parse(localStorage.getItem(LS2));
+    if (s) {
+      muted = !!s.muted;
+      volume = s.volume ?? volume;
+    }
+  } catch {
+  }
+  function save() {
+    try {
+      localStorage.setItem(LS2, JSON.stringify({ muted, volume }));
+    } catch {
+    }
+  }
+  function ac() {
+    if (!ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      ctx = new C();
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -16;
+      comp.knee.value = 12;
+      comp.ratio.value = 4;
+      comp.attack.value = 3e-3;
+      comp.release.value = 0.2;
+      master = ctx.createGain();
+      master.gain.value = muted ? 0 : volume;
+      master.connect(comp);
+      comp.connect(ctx.destination);
+      const verb = ctx.createConvolver();
+      verb.buffer = impulse(2.2, 3);
+      verbIn = ctx.createGain();
+      verbIn.gain.value = 1;
+      const wet = ctx.createGain();
+      wet.gain.value = 0.32;
+      verbIn.connect(verb);
+      verb.connect(wet);
+      wet.connect(master);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+  function impulse(seconds, decay) {
+    const len = ctx.sampleRate * seconds;
+    const b = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) {
+      const d = b.getChannelData(c);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+    return b;
+  }
+  function env(t2, { attack = 4e-3, dur = 0.2, gain = 0.3, rev = 0.15, curve = "exp" }) {
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(1e-4, t2);
+    g.gain.linearRampToValueAtTime(gain, t2 + attack);
+    if (curve === "exp") g.gain.exponentialRampToValueAtTime(1e-4, t2 + attack + dur);
+    else g.gain.linearRampToValueAtTime(1e-4, t2 + attack + dur);
+    g.connect(master);
+    if (rev > 0) {
+      const s = ctx.createGain();
+      s.gain.value = rev;
+      g.connect(s);
+      s.connect(verbIn);
+    }
+    return g;
+  }
+  function tone({ freq = 440, to, type = "sine", dur = 0.2, gain = 0.2, attack = 4e-3, rev = 0.15, delay = 0, detune = 0, glide }) {
+    const t2 = ctx.currentTime + delay;
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t2);
+    o.detune.value = detune;
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t2 + (glide ?? dur));
+    o.connect(env(t2, { attack, dur, gain, rev }));
+    o.start(t2);
+    o.stop(t2 + attack + dur + 0.05);
+  }
+  function noise({ filter = "bandpass", freq = 1e3, to, q = 1, dur = 0.2, gain = 0.2, attack = 4e-3, rev = 0.15, delay = 0, curve }) {
+    const t2 = ctx.currentTime + delay;
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuf;
+    src.loop = true;
+    const f = ctx.createBiquadFilter();
+    f.type = filter;
+    f.Q.value = q;
+    f.frequency.setValueAtTime(freq, t2);
+    if (to) f.frequency.exponentialRampToValueAtTime(to, t2 + dur);
+    src.connect(f);
+    f.connect(env(t2, { attack, dur, gain, rev, curve }));
+    src.start(t2, Math.random());
+    src.stop(t2 + attack + dur + 0.05);
+  }
+  function bell(freq, { gain = 0.12, dur = 1.2, delay = 0, rev = 0.5 } = {}) {
+    [[1, 1], [2.01, 0.45], [3.02, 0.22], [4.17, 0.12]].forEach(([m, g]) => tone({ freq: freq * m, type: "sine", dur: dur / (m * 0.7), gain: gain * g, rev, delay }));
+  }
+  var play = (fn) => (...a) => {
+    if (muted) return;
+    if (!ac()) return;
+    try {
+      fn(...a);
+    } catch {
+    }
+  };
+  var lastHover = 0;
+  var sfx = {
+    // ---------------------------------------------------------------- UI
+    click: play(() => {
+      tone({ freq: 1500, to: 900, type: "triangle", dur: 0.05, gain: 0.12, rev: 0.05 });
+      noise({ filter: "highpass", freq: 3500, dur: 0.025, gain: 0.08, rev: 0 });
+    }),
+    hover: play(() => {
+      const now = performance.now();
+      if (now - lastHover < 45) return;
+      lastHover = now;
+      tone({ freq: 2400, type: "sine", dur: 0.035, gain: 0.025, rev: 0.05 });
+    }),
+    nav: play(() => {
+      noise({ filter: "bandpass", freq: 500, to: 2800, q: 1.4, dur: 0.22, gain: 0.08, attack: 0.05, rev: 0.25 });
+      tone({ freq: 660, type: "sine", dur: 0.18, gain: 0.03, delay: 0.08, rev: 0.4 });
+    }),
+    toggle: play(() => {
+      tone({ freq: 880, type: "triangle", dur: 0.08, gain: 0.1 });
+      tone({ freq: 1320, type: "triangle", dur: 0.1, gain: 0.08, delay: 0.06 });
+    }),
+    // ------------------------------------------------------------- cards
+    swish: play((vol = 1) => {
+      noise({ filter: "bandpass", freq: 3e3, to: 900, q: 0.9, dur: 0.13, gain: 0.12 * vol, attack: 0.02, rev: 0.08 });
+    }),
+    draw: play(() => {
+      noise({ filter: "bandpass", freq: 2600, to: 1200, q: 1, dur: 0.16, gain: 0.14, attack: 0.03, rev: 0.1 });
+      tone({ freq: 900, type: "triangle", dur: 0.03, gain: 0.05, delay: 0.12, rev: 0 });
+    }),
+    play: play(() => {
+      noise({ filter: "bandpass", freq: 2200, to: 700, q: 0.8, dur: 0.12, gain: 0.12, attack: 0.02 });
+      tone({ freq: 170, to: 60, type: "sine", dur: 0.2, gain: 0.45, delay: 0.1, rev: 0.12 });
+      noise({ filter: "lowpass", freq: 900, dur: 0.09, gain: 0.25, delay: 0.1, rev: 0.1 });
+    }),
+    spell: play(() => {
+      noise({ filter: "highpass", freq: 1500, to: 7e3, dur: 0.5, gain: 0.08, attack: 0.15, rev: 0.6 });
+      [659, 880, 1175, 1568].forEach((f, i) => tone({ freq: f, type: "triangle", dur: 0.5, gain: 0.07, delay: i * 0.06, rev: 0.6, detune: 4 }));
+    }),
+    gear: play(() => {
+      noise({ filter: "bandpass", freq: 1800, q: 6, dur: 0.05, gain: 0.25, rev: 0.1 });
+      noise({ filter: "bandpass", freq: 1200, q: 6, dur: 0.06, gain: 0.2, delay: 0.09, rev: 0.1 });
+      tone({ freq: 220, to: 330, type: "square", dur: 0.12, gain: 0.04, delay: 0.05, rev: 0.2 });
+    }),
+    rune: play(() => {
+      bell(1046, { gain: 0.07, dur: 0.9 });
+      bell(1568, { gain: 0.05, dur: 0.8, delay: 0.07 });
+    }),
+    turn: play((mine) => {
+      const base = mine ? 196 : 147;
+      [1, 1.5, 2].forEach((m, i) => tone({ freq: base * m, type: "sine", dur: 1.4, gain: 0.08 / (i + 1), attack: 0.02, rev: 0.7 }));
+      noise({ filter: "lowpass", freq: 400, dur: 0.3, gain: 0.08, rev: 0.4 });
+    }),
+    attack: play(() => {
+      noise({ filter: "bandpass", freq: 300, to: 3500, q: 1.2, dur: 0.24, gain: 0.22, attack: 0.08, rev: 0.2 });
+      tone({ freq: 110, to: 55, type: "sawtooth", dur: 0.25, gain: 0.06, attack: 0.05, rev: 0.2 });
+    }),
+    block: play(() => {
+      noise({ filter: "bandpass", freq: 2500, q: 3, dur: 0.18, gain: 0.25, rev: 0.3 });
+      tone({ freq: 523, type: "triangle", dur: 0.4, gain: 0.08, rev: 0.5 });
+      tone({ freq: 784, type: "triangle", dur: 0.4, gain: 0.06, rev: 0.5, delay: 0.02 });
+    }),
+    impact: play(() => {
+      tone({ freq: 95, to: 38, type: "sine", dur: 0.35, gain: 0.6, rev: 0.2 });
+      noise({ filter: "lowpass", freq: 1400, to: 300, dur: 0.3, gain: 0.35, rev: 0.25 });
+    }),
+    destroy: play(() => {
+      noise({ filter: "lowpass", freq: 3e3, to: 200, dur: 0.6, gain: 0.3, rev: 0.4 });
+      tone({ freq: 220, to: 70, type: "sawtooth", dur: 0.4, gain: 0.05, rev: 0.4 });
+      for (let i = 0; i < 6; i++) noise({ filter: "bandpass", freq: 800 + Math.random() * 2500, q: 8, dur: 0.04, gain: 0.12, delay: 0.05 + i * 0.05, rev: 0.2 });
+    }),
+    shield: play(() => {
+      noise({ filter: "highpass", freq: 3e3, dur: 0.35, gain: 0.25, rev: 0.4 });
+      for (let i = 0; i < 9; i++) tone({ freq: 2200 + Math.random() * 3800, type: "sine", dur: 0.15 + Math.random() * 0.25, gain: 0.05, delay: Math.random() * 0.12, rev: 0.5 });
+      tone({ freq: 140, to: 60, type: "sine", dur: 0.25, gain: 0.3, rev: 0.2 });
+    }),
+    trigger: play(() => {
+      noise({ filter: "bandpass", freq: 400, to: 4e3, q: 2, dur: 0.4, gain: 0.12, attack: 0.2, rev: 0.5 });
+      [523, 659, 784, 1046].forEach((f, i) => tone({ freq: f, type: "sawtooth", dur: 0.35, gain: 0.04, delay: 0.25 + i * 0.05, rev: 0.6 }));
+      bell(1046, { gain: 0.08, delay: 0.45 });
+    }),
+    foilLand: play((delay = 0.55) => {
+      noise({ filter: "bandpass", freq: 5e3, to: 500, q: 1, dur: delay, gain: 0.14, attack: 0.15, rev: 0.4 });
+      tone({ freq: 1200, to: 200, type: "sine", dur: delay, gain: 0.03, attack: 0.1, rev: 0.4 });
+      tone({ freq: 75, to: 32, type: "sine", dur: 0.7, gain: 0.8, delay, rev: 0.4 });
+      noise({ filter: "lowpass", freq: 700, to: 120, dur: 0.6, gain: 0.45, delay, rev: 0.5 });
+      [1568, 2093, 2637, 3136].forEach((f, i) => tone({ freq: f, type: "sine", dur: 0.6, gain: 0.035, delay: delay + 0.05 + i * 0.04, rev: 0.7 }));
+    }),
+    lightning: play(() => {
+      noise({ filter: "highpass", freq: 2500, dur: 0.12, gain: 0.5, attack: 1e-3, rev: 0.6 });
+      for (let i = 0; i < 10; i++) noise({ filter: "bandpass", freq: 1500 + Math.random() * 5e3, q: 3, dur: 0.02, gain: 0.25, delay: Math.random() * 0.12, rev: 0.4 });
+      noise({ filter: "highpass", freq: 1800, dur: 0.1, gain: 0.35, delay: 0.17, rev: 0.6 });
+      tone({ freq: 55, to: 28, type: "sine", dur: 1.6, gain: 0.55, delay: 0.05, rev: 0.7 });
+      noise({ filter: "lowpass", freq: 380, to: 90, dur: 2.2, gain: 0.45, attack: 0.08, delay: 0.1, rev: 0.8 });
+    }),
+    crack: play(() => {
+      for (let i = 0; i < 12; i++) noise({ filter: "bandpass", freq: 600 + Math.random() * 2200, q: 4, dur: 0.03 + Math.random() * 0.05, gain: 0.25, delay: i * 0.025 + Math.random() * 0.02, rev: 0.2 });
+      tone({ freq: 48, to: 30, type: "sine", dur: 1.1, gain: 0.55, rev: 0.4 });
+      noise({ filter: "lowpass", freq: 250, dur: 1.1, gain: 0.35, attack: 0.02, rev: 0.4 });
+      for (let i = 0; i < 8; i++) noise({ filter: "bandpass", freq: 3e3 + Math.random() * 3e3, q: 6, dur: 0.03, gain: 0.08, delay: 0.3 + Math.random() * 0.6, rev: 0.2 });
+    }),
+    win: play(() => {
+      [[523, 0], [659, 0.14], [784, 0.28], [1046, 0.42]].forEach(([f, d]) => {
+        tone({ freq: f, type: "sawtooth", dur: 0.5, gain: 0.05, delay: d, rev: 0.6 });
+        tone({ freq: f, type: "triangle", dur: 0.6, gain: 0.08, delay: d, rev: 0.6, detune: 6 });
+      });
+      [1046, 1318, 1568].forEach((f) => tone({ freq: f, type: "triangle", dur: 1.6, gain: 0.06, delay: 0.6, rev: 0.8 }));
+      bell(2093, { gain: 0.08, delay: 0.6, dur: 1.8 });
+    }),
+    lose: play(() => {
+      [[392, 0], [349, 0.25], [311, 0.5], [262, 0.8]].forEach(([f, d]) => tone({ freq: f, type: "triangle", dur: 0.7, gain: 0.09, delay: d, rev: 0.7 }));
+      tone({ freq: 65, to: 40, type: "sine", dur: 1.5, gain: 0.3, delay: 0.8, rev: 0.6 });
+    }),
+    // ------------------------------------------------------------ boosters
+    packShake: play(() => {
+      for (let i = 0; i < 6; i++) noise({ filter: "bandpass", freq: 1200 + Math.random() * 1500, q: 2, dur: 0.06, gain: 0.1, delay: i * 0.08, rev: 0.05 });
+      tone({ freq: 60, type: "sine", dur: 0.5, gain: 0.15, attack: 0.1, rev: 0.1 });
+    }),
+    packTear: play(() => {
+      for (let i = 0; i < 14; i++) noise({ filter: "bandpass", freq: 2500 + Math.random() * 4e3, q: 1.5, dur: 0.03 + Math.random() * 0.03, gain: 0.22, delay: i * 0.022, rev: 0.1 });
+      noise({ filter: "highpass", freq: 6e3, to: 1500, dur: 0.35, gain: 0.12, rev: 0.2 });
+      tone({ freq: 90, to: 45, type: "sine", dur: 0.4, gain: 0.35, delay: 0.3, rev: 0.4 });
+      noise({ filter: "highpass", freq: 2e3, to: 9e3, dur: 0.8, gain: 0.06, attack: 0.3, delay: 0.3, rev: 0.8 });
+    }),
+    deal: play((i = 0) => {
+      noise({ filter: "bandpass", freq: 3200, to: 1100, q: 1, dur: 0.09, gain: 0.08, attack: 0.015, rev: 0.05 });
+      tone({ freq: 1500 + i * 20, type: "triangle", dur: 0.02, gain: 0.025, delay: 0.07, rev: 0 });
+    }),
+    flip: play(() => {
+      noise({ filter: "bandpass", freq: 1800, to: 3500, q: 1.2, dur: 0.08, gain: 0.14, rev: 0.05 });
+      tone({ freq: 700, type: "triangle", dur: 0.04, gain: 0.06, delay: 0.06 });
+    }),
+    reveal: play((tier2) => {
+      if (tier2 === "uncommon") {
+        bell(1318, { gain: 0.05, dur: 0.6 });
+        return;
+      }
+      if (tier2 === "rare" || tier2 === "legend") {
+        [1046, 1318, 1568].forEach((f, i) => bell(f, { gain: 0.07, dur: 1.1, delay: i * 0.07 }));
+        noise({ filter: "highpass", freq: 4e3, dur: 0.6, gain: 0.05, attack: 0.1, rev: 0.8 });
+        return;
+      }
+      noise({ filter: "bandpass", freq: 300, to: 6e3, q: 1.5, dur: 0.5, gain: 0.15, attack: 0.3, rev: 0.6 });
+      tone({ freq: 60, to: 35, type: "sine", dur: 0.9, gain: 0.6, delay: 0.45, rev: 0.5 });
+      [523, 659, 784, 1046, 1318, 1568, 2093].forEach((f, i) => tone({ freq: f, type: "triangle", dur: 1.4, gain: 0.05, delay: 0.45 + i * 0.045, rev: 0.8, detune: 5 }));
+      bell(2093, { gain: 0.1, delay: 0.5, dur: 2 });
+    })
+  };
+  function isMuted() {
+    return muted;
+  }
+  function setMuted(m) {
+    muted = m;
+    save();
+    if (ctx) master.gain.setTargetAtTime(muted ? 0 : volume, ctx.currentTime, 0.02);
+  }
+  function soundForLog(line, humanName) {
+    if (/ wins!/.test(line)) return line.startsWith(humanName) ? sfx.win() : sfx.lose();
+    if (/^— Turn/.test(line)) return sfx.turn(line.includes(humanName));
+    if (/Shield Trigger!/.test(line)) return sfx.trigger();
+    if (/shield breaks/.test(line)) return sfx.shield();
+    if (/defends!/.test(line)) return sfx.block();
+    if (/ attacks /.test(line)) return sfx.attack();
+    if (/^Fight:/.test(line)) return sfx.impact();
+    if (/is destroyed|has 0 Might/.test(line)) return sfx.destroy();
+    if (/ casts /.test(line)) return sfx.spell();
+    if (/ equips | activates /.test(line)) return sfx.gear();
+    if (/ plays /.test(line)) return null;
+    if (/ channels /.test(line)) return sfx.rune();
+    return null;
+  }
+
+  // js/ui/achievements.js
+  var LS3 = "rajongoi.achievements.v1";
+  function unlockedMap() {
+    try {
+      return JSON.parse(localStorage.getItem(LS3)) || {};
+    } catch {
+      return {};
+    }
+  }
+  function save2(m) {
+    try {
+      localStorage.setItem(LS3, JSON.stringify(m));
+    } catch {
+    }
+  }
+  function unlock(ids) {
+    const m = unlockedMap();
+    const fresh = ids.filter((id) => !m[id]);
+    for (const id of fresh) m[id] = Date.now();
+    if (!fresh.length) return;
+    save2(m);
+    fresh.forEach((id, i) => setTimeout(() => toast(ACHIEVEMENTS.find((a) => a.id === id)), i * 1600));
+  }
+  function toast(a) {
+    if (!a) return;
+    const el = document.createElement("div");
+    el.className = "ach-toast";
+    el.innerHTML = `<div class="ach-ico">${a.icon}</div><div><div class="ach-kicker">Achievement unlocked!</div><b>${esc(a.name)}</b><div class="ach-desc">${esc(a.desc)}</div></div>`;
+    document.body.appendChild(el);
+    sfx.reveal("rare");
+    setTimeout(() => el.classList.add("out"), 4200);
+    setTimeout(() => el.remove(), 4800);
+  }
+  function renderAchievements(app2) {
+    const m = unlockedMap();
+    const got = ACHIEVEMENTS.filter((a) => m[a.id]).length;
+    const obtainable = ACHIEVEMENTS.filter((a) => !a.unobtainable).length;
+    app2.innerHTML = `<div class="page ach-page">
+    <div class="row" style="margin-bottom:6px"><h2 style="margin:0">Achievements</h2><span class="spacer"></span>
+      <span class="ach-count"><b>${got}</b> / ${obtainable} unlocked</span></div>
+    <div class="ach-bar"><i style="width:${(100 * got / obtainable).toFixed(0)}%"></i></div>
+    <p class="muted">Achievements are unlocked in <b>Play vs AI</b> and are saved in this browser.</p>
+    <div class="ach-grid">${ACHIEVEMENTS.map((a) => {
+      const when = m[a.id] ? new Date(m[a.id]).toLocaleDateString() : "";
+      return `<div class="ach ${m[a.id] ? "got" : "locked"} ${a.unobtainable ? "unob" : ""}">
+        <div class="ach-ico">${a.icon}</div>
+        <div class="ach-body"><b>${esc(a.name)}</b><div class="ach-desc">${esc(a.desc)}</div>
+          <div class="ach-state">${m[a.id] ? `\u2713 Unlocked ${esc(when)}` : a.unobtainable ? esc(a.unobtainable) : "Locked"}</div></div>
+      </div>`;
+    }).join("")}</div>
+  </div>`;
+  }
+
+  // js/ui/lang.js
+  var LS4 = "rajongoi.lang";
+  function getLang() {
+    try {
+      return localStorage.getItem(LS4) === "en" ? "en" : "hu";
+    } catch {
+      return "hu";
+    }
+  }
+  function setLang(l) {
+    try {
+      localStorage.setItem(LS4, l);
+    } catch {
+    }
+  }
+  function langToggleHtml() {
+    const l = getLang();
+    return `<div class="lang-toggle" role="group" aria-label="Language">
+    <button type="button" data-lang="hu" class="${l === "hu" ? "on" : ""}">Magyar</button>
+    <button type="button" data-lang="en" class="${l === "en" ? "on" : ""}">English</button></div>`;
+  }
+  function bindLangToggle(root, rerender) {
+    root.querySelectorAll(".lang-toggle [data-lang]").forEach((b) => b.onclick = (e) => {
+      e.stopPropagation();
+      if (b.dataset.lang === getLang()) return;
+      setLang(b.dataset.lang);
+      rerender();
+    });
+  }
+
+  // js/ui/deckinfo.js
+  var T = {
+    noGuide: ["Ehhez a paklihoz m\xE9g nincs le\xEDr\xE1s.", "No strategy notes for this deck yet."],
+    plan: ["J\xE1t\xE9kterv", "Game plan"],
+    combos: ["Komb\xF3k", "Combos"],
+    random: ["Az AI v\xE9letlenszer\u0171en v\xE1laszt a j\xE1tszhat\xF3 paklik k\xF6z\xFCl.", "The AI will pick one of the playable decks at random."],
+    aiPlan: ["Az AI teljes j\xE1t\xE9kterve", "The AI's full game plan"],
+    howTo: ["\xCDgy j\xE1tszd ezt a paklit", "How to play this deck"],
+    matchup: ["Tippek az ellenf\xE9l ellen", "Matchup tips"],
+    achs: ["Megszerezhet\u0151 achievementek", "Achievements you can go for"],
+    achsRandom: [" (v\xE9letlen ellenf\xE9llel)", " (opponent random)"],
+    unlocked: ["\u2713 megvan", "\u2713 unlocked"]
+  };
+  var t = (k) => T[k][getLang() === "hu" ? 0 : 1];
+  var L = (hu, en) => getLang() === "hu" ? hu : en;
+  var deckIds = (d) => new Set([d.legend, d.champion, ...Object.keys(d.cards || {})].filter((id) => id && hasDef(id)));
+  var defs = (ids) => [...ids].map(getDef);
+  var kw = (d, k) => (d.keywords || []).includes(k);
+  var nameList = (list) => list.map((d) => `<b>${esc(d.name)}</b>`).join(", ");
+  function startingCards(d) {
+    const sigs = Object.keys(d.cards || {}).filter((id) => hasDef(id) && getDef(id).type === "signature");
+    if (d.signature && !sigs.includes(d.signature)) sigs.unshift(d.signature);
+    return [
+      ...d.legend ? [{ id: d.legend, role: "Legend" }] : [],
+      ...d.champion ? [{ id: d.champion, role: "Champion" }] : [],
+      ...sigs.map((id) => ({ id, role: "Signature" }))
+    ].filter((x) => hasDef(x.id));
+  }
+  function matchupTips(mine, theirs) {
+    const M = defs(mine), T2 = defs(theirs);
+    const tips = [];
+    const triggers = T2.filter((d) => kw(d, "Shield Trigger"));
+    if (triggers.length) {
+      tips.push(L(
+        `${triggers.length} Shield Trigger van a paklij\xE1ban (${nameList(triggers)}). ` + (mine.has("OGN-177") ? "A nagy t\xE1mad\xE1s el\u0151tt j\xE1tszd ki a <b>GOLDEN</b>-t, hogy egyik se s\xFClj\xF6n el." : "Ne t\xE1madj t\xFAl sok lappal egyszerre a Shieldjeire."),
+        `They run ${triggers.length} Shield Trigger${triggers.length > 1 ? "s" : ""} (${nameList(triggers)}). ` + (mine.has("OGN-177") ? "Cast <b>GOLDEN</b> before your big attack so none of them can fire." : "Don't over-commit into their shields.")
+      ));
+    }
+    const walls = T2.filter((d) => kw(d, "Defensive"));
+    if (walls.length) {
+      const pb = M.filter((d) => kw(d, "Party Breaker"));
+      tips.push(L(
+        `A Defensive Unitjai (${nameList(walls)}) magukra ir\xE1ny\xEDthatj\xE1k a t\xE1mad\xE1saidat.` + (pb.length ? ` ${nameList(pb)} \xE1ll\xF3 Unitokat is t\xE1madhat, ezzel takar\xEDtsd el \u0151ket el\u0151bb.` : " Ford\xEDtsd le vagy t\xE1vol\xEDtsd el \u0151ket, miel\u0151tt a Shieldekre m\xE9sz."),
+        `Their Defensive units (${nameList(walls)}) can redirect your attacks.` + (pb.length ? ` ${nameList(pb)} can attack untapped units \u2014 use it to clear them first.` : " Tap or remove them before going for shields.")
+      ));
+    }
+    const chaos = T2.filter((d) => (d.colors || []).includes("Chaos") && d.type !== "legend" && (d.power ?? 0) < 5);
+    if (chaos.length && mine.has("OGN-172")) tips.push(L(`A <b>Cowtrix</b> \xE9rkez\xE9skor elpuszt\xEDtja a nem Mighty Chaos lapjait (${chaos.length} van a paklij\xE1ban).`, `<b>Cowtrix</b> destroys their non-Mighty Chaos cards when it enters (${chaos.length} in their deck).`));
+    const big = T2.filter((d) => (d.cost || 0) >= 7 && ["unit", "champion"].includes(d.type));
+    if (big.length) tips.push(L(`A leger\u0151sebb lapjai: ${nameList(big)}. Ha m\xE1r van r\xE1juk man\xE1ja, tarts vissza egy Defensive Unitot.`, `Their top end: ${nameList(big)}. Keep a Defensive unit back once they reach that much mana.`));
+    const deathtouch = T2.filter((d) => JSON.stringify(d.effects || []).includes("TKN-005") || kw(d, "Deathtouch"));
+    if (deathtouch.length) tips.push(L(`Vigy\xE1zz a Deathtouch-ra (${nameList(deathtouch)}): tokennel t\xE1madd, ne a legjobb Unitoddal.`, `Watch out for Deathtouch (${nameList(deathtouch)}): attack it with tokens, not with your best unit.`));
+    if (theirs.has("OGN-186")) tips.push(L("N\xE1la is van <b>The ULTIMATE FLEX</b>: ha els\xFCl, abban a k\xF6rben nem vesz\xEDthet, \xFAgyhogy ne pazarold bele a gy\u0151ztes t\xE1mad\xE1st.", "They also run <b>The ULTIMATE FLEX</b>: when it resolves they can't lose that turn, so don't waste a lethal swing into it."));
+    return tips;
+  }
+  function cardRow(d) {
+    return `<div class="di-cards">${startingCards(d).map((x) => `<div class="di-card" data-di-cid="${x.id}">
+    ${cardHtml(getDef(x.id), { size: "sm" })}<span class="di-role">${x.role}</span></div>`).join("")}</div>`;
+  }
+  function guideHtml(d, withStyle = true) {
+    const g = deckGuide(d.id, getLang());
+    if (!g) return `<p class="muted">${t("noGuide")}</p>`;
+    const chips = (ids) => ids.filter(hasDef).map((id) => `<span class="di-chip" data-di-cid="${id}">${esc(getDef(id).name)}</span>`).join("");
+    return `${withStyle ? styleHtml(g) : ""}
+    ${g.plan?.length ? `<h4>${t("plan")}</h4><ol class="di-plan">${g.plan.map((p) => `<li>${esc(p)}</li>`).join("")}</ol>` : ""}
+    ${g.mulligan ? `<p class="di-mull"><b>Mulligan:</b> ${esc(g.mulligan)}</p>` : ""}
+    ${g.combos?.length ? `<h4>${t("combos")}</h4><div class="di-combos">${g.combos.map((c) => `<div class="di-combo"><div class="di-chips">${chips(c.cards)}</div>${esc(c.text)}</div>`).join("")}</div>` : ""}`;
+  }
+  var styleHtml = (g) => `<div class="di-style"><span class="di-arch">${esc(g.archetype || "")}</span>${esc(g.style || "")}</div>`;
+  function strategyHtml(d) {
+    const g = deckGuide(d.id, getLang());
+    if (!g) return `<p class="muted">${t("noGuide")}</p>`;
+    return `${styleHtml(g)}${g.plan?.length ? `<details class="di-sec"><summary>${t("plan")}</summary><ol class="di-plan">${g.plan.map((p) => `<li>${esc(p)}</li>`).join("")}</ol></details>` : ""}`;
+  }
+  function deckInfoHtml(deck, other2, side2) {
+    if (!deck) {
+      return `<div class="deck-info"><p class="muted">${t("random")}</p></div>`;
+    }
+    const mine = deckIds(deck), theirs = other2 ? deckIds(other2) : null;
+    if (side2 === "ai") {
+      const g = deckGuide(deck.id, getLang());
+      return `<div class="deck-info">${cardRow(deck)}
+      ${g ? styleHtml(g) : ""}
+      <details class="di-sec"><summary>${t("aiPlan")}</summary>${guideHtml(deck, false)}</details>
+    </div>`;
+    }
+    const tips = theirs ? matchupTips(mine, theirs) : [];
+    const got = unlockedMap();
+    const hints = achievementHints(mine, theirs).sort((a, b) => !!got[a.id] - !!got[b.id]);
+    return `<div class="deck-info">${cardRow(deck)}
+    <details class="di-sec" open><summary>${t("howTo")}</summary>${guideHtml(deck)}</details>
+    ${tips.length ? `<details class="di-sec" open><summary>${t("matchup")}</summary><ul class="di-tips">${tips.map((t2) => `<li>${t2}</li>`).join("")}</ul></details>` : ""}
+    ${hints.length ? `<details class="di-sec" open><summary>${t("achs")}${theirs ? "" : t("achsRandom")}</summary>
+      <div class="di-achs">${hints.map((a) => `<div class="di-ach ${got[a.id] ? "got" : ""}"><span class="ach-ico">${a.icon}</span>
+        <div><b>${esc(a.name)}</b>${got[a.id] ? ` <span class="di-done">${t("unlocked")}</span>` : ""}<div class="muted">${esc(L(a.tip.hu, a.tip.en))}</div></div></div>`).join("")}</div></details>` : ""}
+  </div>`;
+  }
+
   // js/ui/collection.js
   var SET_NAMES = { OGN: "OGN 2026-01", DND: "DND \u2014 DLC", TKN: "Tokens", RUN: "Runes" };
   var TYPE_ORDER = ["legend", "champion", "unit", "spell", "gear", "signature", "token", "rune"];
@@ -896,6 +1557,14 @@ ${def.text}`;
       }
     });
   }
+  function curveHtml(curve) {
+    const max = Math.max(4, ...Object.values(curve), ...Object.values(GUIDE.curve));
+    return `<div class="curve dv-curve">${Array.from({ length: 10 }, (_, i) => i + 1).map((c) => `<div class="bar" title="cost ${c}${c === 10 ? "+" : ""}: ${curve[c] || 0} (guide ${GUIDE.curve[c] || 0})">
+      <div class="fill" style="height:${(curve[c] || 0) / max * 100}%">${curve[c] ? `<span class="n">${curve[c]}</span>` : ""}</div>
+      <div class="target" style="bottom:${(GUIDE.curve[c] || 0) / max * 100}%"></div></div>`).join("")}</div>
+    <div class="curve-labels">${Array.from({ length: 10 }, (_, i) => `<span>${i + 1}${i === 9 ? "+" : ""}</span>`).join("")}</div>
+    <p class="muted dv-note">${getLang() === "hu" ? "Oszlopok: a pakli \xB7 szaggatott: aj\xE1nlott g\xF6rbe" : "Bars: this deck \xB7 dashed: Assembly Guide"}</p>`;
+  }
   var RARITY_GROUPS = [["epic", "Epic"], ["rare", "Rare"], ["uncommon", "Uncommon"], ["common", "Common"]];
   function renderDeckView(app2, d) {
     const v = validateDeck(d);
@@ -922,8 +1591,13 @@ ${def.text}`;
         ${d.runes ? `<h4>Mana Deck</h4><div class="dv-runes">${Object.entries(d.runes).map(([c, n]) => `<span><i style="background:${COLORS[c]?.hex}"></i>${n} ${esc(c)}</span>`).join("")}</div>` : ""}
       </div>
       <div class="dv-card" id="dv-card"></div>
-      <div class="dv-info" id="dv-info"></div>
+      <div class="dv-side">
+        <div class="dv-box"><div class="dv-box-head"><h4>${getLang() === "hu" ? "Strat\xE9gia" : "Strategy"}</h4>${langToggleHtml()}</div>${strategyHtml(d)}</div>
+        <div class="dv-box"><h4>${getLang() === "hu" ? "Mana-g\xF6rbe" : "Mana curve"} <span class="muted">\xB7 avg ${v.stats.avgCost.toFixed(1)}</span></h4>${curveHtml(v.stats.curve)}</div>
+        <div class="dv-info" id="dv-info"></div>
+      </div>
     </div></div>`;
+    bindLangToggle(app2, () => renderDeckView(app2, d));
     const show = (id) => {
       if (!hasDef(id)) return;
       const c = getDef(id);
@@ -2630,662 +3304,6 @@ ${def.text}`;
       }
     }
     return bestA;
-  }
-
-  // js/ui/sfx.js
-  var LS2 = "rajongoi.sound.v1";
-  var ctx = null;
-  var master;
-  var verbIn;
-  var noiseBuf;
-  var muted = false;
-  var volume = 0.7;
-  try {
-    const s = JSON.parse(localStorage.getItem(LS2));
-    if (s) {
-      muted = !!s.muted;
-      volume = s.volume ?? volume;
-    }
-  } catch {
-  }
-  function save() {
-    try {
-      localStorage.setItem(LS2, JSON.stringify({ muted, volume }));
-    } catch {
-    }
-  }
-  function ac() {
-    if (!ctx) {
-      const C = window.AudioContext || window.webkitAudioContext;
-      if (!C) return null;
-      ctx = new C();
-      const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -16;
-      comp.knee.value = 12;
-      comp.ratio.value = 4;
-      comp.attack.value = 3e-3;
-      comp.release.value = 0.2;
-      master = ctx.createGain();
-      master.gain.value = muted ? 0 : volume;
-      master.connect(comp);
-      comp.connect(ctx.destination);
-      const verb = ctx.createConvolver();
-      verb.buffer = impulse(2.2, 3);
-      verbIn = ctx.createGain();
-      verbIn.gain.value = 1;
-      const wet = ctx.createGain();
-      wet.gain.value = 0.32;
-      verbIn.connect(verb);
-      verb.connect(wet);
-      wet.connect(master);
-      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-      const d = noiseBuf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    }
-    if (ctx.state === "suspended") ctx.resume();
-    return ctx;
-  }
-  function impulse(seconds, decay) {
-    const len = ctx.sampleRate * seconds;
-    const b = ctx.createBuffer(2, len, ctx.sampleRate);
-    for (let c = 0; c < 2; c++) {
-      const d = b.getChannelData(c);
-      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
-    }
-    return b;
-  }
-  function env(t2, { attack = 4e-3, dur = 0.2, gain = 0.3, rev = 0.15, curve = "exp" }) {
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(1e-4, t2);
-    g.gain.linearRampToValueAtTime(gain, t2 + attack);
-    if (curve === "exp") g.gain.exponentialRampToValueAtTime(1e-4, t2 + attack + dur);
-    else g.gain.linearRampToValueAtTime(1e-4, t2 + attack + dur);
-    g.connect(master);
-    if (rev > 0) {
-      const s = ctx.createGain();
-      s.gain.value = rev;
-      g.connect(s);
-      s.connect(verbIn);
-    }
-    return g;
-  }
-  function tone({ freq = 440, to, type = "sine", dur = 0.2, gain = 0.2, attack = 4e-3, rev = 0.15, delay = 0, detune = 0, glide }) {
-    const t2 = ctx.currentTime + delay;
-    const o = ctx.createOscillator();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, t2);
-    o.detune.value = detune;
-    if (to) o.frequency.exponentialRampToValueAtTime(to, t2 + (glide ?? dur));
-    o.connect(env(t2, { attack, dur, gain, rev }));
-    o.start(t2);
-    o.stop(t2 + attack + dur + 0.05);
-  }
-  function noise({ filter = "bandpass", freq = 1e3, to, q = 1, dur = 0.2, gain = 0.2, attack = 4e-3, rev = 0.15, delay = 0, curve }) {
-    const t2 = ctx.currentTime + delay;
-    const src = ctx.createBufferSource();
-    src.buffer = noiseBuf;
-    src.loop = true;
-    const f = ctx.createBiquadFilter();
-    f.type = filter;
-    f.Q.value = q;
-    f.frequency.setValueAtTime(freq, t2);
-    if (to) f.frequency.exponentialRampToValueAtTime(to, t2 + dur);
-    src.connect(f);
-    f.connect(env(t2, { attack, dur, gain, rev, curve }));
-    src.start(t2, Math.random());
-    src.stop(t2 + attack + dur + 0.05);
-  }
-  function bell(freq, { gain = 0.12, dur = 1.2, delay = 0, rev = 0.5 } = {}) {
-    [[1, 1], [2.01, 0.45], [3.02, 0.22], [4.17, 0.12]].forEach(([m, g]) => tone({ freq: freq * m, type: "sine", dur: dur / (m * 0.7), gain: gain * g, rev, delay }));
-  }
-  var play = (fn) => (...a) => {
-    if (muted) return;
-    if (!ac()) return;
-    try {
-      fn(...a);
-    } catch {
-    }
-  };
-  var lastHover = 0;
-  var sfx = {
-    // ---------------------------------------------------------------- UI
-    click: play(() => {
-      tone({ freq: 1500, to: 900, type: "triangle", dur: 0.05, gain: 0.12, rev: 0.05 });
-      noise({ filter: "highpass", freq: 3500, dur: 0.025, gain: 0.08, rev: 0 });
-    }),
-    hover: play(() => {
-      const now = performance.now();
-      if (now - lastHover < 45) return;
-      lastHover = now;
-      tone({ freq: 2400, type: "sine", dur: 0.035, gain: 0.025, rev: 0.05 });
-    }),
-    nav: play(() => {
-      noise({ filter: "bandpass", freq: 500, to: 2800, q: 1.4, dur: 0.22, gain: 0.08, attack: 0.05, rev: 0.25 });
-      tone({ freq: 660, type: "sine", dur: 0.18, gain: 0.03, delay: 0.08, rev: 0.4 });
-    }),
-    toggle: play(() => {
-      tone({ freq: 880, type: "triangle", dur: 0.08, gain: 0.1 });
-      tone({ freq: 1320, type: "triangle", dur: 0.1, gain: 0.08, delay: 0.06 });
-    }),
-    // ------------------------------------------------------------- cards
-    swish: play((vol = 1) => {
-      noise({ filter: "bandpass", freq: 3e3, to: 900, q: 0.9, dur: 0.13, gain: 0.12 * vol, attack: 0.02, rev: 0.08 });
-    }),
-    draw: play(() => {
-      noise({ filter: "bandpass", freq: 2600, to: 1200, q: 1, dur: 0.16, gain: 0.14, attack: 0.03, rev: 0.1 });
-      tone({ freq: 900, type: "triangle", dur: 0.03, gain: 0.05, delay: 0.12, rev: 0 });
-    }),
-    play: play(() => {
-      noise({ filter: "bandpass", freq: 2200, to: 700, q: 0.8, dur: 0.12, gain: 0.12, attack: 0.02 });
-      tone({ freq: 170, to: 60, type: "sine", dur: 0.2, gain: 0.45, delay: 0.1, rev: 0.12 });
-      noise({ filter: "lowpass", freq: 900, dur: 0.09, gain: 0.25, delay: 0.1, rev: 0.1 });
-    }),
-    spell: play(() => {
-      noise({ filter: "highpass", freq: 1500, to: 7e3, dur: 0.5, gain: 0.08, attack: 0.15, rev: 0.6 });
-      [659, 880, 1175, 1568].forEach((f, i) => tone({ freq: f, type: "triangle", dur: 0.5, gain: 0.07, delay: i * 0.06, rev: 0.6, detune: 4 }));
-    }),
-    gear: play(() => {
-      noise({ filter: "bandpass", freq: 1800, q: 6, dur: 0.05, gain: 0.25, rev: 0.1 });
-      noise({ filter: "bandpass", freq: 1200, q: 6, dur: 0.06, gain: 0.2, delay: 0.09, rev: 0.1 });
-      tone({ freq: 220, to: 330, type: "square", dur: 0.12, gain: 0.04, delay: 0.05, rev: 0.2 });
-    }),
-    rune: play(() => {
-      bell(1046, { gain: 0.07, dur: 0.9 });
-      bell(1568, { gain: 0.05, dur: 0.8, delay: 0.07 });
-    }),
-    turn: play((mine) => {
-      const base = mine ? 196 : 147;
-      [1, 1.5, 2].forEach((m, i) => tone({ freq: base * m, type: "sine", dur: 1.4, gain: 0.08 / (i + 1), attack: 0.02, rev: 0.7 }));
-      noise({ filter: "lowpass", freq: 400, dur: 0.3, gain: 0.08, rev: 0.4 });
-    }),
-    attack: play(() => {
-      noise({ filter: "bandpass", freq: 300, to: 3500, q: 1.2, dur: 0.24, gain: 0.22, attack: 0.08, rev: 0.2 });
-      tone({ freq: 110, to: 55, type: "sawtooth", dur: 0.25, gain: 0.06, attack: 0.05, rev: 0.2 });
-    }),
-    block: play(() => {
-      noise({ filter: "bandpass", freq: 2500, q: 3, dur: 0.18, gain: 0.25, rev: 0.3 });
-      tone({ freq: 523, type: "triangle", dur: 0.4, gain: 0.08, rev: 0.5 });
-      tone({ freq: 784, type: "triangle", dur: 0.4, gain: 0.06, rev: 0.5, delay: 0.02 });
-    }),
-    impact: play(() => {
-      tone({ freq: 95, to: 38, type: "sine", dur: 0.35, gain: 0.6, rev: 0.2 });
-      noise({ filter: "lowpass", freq: 1400, to: 300, dur: 0.3, gain: 0.35, rev: 0.25 });
-    }),
-    destroy: play(() => {
-      noise({ filter: "lowpass", freq: 3e3, to: 200, dur: 0.6, gain: 0.3, rev: 0.4 });
-      tone({ freq: 220, to: 70, type: "sawtooth", dur: 0.4, gain: 0.05, rev: 0.4 });
-      for (let i = 0; i < 6; i++) noise({ filter: "bandpass", freq: 800 + Math.random() * 2500, q: 8, dur: 0.04, gain: 0.12, delay: 0.05 + i * 0.05, rev: 0.2 });
-    }),
-    shield: play(() => {
-      noise({ filter: "highpass", freq: 3e3, dur: 0.35, gain: 0.25, rev: 0.4 });
-      for (let i = 0; i < 9; i++) tone({ freq: 2200 + Math.random() * 3800, type: "sine", dur: 0.15 + Math.random() * 0.25, gain: 0.05, delay: Math.random() * 0.12, rev: 0.5 });
-      tone({ freq: 140, to: 60, type: "sine", dur: 0.25, gain: 0.3, rev: 0.2 });
-    }),
-    trigger: play(() => {
-      noise({ filter: "bandpass", freq: 400, to: 4e3, q: 2, dur: 0.4, gain: 0.12, attack: 0.2, rev: 0.5 });
-      [523, 659, 784, 1046].forEach((f, i) => tone({ freq: f, type: "sawtooth", dur: 0.35, gain: 0.04, delay: 0.25 + i * 0.05, rev: 0.6 }));
-      bell(1046, { gain: 0.08, delay: 0.45 });
-    }),
-    foilLand: play((delay = 0.55) => {
-      noise({ filter: "bandpass", freq: 5e3, to: 500, q: 1, dur: delay, gain: 0.14, attack: 0.15, rev: 0.4 });
-      tone({ freq: 1200, to: 200, type: "sine", dur: delay, gain: 0.03, attack: 0.1, rev: 0.4 });
-      tone({ freq: 75, to: 32, type: "sine", dur: 0.7, gain: 0.8, delay, rev: 0.4 });
-      noise({ filter: "lowpass", freq: 700, to: 120, dur: 0.6, gain: 0.45, delay, rev: 0.5 });
-      [1568, 2093, 2637, 3136].forEach((f, i) => tone({ freq: f, type: "sine", dur: 0.6, gain: 0.035, delay: delay + 0.05 + i * 0.04, rev: 0.7 }));
-    }),
-    lightning: play(() => {
-      noise({ filter: "highpass", freq: 2500, dur: 0.12, gain: 0.5, attack: 1e-3, rev: 0.6 });
-      for (let i = 0; i < 10; i++) noise({ filter: "bandpass", freq: 1500 + Math.random() * 5e3, q: 3, dur: 0.02, gain: 0.25, delay: Math.random() * 0.12, rev: 0.4 });
-      noise({ filter: "highpass", freq: 1800, dur: 0.1, gain: 0.35, delay: 0.17, rev: 0.6 });
-      tone({ freq: 55, to: 28, type: "sine", dur: 1.6, gain: 0.55, delay: 0.05, rev: 0.7 });
-      noise({ filter: "lowpass", freq: 380, to: 90, dur: 2.2, gain: 0.45, attack: 0.08, delay: 0.1, rev: 0.8 });
-    }),
-    crack: play(() => {
-      for (let i = 0; i < 12; i++) noise({ filter: "bandpass", freq: 600 + Math.random() * 2200, q: 4, dur: 0.03 + Math.random() * 0.05, gain: 0.25, delay: i * 0.025 + Math.random() * 0.02, rev: 0.2 });
-      tone({ freq: 48, to: 30, type: "sine", dur: 1.1, gain: 0.55, rev: 0.4 });
-      noise({ filter: "lowpass", freq: 250, dur: 1.1, gain: 0.35, attack: 0.02, rev: 0.4 });
-      for (let i = 0; i < 8; i++) noise({ filter: "bandpass", freq: 3e3 + Math.random() * 3e3, q: 6, dur: 0.03, gain: 0.08, delay: 0.3 + Math.random() * 0.6, rev: 0.2 });
-    }),
-    win: play(() => {
-      [[523, 0], [659, 0.14], [784, 0.28], [1046, 0.42]].forEach(([f, d]) => {
-        tone({ freq: f, type: "sawtooth", dur: 0.5, gain: 0.05, delay: d, rev: 0.6 });
-        tone({ freq: f, type: "triangle", dur: 0.6, gain: 0.08, delay: d, rev: 0.6, detune: 6 });
-      });
-      [1046, 1318, 1568].forEach((f) => tone({ freq: f, type: "triangle", dur: 1.6, gain: 0.06, delay: 0.6, rev: 0.8 }));
-      bell(2093, { gain: 0.08, delay: 0.6, dur: 1.8 });
-    }),
-    lose: play(() => {
-      [[392, 0], [349, 0.25], [311, 0.5], [262, 0.8]].forEach(([f, d]) => tone({ freq: f, type: "triangle", dur: 0.7, gain: 0.09, delay: d, rev: 0.7 }));
-      tone({ freq: 65, to: 40, type: "sine", dur: 1.5, gain: 0.3, delay: 0.8, rev: 0.6 });
-    }),
-    // ------------------------------------------------------------ boosters
-    packShake: play(() => {
-      for (let i = 0; i < 6; i++) noise({ filter: "bandpass", freq: 1200 + Math.random() * 1500, q: 2, dur: 0.06, gain: 0.1, delay: i * 0.08, rev: 0.05 });
-      tone({ freq: 60, type: "sine", dur: 0.5, gain: 0.15, attack: 0.1, rev: 0.1 });
-    }),
-    packTear: play(() => {
-      for (let i = 0; i < 14; i++) noise({ filter: "bandpass", freq: 2500 + Math.random() * 4e3, q: 1.5, dur: 0.03 + Math.random() * 0.03, gain: 0.22, delay: i * 0.022, rev: 0.1 });
-      noise({ filter: "highpass", freq: 6e3, to: 1500, dur: 0.35, gain: 0.12, rev: 0.2 });
-      tone({ freq: 90, to: 45, type: "sine", dur: 0.4, gain: 0.35, delay: 0.3, rev: 0.4 });
-      noise({ filter: "highpass", freq: 2e3, to: 9e3, dur: 0.8, gain: 0.06, attack: 0.3, delay: 0.3, rev: 0.8 });
-    }),
-    deal: play((i = 0) => {
-      noise({ filter: "bandpass", freq: 3200, to: 1100, q: 1, dur: 0.09, gain: 0.08, attack: 0.015, rev: 0.05 });
-      tone({ freq: 1500 + i * 20, type: "triangle", dur: 0.02, gain: 0.025, delay: 0.07, rev: 0 });
-    }),
-    flip: play(() => {
-      noise({ filter: "bandpass", freq: 1800, to: 3500, q: 1.2, dur: 0.08, gain: 0.14, rev: 0.05 });
-      tone({ freq: 700, type: "triangle", dur: 0.04, gain: 0.06, delay: 0.06 });
-    }),
-    reveal: play((tier2) => {
-      if (tier2 === "uncommon") {
-        bell(1318, { gain: 0.05, dur: 0.6 });
-        return;
-      }
-      if (tier2 === "rare" || tier2 === "legend") {
-        [1046, 1318, 1568].forEach((f, i) => bell(f, { gain: 0.07, dur: 1.1, delay: i * 0.07 }));
-        noise({ filter: "highpass", freq: 4e3, dur: 0.6, gain: 0.05, attack: 0.1, rev: 0.8 });
-        return;
-      }
-      noise({ filter: "bandpass", freq: 300, to: 6e3, q: 1.5, dur: 0.5, gain: 0.15, attack: 0.3, rev: 0.6 });
-      tone({ freq: 60, to: 35, type: "sine", dur: 0.9, gain: 0.6, delay: 0.45, rev: 0.5 });
-      [523, 659, 784, 1046, 1318, 1568, 2093].forEach((f, i) => tone({ freq: f, type: "triangle", dur: 1.4, gain: 0.05, delay: 0.45 + i * 0.045, rev: 0.8, detune: 5 }));
-      bell(2093, { gain: 0.1, delay: 0.5, dur: 2 });
-    })
-  };
-  function isMuted() {
-    return muted;
-  }
-  function setMuted(m) {
-    muted = m;
-    save();
-    if (ctx) master.gain.setTargetAtTime(muted ? 0 : volume, ctx.currentTime, 0.02);
-  }
-  function soundForLog(line, humanName) {
-    if (/ wins!/.test(line)) return line.startsWith(humanName) ? sfx.win() : sfx.lose();
-    if (/^— Turn/.test(line)) return sfx.turn(line.includes(humanName));
-    if (/Shield Trigger!/.test(line)) return sfx.trigger();
-    if (/shield breaks/.test(line)) return sfx.shield();
-    if (/defends!/.test(line)) return sfx.block();
-    if (/ attacks /.test(line)) return sfx.attack();
-    if (/^Fight:/.test(line)) return sfx.impact();
-    if (/is destroyed|has 0 Might/.test(line)) return sfx.destroy();
-    if (/ casts /.test(line)) return sfx.spell();
-    if (/ equips | activates /.test(line)) return sfx.gear();
-    if (/ plays /.test(line)) return null;
-    if (/ channels /.test(line)) return sfx.rune();
-    return null;
-  }
-
-  // js/engine/achievements.js
-  var sameTurn = (events, ev, f) => events.filter((e) => e.turn === ev.turn && f(e));
-  var defOf = (id) => {
-    try {
-      return getDef(id);
-    } catch {
-      return null;
-    }
-  };
-  var makesTokens = (ids) => [...ids].filter((id) => JSON.stringify(defOf(id)?.effects || []).includes('"do":"token"'));
-  var withKw = (ids, kw2) => [...ids].filter((id) => (defOf(id)?.keywords || []).includes(kw2));
-  var withTribe = (ids, t2) => [...ids].filter((id) => (defOf(id)?.tribes || []).some((x) => x.toLowerCase() === t2.toLowerCase()));
-  var names = (ids) => ids.map((id) => defOf(id)?.name || id).join(", ");
-  var playedThisTurn = (events, ev, me, id) => events.some((e) => e.type === "play" && e.player === me && e.id === id && e.turn === ev.turn);
-  var ACHIEVEMENTS = [
-    {
-      id: "funniest",
-      name: "Funniest shit I have ever seen",
-      icon: "\u{1F923}",
-      desc: "Destroy your opponent with a copy of a token creature they created, using the Parody Alchemist.",
-      hint: ({ mine, theirs }) => {
-        if (!mine.has("OGN-180")) return null;
-        if (!theirs) return {
-          hu: "Akkor siker\xFClhet, ha az AI paklija tokeneket csin\xE1l: m\xE1sold le az egyiket a Parody Alchemisttel, \xE9s azzal m\xE9rd a d\xF6nt\u0151 csap\xE1st.",
-          en: "Possible if the AI's deck makes tokens: copy one with Parody Alchemist and land the final blow with it."
-        };
-        const t2 = makesTokens(theirs);
-        return t2.length ? {
-          hu: `Az ellenf\xE9l tokeneket csin\xE1l (${names(t2)}). M\xE1sold le az egyiket a Parody Alchemisttel, \xE9s a m\xE1solattal vidd be a gy\u0151ztes Direct Attackot.`,
-          en: `They make tokens (${names(t2)}) \u2014 copy one with Parody Alchemist and deliver the final direct attack with the copy.`
-        } : null;
-      },
-      check: ({ ev, me }) => ev.type === "finalBlow" && ev.player === me && ev.copy && ev.token
-    },
-    {
-      id: "unexpected-flex",
-      name: "Unexpected FLEX",
-      icon: "\u{1F4AA}",
-      desc: "Play The Ultimate Flex from a triggered shield.",
-      hint: ({ mine }) => !mine.has("OGN-186") ? null : mine.has("OGN-182") ? {
-        hu: "Tedd a The ULTIMATE FLEX-et Shieldbe a The Solar Boat Team Shieldify-j\xE1val, hogy Shield Triggerk\xE9nt els\xFClhessen.",
-        en: "Shieldify The ULTIMATE FLEX with The Solar Boat Team so it can trigger from your shields."
-      } : { hu: "Benne van a pakliban a The ULTIMATE FLEX. Rem\xE9ld, hogy Shieldbe ker\xFCl.", en: "You run The ULTIMATE FLEX \u2014 hope it lands in your shields." },
-      check: ({ ev, me }) => ev.type === "play" && ev.player === me && ev.id === "OGN-186" && ev.via === "shieldTrigger"
-    },
-    {
-      id: "painter",
-      name: "Speed Painting",
-      icon: "\u{1F58C}\uFE0F",
-      desc: "Accelerate 3 Miniatures with the Miniature Painter in a single turn.",
-      hint: ({ mine }) => mine.has("OGN-188") && (mine.has("OGN-179") || mine.has("OGN-189")) ? {
-        hu: "Egy nagy k\xF6rben k\xE9sz\xEDts \xE9s gyors\xEDts (Accelerate) 3 Miniature-t a 3D Printerekkel, mik\xF6zben a Painter lent van.",
-        en: "In one big turn make and accelerate 3 Miniatures with your 3D Printers while the Painter is on the field."
-      } : null,
-      check: ({ ev, me, events }) => ev.type === "accelerate" && ev.player === me && sameTurn(events, ev, (e) => e.type === "accelerate" && e.player === me).length >= 3
-    },
-    {
-      id: "manyika-rest",
-      name: "Manyika can rest finally",
-      icon: "\u{1FAA6}",
-      desc: "Watch a Manyika Dreadnought die from a Burst-Pouch (either of you may control them).",
-      hint: ({ mine, theirs }) => {
-        const a = mine.has("OGN-176"), b = theirs?.has("OGN-176");
-        if (a && b) return {
-          hu: "Mindk\xE9t pakliban van Manyika Dreadnought. T\xE1madd meg az \xF6v\xE9t a Burst-Pouchoddal, vagy hagyd, hogy az \xF6v\xE9 belefusson a ti\xE9dbe.",
-          en: "Both decks run Manyika Dreadnought \u2014 attack theirs with your Burst-Pouch, or let theirs run into yours."
-        };
-        if (a && !theirs) return {
-          hu: "Mindk\xE9t oldalon kell egy Manyika. Akkor siker\xFClhet, ha az AI is Manyika Dreadnought-os paklit v\xE1laszt.",
-          en: "Needs a Manyika on both sides \u2014 possible if the AI also picks a deck with Manyika Dreadnought."
-        };
-        if ((a || b) && (mine.has("OGN-180") || theirs?.has("OGN-180"))) return {
-          hu: "M\xE1solj le egy Burst-Pouchot a Parody Alchemisttel, \xE9s t\xE1madj vele egy Manyika Dreadnoughtra.",
-          en: "Copy a Burst-Pouch with Parody Alchemist and attack into a Manyika Dreadnought."
-        };
-        return null;
-      },
-      check: ({ ev }) => ev.type === "kill" && ev.victim === "OGN-176" && ev.killer === "TKN-005"
-    },
-    {
-      id: "art-destruction",
-      name: "Art of Destruction",
-      icon: "\u{1F3A8}",
-      desc: "Banish 5 cards in a turn with The Chronicler.",
-      hint: ({ mine }) => {
-        if (!mine.has("OGN-178")) return null;
-        const n = withTribe(mine, "Art").filter((id) => id !== "OGN-178").length;
-        return n >= 5 ? {
-          hu: `Gy\u0171jts \xF6ssze 5 Art lapot a kezedben, j\xE1tszd ki a The Chroniclert, majd mindet 1-\xE9rt (${n} Art lap van a pakliban).`,
-          en: `Hold 5 Art cards, play The Chronicler, then cast them all for 1 (${n} Art cards in your deck).`
-        } : null;
-      },
-      check: ({ ev, me, events }) => ev.type === "banish" && ev.player === me && sameTurn(events, ev, (e) => e.type === "banish" && e.player === me).length >= 5
-    },
-    {
-      id: "came-prepared",
-      name: "Came Prepared",
-      icon: "\u{1F6E1}\uFE0F",
-      desc: "Shieldify a Shield Trigger card.",
-      hint: ({ mine }) => {
-        const sh = withKw(mine, "Shieldify"), st2 = withKw(mine, "Shield Trigger");
-        return sh.length && st2.length ? {
-          hu: `J\xE1tszd ki ezt: ${names(sh)}, mik\xF6zben egy Shield Trigger lap van a kezedben (${names(st2)}), \xE9s azt tedd a Shieldek k\xF6z\xE9.`,
-          en: `Play ${names(sh)} with a Shield Trigger card in hand (${names(st2)}).`
-        } : null;
-      },
-      check: ({ ev, me }) => ev.type === "shieldify" && ev.player === me && (getDef(ev.id).keywords || []).includes("Shield Trigger")
-    },
-    {
-      id: "art-of-deal",
-      name: "Art of the Deal",
-      icon: "\u{1F91D}",
-      desc: "Make a deal with your opponent using The Dealmaker.",
-      unobtainable: "Unlocks with online play \u2014 the AI never accepts a deal.",
-      check: () => false
-    },
-    {
-      id: "strawberry",
-      name: "Join the Strawberry Club",
-      icon: "\u{1F353}",
-      desc: "Have your opponent play Welcome to the Strawberry Club! against you as a Shield Trigger.",
-      hint: ({ theirs }) => !theirs ? { hu: "Akkor siker\xFClhet, ha az AI paklij\xE1ban van Welcome to the Strawberry Club!.", en: "Possible if the AI's deck runs Welcome to the Strawberry Club!." } : theirs.has("OGN-012") ? {
-        hu: "Az AI-n\xE1l van Welcome to the Strawberry Club!. T\xF6rd a Shieldjeit, \xE9s egyszer els\xFClhet.",
-        en: "The AI runs Welcome to the Strawberry Club! \u2014 keep breaking shields and it may trigger."
-      } : null,
-      check: ({ ev, op }) => ev.type === "play" && ev.player === op && ev.id === "OGN-012" && ev.via === "shieldTrigger"
-    },
-    {
-      id: "movie-night",
-      name: "Quality Movie Night",
-      icon: "\u{1F3AC}",
-      desc: "Play Movie Night at Chris and The Law on the same turn.",
-      hint: ({ mine }) => mine.has("OGN-173") && mine.has("OGN-171") ? { hu: "Movie Night at Chris, majd a The Law legyen az utols\xF3 lapod abban a k\xF6rben (4 mana).", en: "Cast Movie Night at Chris, then The Law as your last card that turn (4 mana)." } : null,
-      check: ({ ev, me, events }) => ev.type === "play" && ev.player === me && ["OGN-173", "OGN-171"].includes(ev.id) && playedThisTurn(events, ev, me, "OGN-173") && playedThisTurn(events, ev, me, "OGN-171")
-    },
-    {
-      id: "finale",
-      name: "Finale",
-      icon: "\u{1F404}",
-      desc: "Play Cowtrix and GOLDEN on the same turn.",
-      hint: ({ mine }) => mine.has("OGN-172") && mine.has("OGN-177") ? { hu: "J\xE1tszd ki a Cowtrixot Rumival (felh\xFAzza a GOLDEN-t), \xE9s m\xE9g ugyanabban a k\xF6rben a GOLDEN-t.", en: "Play Cowtrix choosing Rumi (draws GOLDEN), then cast GOLDEN the same turn." } : null,
-      check: ({ ev, me, events }) => ev.type === "play" && ev.player === me && ["OGN-172", "OGN-177"].includes(ev.id) && playedThisTurn(events, ev, me, "OGN-172") && playedThisTurn(events, ev, me, "OGN-177")
-    },
-    {
-      id: "printer-upgrade",
-      name: "Printer Upgrade",
-      icon: "\u{1F5A8}\uFE0F",
-      desc: "Replace 3D Printer - Lui's Forge with 3D Printer - X Forge 2.",
-      hint: ({ mine }) => mine.has("OGN-179") && mine.has("OGN-189") ? {
-        hu: "Ha mindk\xE9t Gear Slot foglalt (az egyikben a Lui's Forge), j\xE1tszd ki az X Forge 2-t, \xE9s v\xE1laszd a Lui's Forge cser\xE9j\xE9t.",
-        en: "With both Gear slots full (one of them Lui's Forge), play X Forge 2 and choose to replace Lui's Forge."
-      } : null,
-      check: ({ ev, me }) => ev.type === "gearReplace" && ev.player === me && ev.oldId === "OGN-179" && ev.newId === "OGN-189"
-    },
-    {
-      id: "dungeon-survivors",
-      name: "Dungeon Survivors",
-      icon: "\u{1F3F0}",
-      desc: "Win the game with Darkest Dungeoneers tapped on your side of the battlefield.",
-      hint: ({ mine }) => mine.has("OGN-045") ? {
-        hu: "A gy\u0151ztes k\xF6r\xF6dben a Darkest Dungeoneers legyen leford\xEDtva: v\xE9dekezzen (Defensive) vagy t\xE1madjon.",
-        en: "Have Darkest Dungeoneers tapped on your winning turn: use its Defensive or attack with it."
-      } : null,
-      check: ({ ev, me, s }) => ev.type === "win" && ev.player === me && s.players[me].battle.some((u) => u.id === "OGN-045" && u.tapped)
-    }
-  ];
-  function achievementHints(mine, theirs) {
-    const out = [];
-    for (const a of ACHIEVEMENTS) {
-      if (a.unobtainable || !a.hint) continue;
-      let tip = null;
-      try {
-        tip = a.hint({ mine, theirs });
-      } catch {
-      }
-      if (tip) out.push({ ...a, tip });
-    }
-    return out;
-  }
-  function checkAchievements(s, me, seen, already = /* @__PURE__ */ new Set()) {
-    const events = s.events || [];
-    const out = [];
-    for (const ev of events) {
-      if (ev.n <= seen) continue;
-      for (const a of ACHIEVEMENTS) {
-        if (already.has(a.id) || out.includes(a.id)) continue;
-        try {
-          if (a.check({ s, me, op: 1 - me, ev, events })) out.push(a.id);
-        } catch {
-        }
-      }
-    }
-    return out;
-  }
-
-  // js/ui/achievements.js
-  var LS3 = "rajongoi.achievements.v1";
-  function unlockedMap() {
-    try {
-      return JSON.parse(localStorage.getItem(LS3)) || {};
-    } catch {
-      return {};
-    }
-  }
-  function save2(m) {
-    try {
-      localStorage.setItem(LS3, JSON.stringify(m));
-    } catch {
-    }
-  }
-  function unlock(ids) {
-    const m = unlockedMap();
-    const fresh = ids.filter((id) => !m[id]);
-    for (const id of fresh) m[id] = Date.now();
-    if (!fresh.length) return;
-    save2(m);
-    fresh.forEach((id, i) => setTimeout(() => toast(ACHIEVEMENTS.find((a) => a.id === id)), i * 1600));
-  }
-  function toast(a) {
-    if (!a) return;
-    const el = document.createElement("div");
-    el.className = "ach-toast";
-    el.innerHTML = `<div class="ach-ico">${a.icon}</div><div><div class="ach-kicker">Achievement unlocked!</div><b>${esc(a.name)}</b><div class="ach-desc">${esc(a.desc)}</div></div>`;
-    document.body.appendChild(el);
-    sfx.reveal("rare");
-    setTimeout(() => el.classList.add("out"), 4200);
-    setTimeout(() => el.remove(), 4800);
-  }
-  function renderAchievements(app2) {
-    const m = unlockedMap();
-    const got = ACHIEVEMENTS.filter((a) => m[a.id]).length;
-    const obtainable = ACHIEVEMENTS.filter((a) => !a.unobtainable).length;
-    app2.innerHTML = `<div class="page ach-page">
-    <div class="row" style="margin-bottom:6px"><h2 style="margin:0">Achievements</h2><span class="spacer"></span>
-      <span class="ach-count"><b>${got}</b> / ${obtainable} unlocked</span></div>
-    <div class="ach-bar"><i style="width:${(100 * got / obtainable).toFixed(0)}%"></i></div>
-    <p class="muted">Achievements are unlocked in <b>Play vs AI</b> and are saved in this browser.</p>
-    <div class="ach-grid">${ACHIEVEMENTS.map((a) => {
-      const when = m[a.id] ? new Date(m[a.id]).toLocaleDateString() : "";
-      return `<div class="ach ${m[a.id] ? "got" : "locked"} ${a.unobtainable ? "unob" : ""}">
-        <div class="ach-ico">${a.icon}</div>
-        <div class="ach-body"><b>${esc(a.name)}</b><div class="ach-desc">${esc(a.desc)}</div>
-          <div class="ach-state">${m[a.id] ? `\u2713 Unlocked ${esc(when)}` : a.unobtainable ? esc(a.unobtainable) : "Locked"}</div></div>
-      </div>`;
-    }).join("")}</div>
-  </div>`;
-  }
-
-  // js/ui/lang.js
-  var LS4 = "rajongoi.lang";
-  function getLang() {
-    try {
-      return localStorage.getItem(LS4) === "en" ? "en" : "hu";
-    } catch {
-      return "hu";
-    }
-  }
-  function setLang(l) {
-    try {
-      localStorage.setItem(LS4, l);
-    } catch {
-    }
-  }
-  function langToggleHtml() {
-    const l = getLang();
-    return `<div class="lang-toggle" role="group" aria-label="Language">
-    <button type="button" data-lang="hu" class="${l === "hu" ? "on" : ""}">Magyar</button>
-    <button type="button" data-lang="en" class="${l === "en" ? "on" : ""}">English</button></div>`;
-  }
-  function bindLangToggle(root, rerender) {
-    root.querySelectorAll(".lang-toggle [data-lang]").forEach((b) => b.onclick = (e) => {
-      e.stopPropagation();
-      if (b.dataset.lang === getLang()) return;
-      setLang(b.dataset.lang);
-      rerender();
-    });
-  }
-
-  // js/ui/deckinfo.js
-  var T = {
-    noGuide: ["Ehhez a paklihoz m\xE9g nincs le\xEDr\xE1s.", "No strategy notes for this deck yet."],
-    plan: ["J\xE1t\xE9kterv", "Game plan"],
-    combos: ["Komb\xF3k", "Combos"],
-    random: ["Az AI v\xE9letlenszer\u0171en v\xE1laszt a j\xE1tszhat\xF3 paklik k\xF6z\xFCl.", "The AI will pick one of the playable decks at random."],
-    aiPlan: ["Az AI teljes j\xE1t\xE9kterve", "The AI's full game plan"],
-    howTo: ["\xCDgy j\xE1tszd ezt a paklit", "How to play this deck"],
-    matchup: ["Tippek az ellenf\xE9l ellen", "Matchup tips"],
-    achs: ["Megszerezhet\u0151 achievementek", "Achievements you can go for"],
-    achsRandom: [" (v\xE9letlen ellenf\xE9llel)", " (opponent random)"],
-    unlocked: ["\u2713 megvan", "\u2713 unlocked"]
-  };
-  var t = (k) => T[k][getLang() === "hu" ? 0 : 1];
-  var L = (hu, en) => getLang() === "hu" ? hu : en;
-  var deckIds = (d) => new Set([d.legend, d.champion, ...Object.keys(d.cards || {})].filter((id) => id && hasDef(id)));
-  var defs = (ids) => [...ids].map(getDef);
-  var kw = (d, k) => (d.keywords || []).includes(k);
-  var nameList = (list) => list.map((d) => `<b>${esc(d.name)}</b>`).join(", ");
-  function startingCards(d) {
-    const sigs = Object.keys(d.cards || {}).filter((id) => hasDef(id) && getDef(id).type === "signature");
-    if (d.signature && !sigs.includes(d.signature)) sigs.unshift(d.signature);
-    return [
-      ...d.legend ? [{ id: d.legend, role: "Legend" }] : [],
-      ...d.champion ? [{ id: d.champion, role: "Champion" }] : [],
-      ...sigs.map((id) => ({ id, role: "Signature" }))
-    ].filter((x) => hasDef(x.id));
-  }
-  function matchupTips(mine, theirs) {
-    const M = defs(mine), T2 = defs(theirs);
-    const tips = [];
-    const triggers = T2.filter((d) => kw(d, "Shield Trigger"));
-    if (triggers.length) {
-      tips.push(L(
-        `${triggers.length} Shield Trigger van a paklij\xE1ban (${nameList(triggers)}). ` + (mine.has("OGN-177") ? "A nagy t\xE1mad\xE1s el\u0151tt j\xE1tszd ki a <b>GOLDEN</b>-t, hogy egyik se s\xFClj\xF6n el." : "Ne t\xE1madj t\xFAl sok lappal egyszerre a Shieldjeire."),
-        `They run ${triggers.length} Shield Trigger${triggers.length > 1 ? "s" : ""} (${nameList(triggers)}). ` + (mine.has("OGN-177") ? "Cast <b>GOLDEN</b> before your big attack so none of them can fire." : "Don't over-commit into their shields.")
-      ));
-    }
-    const walls = T2.filter((d) => kw(d, "Defensive"));
-    if (walls.length) {
-      const pb = M.filter((d) => kw(d, "Party Breaker"));
-      tips.push(L(
-        `A Defensive Unitjai (${nameList(walls)}) magukra ir\xE1ny\xEDthatj\xE1k a t\xE1mad\xE1saidat.` + (pb.length ? ` ${nameList(pb)} \xE1ll\xF3 Unitokat is t\xE1madhat, ezzel takar\xEDtsd el \u0151ket el\u0151bb.` : " Ford\xEDtsd le vagy t\xE1vol\xEDtsd el \u0151ket, miel\u0151tt a Shieldekre m\xE9sz."),
-        `Their Defensive units (${nameList(walls)}) can redirect your attacks.` + (pb.length ? ` ${nameList(pb)} can attack untapped units \u2014 use it to clear them first.` : " Tap or remove them before going for shields.")
-      ));
-    }
-    const chaos = T2.filter((d) => (d.colors || []).includes("Chaos") && d.type !== "legend" && (d.power ?? 0) < 5);
-    if (chaos.length && mine.has("OGN-172")) tips.push(L(`A <b>Cowtrix</b> \xE9rkez\xE9skor elpuszt\xEDtja a nem Mighty Chaos lapjait (${chaos.length} van a paklij\xE1ban).`, `<b>Cowtrix</b> destroys their non-Mighty Chaos cards when it enters (${chaos.length} in their deck).`));
-    const big = T2.filter((d) => (d.cost || 0) >= 7 && ["unit", "champion"].includes(d.type));
-    if (big.length) tips.push(L(`A leger\u0151sebb lapjai: ${nameList(big)}. Ha m\xE1r van r\xE1juk man\xE1ja, tarts vissza egy Defensive Unitot.`, `Their top end: ${nameList(big)}. Keep a Defensive unit back once they reach that much mana.`));
-    const deathtouch = T2.filter((d) => JSON.stringify(d.effects || []).includes("TKN-005") || kw(d, "Deathtouch"));
-    if (deathtouch.length) tips.push(L(`Vigy\xE1zz a Deathtouch-ra (${nameList(deathtouch)}): tokennel t\xE1madd, ne a legjobb Unitoddal.`, `Watch out for Deathtouch (${nameList(deathtouch)}): attack it with tokens, not with your best unit.`));
-    if (theirs.has("OGN-186")) tips.push(L("N\xE1la is van <b>The ULTIMATE FLEX</b>: ha els\xFCl, abban a k\xF6rben nem vesz\xEDthet, \xFAgyhogy ne pazarold bele a gy\u0151ztes t\xE1mad\xE1st.", "They also run <b>The ULTIMATE FLEX</b>: when it resolves they can't lose that turn, so don't waste a lethal swing into it."));
-    return tips;
-  }
-  function cardRow(d) {
-    return `<div class="di-cards">${startingCards(d).map((x) => `<div class="di-card" data-di-cid="${x.id}">
-    ${cardHtml(getDef(x.id), { size: "sm" })}<span class="di-role">${x.role}</span></div>`).join("")}</div>`;
-  }
-  function guideHtml(d, withStyle = true) {
-    const g = deckGuide(d.id, getLang());
-    if (!g) return `<p class="muted">${t("noGuide")}</p>`;
-    const chips = (ids) => ids.filter(hasDef).map((id) => `<span class="di-chip" data-di-cid="${id}">${esc(getDef(id).name)}</span>`).join("");
-    return `${withStyle ? styleHtml(g) : ""}
-    ${g.plan?.length ? `<h4>${t("plan")}</h4><ol class="di-plan">${g.plan.map((p) => `<li>${esc(p)}</li>`).join("")}</ol>` : ""}
-    ${g.mulligan ? `<p class="di-mull"><b>Mulligan:</b> ${esc(g.mulligan)}</p>` : ""}
-    ${g.combos?.length ? `<h4>${t("combos")}</h4><div class="di-combos">${g.combos.map((c) => `<div class="di-combo"><div class="di-chips">${chips(c.cards)}</div>${esc(c.text)}</div>`).join("")}</div>` : ""}`;
-  }
-  var styleHtml = (g) => `<div class="di-style"><span class="di-arch">${esc(g.archetype || "")}</span>${esc(g.style || "")}</div>`;
-  function deckInfoHtml(deck, other2, side2) {
-    if (!deck) {
-      return `<div class="deck-info"><p class="muted">${t("random")}</p></div>`;
-    }
-    const mine = deckIds(deck), theirs = other2 ? deckIds(other2) : null;
-    if (side2 === "ai") {
-      const g = deckGuide(deck.id, getLang());
-      return `<div class="deck-info">${cardRow(deck)}
-      ${g ? styleHtml(g) : ""}
-      <details class="di-sec"><summary>${t("aiPlan")}</summary>${guideHtml(deck, false)}</details>
-    </div>`;
-    }
-    const tips = theirs ? matchupTips(mine, theirs) : [];
-    const got = unlockedMap();
-    const hints = achievementHints(mine, theirs).sort((a, b) => !!got[a.id] - !!got[b.id]);
-    return `<div class="deck-info">${cardRow(deck)}
-    <details class="di-sec" open><summary>${t("howTo")}</summary>${guideHtml(deck)}</details>
-    ${tips.length ? `<details class="di-sec" open><summary>${t("matchup")}</summary><ul class="di-tips">${tips.map((t2) => `<li>${t2}</li>`).join("")}</ul></details>` : ""}
-    ${hints.length ? `<details class="di-sec" open><summary>${t("achs")}${theirs ? "" : t("achsRandom")}</summary>
-      <div class="di-achs">${hints.map((a) => `<div class="di-ach ${got[a.id] ? "got" : ""}"><span class="ach-ico">${a.icon}</span>
-        <div><b>${esc(a.name)}</b>${got[a.id] ? ` <span class="di-done">${t("unlocked")}</span>` : ""}<div class="muted">${esc(L(a.tip.hu, a.tip.en))}</div></div></div>`).join("")}</div></details>` : ""}
-  </div>`;
   }
 
   // js/ui/play.js
