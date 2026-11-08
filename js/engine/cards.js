@@ -175,7 +175,7 @@ export function describeEffect(e, def) {
     case 'grantKeyword': return `Give ${t} ${e.keyword}${dur}.`;
     case 'copyUnit': return `Copy ${t}${pw}; the copy has Haste and dies at the end of this turn.`;
     case 'artDiscount': return 'Your other Art cards cost [1] this turn; any played this way are banished at the end of your turn.';
-    case 'nextDiscount': return `Your next ${e.color} card costs [${n}] less.`;
+    case 'nextDiscount': return `The next ${e.tribes ? e.tribes.join(' or ') : e.color} card${e.thisTurn ? ' this turn' : ''} costs [${n}] less.`;
     case 'drawKeepTribe': return `Draw [${n}] cards. Keep the ${e.tribe} cards, shuffle the rest back into your deck.`;
     case 'recoverTribe': return `Return a ${(e.tribes || []).join(' or ')} card from your Graveyard to your hand.`;
     case 'lastPlayBuff': return `If this is the last card you play this turn, give ${t} +${n} [M] and ${e.keyword}.`;

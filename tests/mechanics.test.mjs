@@ -28,6 +28,27 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Aspect of Kindness: [T] next Cat or Train card this turn costs 1 less'() {
+    const bea = decks.find(d => d.id === 'ogn-bea');
+    const s = createGame({ decks: [bea, deck], ai: [false, false], seed: 7, firstPlayer: 0 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const p = s.players[0]; p.hand = []; p.battle = [];
+    p.mana = Array.from({ length: 6 }, (_, i) => ({ uid: 'b' + i, color: i % 2 ? 'Calm' : 'Chaos', tapped: false }));
+    const def = getDef('OGN-108'), keep = def.tribes; // Disappointed Cat (no Cat tag yet)
+    try {
+      def.tribes = ['Cat'];
+      const c = card(s, 0, 'OGN-108'), other = getDef('OGN-001');
+      const before = effectiveCost(s, 0, def);
+      step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === p.legend.uid));
+      assert.equal(effectiveCost(s, 0, def), Math.max(0, before - 1), 'Cat card is 1 cheaper');
+      assert.equal(effectiveCost(s, 0, other), other.cost, 'other cards are not');
+      s.turn++;
+      assert.equal(effectiveCost(s, 0, def), before, 'only this turn');
+      s.turn--;
+      play(s, c.uid);
+      assert.equal(p.nextDiscount, null, 'used up by the first Cat card');
+    } finally { def.tribes = keep; }
+  },
   'Aspect of Science: Seizure at 1 shield banishes the Field, then [T] Shieldify 1'() {
     const anna = decks.find(d => d.id === 'ogn-anna');
     const s = createGame({ decks: [anna, deck], ai: [false, false], seed: 7, firstPlayer: 1 });

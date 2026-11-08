@@ -753,5 +753,21 @@
   "championNames": [
    "Dagadt Idzi"
   ]
+ },
+ "OGN-L-bea": {
+  "keywords": [],
+  "activateCost": 0,
+  "effects": [
+   {
+    "on": "activate",
+    "do": "nextDiscount",
+    "tribes": [
+     "Cat",
+     "Train"
+    ],
+    "amount": 1,
+    "thisTurn": true
+   }
+  ]
  }
 }

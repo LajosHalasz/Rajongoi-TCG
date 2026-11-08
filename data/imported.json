@@ -1928,6 +1928,43 @@
     }
   },
   {
+    "id": "OGN-L-bea",
+    "set": "OGN",
+    "number": "L-bea",
+    "name": "Aspect of Kindness",
+    "type": "legend",
+    "subname": "Bea",
+    "owners": [
+      "Bea"
+    ],
+    "colors": [
+      "Calm",
+      "Chaos"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Cat",
+      "Train"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "[T]: The next {Cat#6D6E6B}or {Train#6D6E6B} card this turn costs [1] less.",
+    "flavor": "",
+    "rarity": "epic",
+    "illustrator": "Lui",
+    "setInfo": "L04 OGN",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-L-bea.jpg",
+    "imageCrop": {
+      "x": 2.5812158744037275,
+      "y": 0.4940080348772449,
+      "width": 95.14747859181732,
+      "height": 99.17474994518909
+    }
+  },
+  {
     "id": "OGN-L-lui",
     "set": "OGN",
     "number": "L-lui",

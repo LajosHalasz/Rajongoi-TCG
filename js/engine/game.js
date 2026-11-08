@@ -149,10 +149,20 @@ export function artDiscounted(s, pi, d) {
   return p.artTurn === s.turn && isArt(d) && d.cost > 1 && kindOf(d) !== 'legend';
 }
 
+/** "Your next <color / tag> card costs N less" (Strawberry Club, Aspect of Kindness). */
+function nextDiscountFits(s, p, d) {
+  const nd = p.nextDiscount;
+  if (!nd) return false;
+  if (nd.turn != null && nd.turn !== s.turn) return false; // "this turn" ran out
+  if (nd.color && !d.colors.includes(nd.color)) return false;
+  if (nd.tribes && !nd.tribes.some(t => hasTribe(d, t))) return false;
+  return true;
+}
+
 export function effectiveCost(s, pi, d) {
   const p = s.players[pi];
   let base = artDiscounted(s, pi, d) ? 1 : d.cost;
-  if (p.nextDiscount && d.colors.includes(p.nextDiscount.color)) base = Math.max(0, base - p.nextDiscount.amount);
+  if (nextDiscountFits(s, p, d)) base = Math.max(0, base - p.nextDiscount.amount);
   const r = d.costReduction;
   if (!r) return base;
   let n = 0;
@@ -338,7 +348,7 @@ function activateOptions(s, pi) {
     if (!(d.effects || []).some(e => e.on === 'activate')) continue;
     if (d.activateNoTap) { if (g.activatedTurn === s.turn) continue; }
     else if (g.tapped || (p.battle.includes(g) && !canAttackNow(s, g))) continue;
-    if (g === p.legend && !(d.effects || []).some(e => e.on === 'activate' && (!e.tribes || p.graveyard.some(c => e.tribes.some(t => hasTribe(getDef(c.id), t)))))) continue;
+    if (g === p.legend && !(d.effects || []).some(e => e.on === 'activate' && (e.do !== 'recoverTribe' || p.graveyard.some(c => e.tribes.some(t => hasTribe(getDef(c.id), t)))))) continue;
     // conditional tap abilities: "If you are in Seizure, ..." / Shieldify needs a card in hand
     if (!(d.effects || []).some(e => e.on === 'activate' && (e.requires !== 'seizure' || p.seizure) && (e.do !== 'shieldify' || p.hand.length))) continue;
     if (!canAfford(p, d.activateCost || 0, null)) continue;
@@ -620,8 +630,8 @@ function doPlay(s, pi, a) {
   const viaArt = artDiscounted(s, pi, d);
   p.plays = (p.playTurn === s.turn ? p.plays || 0 : 0) + 1; p.playTurn = s.turn;
   payCost(s, p, effectiveCost(s, pi, d), d.colors, d.recycle || 0);
-  if (p.nextDiscount && d.colors.includes(p.nextDiscount.color)) {
-    log(s, `${d.name} costs ${p.nextDiscount.amount} less (Strawberry Club).`);
+  if (nextDiscountFits(s, p, d)) {
+    log(s, `${d.name} costs ${p.nextDiscount.amount} less (${p.nextDiscount.source}).`);
     p.nextDiscount = null;
   }
   if (viaArt) { inst.banishEot = true; log(s, `${d.name} is played for 1 (The Chronicler) and will be banished at end of turn.`); }
@@ -935,8 +945,8 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       log(s, `${me.name}'s other Art cards cost 1 this turn.`);
       break;
     case 'nextDiscount':
-      me.nextDiscount = { color: e.color, amount: n };
-      log(s, `${me.name}'s next ${e.color} card costs ${n} less.`);
+      me.nextDiscount = { color: e.color, tribes: e.tribes, amount: n, source: getDef(source.id).name, ...(e.thisTurn ? { turn: s.turn } : {}) };
+      log(s, `${me.name}'s next ${e.tribes ? e.tribes.join(' or ') : e.color} card costs ${n} less${e.thisTurn ? ' this turn' : ''}.`);
       break;
   }
 }

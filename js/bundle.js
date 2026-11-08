@@ -244,7 +244,7 @@ ${def.text}`;
       case "artDiscount":
         return "Your other Art cards cost [1] this turn; any played this way are banished at the end of your turn.";
       case "nextDiscount":
-        return `Your next ${e.color} card costs [${n}] less.`;
+        return `The next ${e.tribes ? e.tribes.join(" or ") : e.color} card${e.thisTurn ? " this turn" : ""} costs [${n}] less.`;
       case "drawKeepTribe":
         return `Draw [${n}] cards. Keep the ${e.tribe} cards, shuffle the rest back into your deck.`;
       case "recoverTribe":
@@ -1175,10 +1175,18 @@ ${def.text}`;
     const p = s.players[pi];
     return p.artTurn === s.turn && isArt(d) && d.cost > 1 && kindOf(d) !== "legend";
   }
+  function nextDiscountFits(s, p, d) {
+    const nd = p.nextDiscount;
+    if (!nd) return false;
+    if (nd.turn != null && nd.turn !== s.turn) return false;
+    if (nd.color && !d.colors.includes(nd.color)) return false;
+    if (nd.tribes && !nd.tribes.some((t2) => hasTribe(d, t2))) return false;
+    return true;
+  }
   function effectiveCost(s, pi, d) {
     const p = s.players[pi];
     let base = artDiscounted(s, pi, d) ? 1 : d.cost;
-    if (p.nextDiscount && d.colors.includes(p.nextDiscount.color)) base = Math.max(0, base - p.nextDiscount.amount);
+    if (nextDiscountFits(s, p, d)) base = Math.max(0, base - p.nextDiscount.amount);
     const r = d.costReduction;
     if (!r) return base;
     let n = 0;
@@ -1361,7 +1369,7 @@ ${def.text}`;
       if (d.activateNoTap) {
         if (g.activatedTurn === s.turn) continue;
       } else if (g.tapped || p.battle.includes(g) && !canAttackNow(s, g)) continue;
-      if (g === p.legend && !(d.effects || []).some((e) => e.on === "activate" && (!e.tribes || p.graveyard.some((c) => e.tribes.some((t2) => hasTribe(getDef(c.id), t2)))))) continue;
+      if (g === p.legend && !(d.effects || []).some((e) => e.on === "activate" && (e.do !== "recoverTribe" || p.graveyard.some((c) => e.tribes.some((t2) => hasTribe(getDef(c.id), t2)))))) continue;
       if (!(d.effects || []).some((e) => e.on === "activate" && (e.requires !== "seizure" || p.seizure) && (e.do !== "shieldify" || p.hand.length))) continue;
       if (!canAfford(p, d.activateCost || 0, null)) continue;
       acts.push(...withTargets(s, pi, d, { type: "activate", uid: g.uid }, true, "activate"));
@@ -1676,8 +1684,8 @@ ${def.text}`;
     p.plays = (p.playTurn === s.turn ? p.plays || 0 : 0) + 1;
     p.playTurn = s.turn;
     payCost(s, p, effectiveCost(s, pi, d), d.colors, d.recycle || 0);
-    if (p.nextDiscount && d.colors.includes(p.nextDiscount.color)) {
-      log(s, `${d.name} costs ${p.nextDiscount.amount} less (Strawberry Club).`);
+    if (nextDiscountFits(s, p, d)) {
+      log(s, `${d.name} costs ${p.nextDiscount.amount} less (${p.nextDiscount.source}).`);
       p.nextDiscount = null;
     }
     if (viaArt) {
@@ -2054,8 +2062,8 @@ ${def.text}`;
         log(s, `${me.name}'s other Art cards cost 1 this turn.`);
         break;
       case "nextDiscount":
-        me.nextDiscount = { color: e.color, amount: n };
-        log(s, `${me.name}'s next ${e.color} card costs ${n} less.`);
+        me.nextDiscount = { color: e.color, tribes: e.tribes, amount: n, source: getDef(source.id).name, ...e.thisTurn ? { turn: s.turn } : {} };
+        log(s, `${me.name}'s next ${e.tribes ? e.tribes.join(" or ") : e.color} card costs ${n} less${e.thisTurn ? " this turn" : ""}.`);
         break;
     }
   }
