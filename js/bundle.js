@@ -3692,6 +3692,7 @@ ${def.text}`;
     if (hl.selected === inst.uid) cls.push("selected");
     if (hl.mull?.has(inst.uid)) cls.push("mull-sel");
     if (hl.attacking === inst.uid || hl.defending === inst.uid) cls.push("attacking");
+    if (onBoard && hasKeyword(s, inst, "Indestructible")) cls.push("indestructible");
     const pw = onBoard ? power(s, inst) : void 0;
     const cost = opts.inHand && inst.owner === HUMAN ? effectiveCost(s, inst.owner, d) : void 0;
     const icons = [];

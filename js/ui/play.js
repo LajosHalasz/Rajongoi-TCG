@@ -266,6 +266,8 @@ function unitCard(s, inst, hl, opts = {}) {
   if (hl.selected === inst.uid) cls.push('selected');
   if (hl.mull?.has(inst.uid)) cls.push('mull-sel');
   if (hl.attacking === inst.uid || hl.defending === inst.uid) cls.push('attacking');
+  // glowing blue border for as long as the Unit is Indestructible (printed, granted, or by a Legend)
+  if (onBoard && hasKeyword(s, inst, 'Indestructible')) cls.push('indestructible');
   const pw = onBoard ? power(s, inst) : undefined;
   const cost = opts.inHand && inst.owner === HUMAN ? effectiveCost(s, inst.owner, d) : undefined;
   // status icons stacked under the Might box (top right)

@@ -1033,3 +1033,8 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 .card .cost.cheaper span { color: #0b4d1c; }
 .card .cost.pricier { background: radial-gradient(circle at 35% 30%, #ffecec, #f07b74); border-color: #c8322b; box-shadow: 0 0 0 .8cqw #111, 0 0 4cqw rgba(220,60,50,.85); }
 .card .cost.pricier span { color: #5d0d0a; }
+/* Indestructible Units: a glowing blue border while it lasts */
+/* outline + drop-shadow, so it combines with the playable / can-attack / target highlights (box-shadow) */
+.battle .card.indestructible { outline: 2px solid #8fdcff; outline-offset: 3px; animation: indestructible-glow 1.6s ease-in-out infinite alternate; }
+@keyframes indestructible-glow { from { filter: drop-shadow(0 0 4px rgba(60,170,255,.7)); outline-color: #7fd6ff; }
+  to { filter: drop-shadow(0 0 12px rgba(60,170,255,1)); outline-color: #c8f0ff; } }
