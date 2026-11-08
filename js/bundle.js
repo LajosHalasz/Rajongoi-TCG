@@ -5655,8 +5655,8 @@ ${def.text}`;
     }
     const showcase = pool.slice(0, 5);
     const fan = showcase.map((d, i) => {
-      const rot = (i - (showcase.length - 1) / 2) * 7;
-      return cardHtml(d, { size: "md", classes: "fan-card", style: `transform:rotate(${rot}deg) translateY(${Math.abs(rot) * 1.4}px)` });
+      const off = Math.abs(i - (showcase.length - 1) / 2);
+      return cardHtml(d, { size: "md", classes: "fan-card", style: `transform:translateY(${Math.round(off * off * 9)}px)` });
     }).join("");
     const seeds = Array.from({ length: 22 }, (_, i) => `<i style="left:${i * 37 % 100}%;animation-delay:${i * 0.73 % 9}s;animation-duration:${9 + i % 5 * 2}s;--s:${0.6 + i % 4 * 0.25}"></i>`).join("");
     const achDone = unlockedMap();

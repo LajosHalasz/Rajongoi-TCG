@@ -59,13 +59,13 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
 .home .menu { display: grid; gap: 14px; width: min(360px, 100%); margin: 0 auto; }
 .home .menu button { font-size: 24px; padding: 14px; }
 .home .fan { display: flex; justify-content: center; align-items: flex-start; margin: 28px 0 0; padding-bottom: 20px; }
-.home .fan .card { margin: 0 -26px; transition: transform .2s; }
+.home .fan .card { margin: 0 -14px; transition: transform .2s; }
 .home { overflow-x: hidden; }
 @media (max-width: 700px) {
   .home .fan .card { --w: 118px; margin: 0 -22px; }
   .home h1 { font-size: 13vw; }
 }
-.home .fan .card:hover { transform: translateY(-14px) rotate(0deg) !important; z-index: 2; }
+.home .fan .card:hover { transform: translateY(-14px) !important; z-index: 2; }
 
 
 /* ---------------------------------------------- epic home background */

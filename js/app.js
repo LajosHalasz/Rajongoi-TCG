@@ -18,8 +18,10 @@ function renderHome() {
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   const showcase = pool.slice(0, 5);
   const fan = showcase.map((d, i) => {
-    const rot = (i - (showcase.length - 1) / 2) * 7;
-    return cardHtml(d, { size: 'md', classes: 'fan-card', style: `transform:rotate(${rot}deg) translateY(${Math.abs(rot) * 1.4}px)` });
+    // an arc made with whole-pixel vertical offsets only: rotated cards are rendered blurry by the
+    // browser (they sit on a composited layer above the animated background), straight ones stay sharp
+    const off = Math.abs(i - (showcase.length - 1) / 2);
+    return cardHtml(d, { size: 'md', classes: 'fan-card', style: `transform:translateY(${Math.round(off * off * 9)}px)` });
   }).join('');
   const seeds = Array.from({ length: 22 }, (_, i) =>
     `<i style="left:${(i * 37) % 100}%;animation-delay:${(i * 0.73) % 9}s;animation-duration:${9 + (i % 5) * 2}s;--s:${0.6 + (i % 4) * 0.25}"></i>`).join('');
