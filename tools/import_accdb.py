@@ -205,9 +205,9 @@ def convert(row, set_code):
         card['keywords'].insert(0, 'Shield Trigger')
     if provisional:
         card['provisional'] = provisional
-    # rarity (the database has none): Signatures/Legends epic, Champions rare,
+    # rarity (the database has none): Signatures epic, Legends and Champions rare,
     # expensive cards uncommon, the rest common. Finished cards override this.
-    card['rarity'] = ('epic' if kind in ('signature', 'legend') else 'rare' if kind == 'champion'
+    card['rarity'] = ('rare' if kind == 'legend' else 'epic' if kind == 'signature' else 'rare' if kind == 'champion'
                       else 'uncommon' if card['cost'] >= 4 else 'common')
     logic = CARD_LOGIC.get(cid)
     if logic:

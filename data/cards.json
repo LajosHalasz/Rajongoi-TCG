@@ -197,7 +197,7 @@
   ],
   "purpose": "",
   "wip": true,
-  "rarity": "epic"
+  "rarity": "rare"
  },
  {
   "id": "DND-010",
@@ -418,7 +418,7 @@
   ],
   "purpose": "",
   "wip": true,
-  "rarity": "epic"
+  "rarity": "rare"
  },
  {
   "id": "DND-018",
@@ -444,7 +444,7 @@
   ],
   "purpose": "",
   "wip": true,
-  "rarity": "epic"
+  "rarity": "rare"
  },
  {
   "id": "DND-019",
@@ -7164,7 +7164,8 @@
   ],
   "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Anna's deck is coming soon.)__",
   "flavor": "",
-  "placeholder": true
+  "placeholder": true,
+  "rarity": "rare"
  },
  {
   "id": "OGN-L-balu",
@@ -7190,7 +7191,8 @@
   ],
   "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Balu's deck is coming soon.)__",
   "flavor": "",
-  "placeholder": true
+  "placeholder": true,
+  "rarity": "rare"
  },
  {
   "id": "OGN-L-bea",
@@ -7216,7 +7218,8 @@
   ],
   "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Bea's deck is coming soon.)__",
   "flavor": "",
-  "placeholder": true
+  "placeholder": true,
+  "rarity": "rare"
  },
  {
   "id": "OGN-L-chris",
@@ -7242,7 +7245,8 @@
   ],
   "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Chris's deck is coming soon.)__",
   "flavor": "",
-  "placeholder": true
+  "placeholder": true,
+  "rarity": "rare"
  },
  {
   "id": "OGN-L-domi",
@@ -7268,7 +7272,8 @@
   ],
   "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Domi's deck is coming soon.)__",
   "flavor": "",
-  "placeholder": true
+  "placeholder": true,
+  "rarity": "rare"
  },
  {
   "id": "OGN-L-kozi",
@@ -7294,7 +7299,8 @@
   ],
   "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Kozi's deck is coming soon.)__",
   "flavor": "",
-  "placeholder": true
+  "placeholder": true,
+  "rarity": "rare"
  },
  {
   "id": "OGN-L-laci",
@@ -7320,7 +7326,8 @@
   ],
   "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Laci's deck is coming soon.)__",
   "flavor": "",
-  "placeholder": true
+  "placeholder": true,
+  "rarity": "rare"
  },
  {
   "id": "OGN-L-tatai",
@@ -7346,7 +7353,8 @@
   ],
   "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Tatai's deck is coming soon.)__",
   "flavor": "",
-  "placeholder": true
+  "placeholder": true,
+  "rarity": "rare"
  },
  {
   "id": "OGN-L-varon",
@@ -7372,7 +7380,8 @@
   ],
   "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Varon's deck is coming soon.)__",
   "flavor": "",
-  "placeholder": true
+  "placeholder": true,
+  "rarity": "rare"
  },
  {
   "id": "OGN-L-vince",
@@ -7398,6 +7407,7 @@
   ],
   "text": "{Placeholder Legend#7A7A7A}__(The real Legend of Vince's deck is coming soon.)__",
   "flavor": "",
-  "placeholder": true
+  "placeholder": true,
+  "rarity": "rare"
  }
 ]

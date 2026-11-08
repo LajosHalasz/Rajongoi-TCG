@@ -66,7 +66,7 @@ export function normalize(c) {
   };
   def.colors = (def.colors || []).map(cap);
   def.type = (def.type || 'unit').toLowerCase();
-  if (def.type === 'legend') def.rarity = 'epic'; // ground rule: every Legend is Epic
+  if (def.type === 'legend') def.rarity = 'rare'; // ground rule: every Legend is Rare
   if (def.type === 'signature' && !def.sigType) def.sigType = 'spell';
   def.recycle = def.recycle || 0;
   def.text = def.text && def.text.trim() ? def.text : describe(def);
