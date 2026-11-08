@@ -1607,9 +1607,13 @@ ${def.text}`;
       app2.querySelectorAll(".dv-row").forEach((r) => r.classList.toggle("on", r.dataset.cid === id));
     };
     app2.querySelectorAll(".dv-row").forEach((r) => {
-      r.onmouseenter = () => show(r.dataset.cid);
-      r.onfocus = () => show(r.dataset.cid);
       r.onclick = () => show(r.dataset.cid);
+      r.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          show(r.dataset.cid);
+        }
+      };
     });
     if (first) show(first.id);
   }

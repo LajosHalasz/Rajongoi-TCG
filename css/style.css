@@ -943,7 +943,8 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 .dv-list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
 .dv-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; border-left: 4px solid var(--rc); background: rgba(0,0,0,.18); outline: none; }
 .dv-row.r-common { --rc: #8a8f96; } .dv-row.r-uncommon { --rc: #a9c4dc; } .dv-row.r-rare { --rc: #e0b040; } .dv-row.r-epic { --rc: #c26bff; }
-.dv-row:hover, .dv-row.on, .dv-row:focus-visible { border-color: var(--copper-hi); border-left-color: var(--rc); background: rgba(224,164,99,.1); }
+.dv-row:hover { background: rgba(255,255,255,.05); }
+.dv-row.on, .dv-row:focus-visible { border-color: var(--copper-hi); border-left-color: var(--rc); background: rgba(224,164,99,.12); }
 .dv-cost { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: #eee; color: #111; font-weight: 800; font-size: 14px; }
 .dv-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
 .dv-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }

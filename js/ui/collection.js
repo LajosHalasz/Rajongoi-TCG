@@ -217,10 +217,10 @@ function renderDeckView(app, d) {
       ${c.id === d.champion ? '<p class="muted">Starts in the Champion Slot.</p>' : c.id === d.signature ? '<p class="muted">Starts in the Signature Slot.</p>' : ''}`;
     app.querySelectorAll('.dv-row').forEach(r => r.classList.toggle('on', r.dataset.cid === id));
   };
+  // click (not hover) picks the card, so moving the mouse across the list doesn't flick the preview
   app.querySelectorAll('.dv-row').forEach(r => {
-    r.onmouseenter = () => show(r.dataset.cid);
-    r.onfocus = () => show(r.dataset.cid);
-    r.onclick = () => show(r.dataset.cid); // touch screens
+    r.onclick = () => show(r.dataset.cid);
+    r.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(r.dataset.cid); } };
   });
   if (first) show(first.id);
 }
