@@ -1427,7 +1427,7 @@ ${def.text}`;
         if (g.activatedTurn === s.turn) continue;
       } else if (g.tapped || p.battle.includes(g) && !canAttackNow(s, g)) continue;
       if (g === p.legend && !(d.effects || []).some((e) => e.on === "activate" && (e.do !== "recoverTribe" || p.graveyard.some((c) => e.tribes.some((t2) => hasTribe(getDef(c.id), t2)))))) continue;
-      if (!(d.effects || []).some((e) => e.on === "activate" && (e.requires !== "seizure" || p.seizure) && (e.do !== "shieldify" || p.hand.length))) continue;
+      if (!(d.effects || []).some((e) => e.on === "activate" && (e.requires !== "seizure" || p.seizure) && (e.do !== "shieldify" || p.hand.length) && (e.do !== "forceThunks" || (p.thunks || []).length))) continue;
       if (!canAfford(p, d.activateCost || 0, null)) continue;
       acts.push(...withTargets(s, pi, d, { type: "activate", uid: g.uid }, true, "activate"));
     }
@@ -1832,10 +1832,48 @@ ${def.text}`;
       log(s, `${p.name} equips ${d.name}.`);
       runEffects(s, pi, inst, playEffects(d, modes), target);
     } else {
+      if (deferAsThunk(s, pi, inst, target, modes)) return;
       log(s, `${p.name} casts ${d.name}${target && findInst(s, target) ? " \u2192 " + nm(findInst(s, target).inst) : ""}.`);
       fireAll(s, pi, "spellCast");
       runTwiceIfDoubled(s, pi, inst, playEffects(d, modes), target);
       finishSpell(s, p, inst, modes);
+    }
+  }
+  var MAX_THUNKS = 3;
+  function deferAsThunk(s, pi, inst, target, modes) {
+    const p = s.players[pi];
+    if (p.forcing || !p.legend) return false;
+    const d = getDef(inst.id);
+    if ((d.keywords || []).includes("Reaction")) return false;
+    if (!(getDef(p.legend.id).effects || []).some((e) => e.on === "static" && e.do === "lazyEvaluation")) return false;
+    p.thunks = p.thunks || [];
+    if (p.thunks.length >= MAX_THUNKS) return false;
+    p.thunks.push({ inst, target: target ?? null, modes: modes ?? null });
+    log(s, `${d.name} becomes a Thunk under ${nm(p.legend)} (${p.thunks.length}/${MAX_THUNKS}) \u2014 Lazy Evaluation.`);
+    return true;
+  }
+  function forceThunks(s, pi) {
+    const p = s.players[pi];
+    const list = p.thunks || [];
+    p.thunks = [];
+    log(s, `${p.name} forces ${list.length} Thunk${list.length === 1 ? "" : "s"}!`);
+    p.forcing = true;
+    try {
+      for (const t2 of list) {
+        if (s.winner != null) break;
+        const d = getDef(t2.inst.id);
+        const modes = resolveModes(s, pi, d, t2.modes);
+        log(s, `${d.name} resolves (forced).`);
+        fireAll(s, pi, "spellCast");
+        runTwiceIfDoubled(s, pi, t2.inst, playEffects(d, modes), t2.target);
+        finishSpell(s, p, t2.inst, modes);
+      }
+    } finally {
+      p.forcing = false;
+    }
+    if (list.length === MAX_THUNKS) {
+      log(s, "Memoization: exactly 3 Thunks forced.");
+      drawCard(s, pi);
     }
   }
   function finishSpell(s, p, inst, modes) {
@@ -2030,6 +2068,9 @@ ${def.text}`;
         break;
       case "channel":
         channel(s, me, n, !!e.tapped);
+        break;
+      case "forceThunks":
+        forceThunks(s, pi);
         break;
       case "discard":
         for (let i = 0; i < n && op.hand.length; i++) {
@@ -2283,6 +2324,11 @@ ${def.text}`;
     if (s.stack.length) {
       const it = s.stack.pop();
       const d = getDef(it.inst.id);
+      if (deferAsThunk(s, it.controller, it.inst, it.target, it.modes)) {
+        pd.passes = 0;
+        pd.player = s.combat ? other(s.combat.attackerOwner) : other(s.active);
+        return;
+      }
       log(s, `${d.name} resolves.`);
       const modes = resolveModes(s, it.controller, d, it.modes);
       runTwiceIfDoubled(s, it.controller, it.inst, playEffects(d, modes), it.target);
@@ -3404,7 +3450,7 @@ ${def.text}`;
       power: pw,
       cost,
       classes: cls.join(" "),
-      badges: iconCol + tapHint + uses + (opts.seizure ? '<div class="badge-seizure" title="Seizure: all Units were banished; [T] to Shieldify 1">SEIZURE</div>' : "")
+      badges: iconCol + tapHint + uses + (opts.seizure ? '<div class="badge-seizure" title="Seizure: all Units were banished; [T] to Shieldify 1">SEIZURE</div>' : "") + (opts.thunks ? `<div class="badge-thunks" title="${esc(opts.thunks.map((t2) => getDef(t2.inst.id).name).join(", "))} \u2014 [T] Force resolves them">${opts.thunks.length}/3 THUNK${opts.thunks.length > 1 ? "S" : ""}</div>` : "")
     });
   }
   function playerRow(s, p, mine, hl) {
@@ -3424,7 +3470,7 @@ ${def.text}`;
       <span>Runes <b>${free}</b>/${p.mana.length} \xB7 Mana deck ${p.manaDeck.length}</span>
       <div class="runes">${runes}</div>
     </div>
-    ${zone("Legend", unitCard(s, p.legend, hl, { slot: true, seizure: p.seizure }))}
+    ${zone("Legend", unitCard(s, p.legend, hl, { slot: true, seizure: p.seizure, thunks: (p.thunks || []).length ? p.thunks : null }))}
     ${zone("Champion", p.championSlot ? unitCard(s, p.championSlot, hl, { slot: true, inHand: true }) : "", "", "played")}
     ${zone("Signature", p.signatureSlot ? unitCard(s, p.signatureSlot, hl, { slot: true, inHand: true }) : "", "", "played")}
     ${zone(`Gear ${p.gear.length}/${RULES.GEAR_SLOTS}`, p.gear.map((g) => unitCard(s, g, hl, { slot: true })).join(""), "", "empty")}

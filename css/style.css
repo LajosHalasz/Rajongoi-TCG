@@ -964,3 +964,5 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
   .dv-card .card { --w: min(300px, 80vw); }
   .dv-list { max-height: none; }
 }
+.card .badge-thunks { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); z-index: 6; white-space: nowrap; padding: 1.2cqw 3.5cqw;
+  background: #21705b; color: #fff; font-family: 'Lexend'; font-weight: 800; font-size: 8cqw; border-radius: 2cqw; box-shadow: 0 0 0 .8cqw rgba(255,255,255,.8), 0 1cqw 3cqw rgba(0,0,0,.5); }

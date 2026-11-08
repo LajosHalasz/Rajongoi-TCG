@@ -280,7 +280,8 @@ function unitCard(s, inst, hl, opts = {}) {
   const tapHint = hl.taps?.has(inst.uid) ? '<div class="tap-hint" title="Tap ability ready">↻ TAP</div>' : '';
   const uses = inst.uses != null && !opts.inHand ? `<div class="badge-uses">${inst.uses} left</div>` : '';
   return cardHtml(d, { size: 'sm', mini: !(opts.inHand && !opts.slot), uid: inst.uid, tapped: inst.tapped && !opts.inHand, power: pw, cost,
-    classes: cls.join(' '), badges: iconCol + tapHint + uses + (opts.seizure ? '<div class="badge-seizure" title="Seizure: all Units were banished; [T] to Shieldify 1">SEIZURE</div>' : '') });
+    classes: cls.join(' '), badges: iconCol + tapHint + uses + (opts.seizure ? '<div class="badge-seizure" title="Seizure: all Units were banished; [T] to Shieldify 1">SEIZURE</div>' : '')
+      + (opts.thunks ? `<div class="badge-thunks" title="${esc(opts.thunks.map(t => getDef(t.inst.id).name).join(', '))} — [T] Force resolves them">${opts.thunks.length}/3 THUNK${opts.thunks.length > 1 ? 'S' : ''}</div>` : '') });
 }
 
 function playerRow(s, p, mine, hl) {
@@ -302,7 +303,7 @@ function playerRow(s, p, mine, hl) {
       <span>Runes <b>${free}</b>/${p.mana.length} · Mana deck ${p.manaDeck.length}</span>
       <div class="runes">${runes}</div>
     </div>
-    ${zone('Legend', unitCard(s, p.legend, hl, { slot: true, seizure: p.seizure }))}
+    ${zone('Legend', unitCard(s, p.legend, hl, { slot: true, seizure: p.seizure, thunks: (p.thunks || []).length ? p.thunks : null }))}
     ${zone('Champion', p.championSlot ? unitCard(s, p.championSlot, hl, { slot: true, inHand: true }) : '', '', 'played')}
     ${zone('Signature', p.signatureSlot ? unitCard(s, p.signatureSlot, hl, { slot: true, inHand: true }) : '', '', 'played')}
     ${zone(`Gear ${p.gear.length}/${RULES.GEAR_SLOTS}`, p.gear.map(g => unitCard(s, g, hl, { slot: true })).join(''), '', 'empty')}

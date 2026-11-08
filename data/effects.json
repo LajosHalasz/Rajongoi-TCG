@@ -783,5 +783,22 @@
     "amount": 2
    }
   ]
+ },
+ "OGN-L-domi": {
+  "keywords": [],
+  "activateCost": 0,
+  "championNames": [
+   "Chad-Domi"
+  ],
+  "effects": [
+   {
+    "on": "static",
+    "do": "lazyEvaluation"
+   },
+   {
+    "on": "activate",
+    "do": "forceThunks"
+   }
+  ]
  }
 }

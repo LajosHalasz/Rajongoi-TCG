@@ -28,6 +28,28 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Aspect of Excessive Detail: Lazy Evaluation stores spells as Thunks, Force resolves them (+1 card for exactly 3)'() {
+    const domi = decks.find(d => d.id === 'ogn-domi');
+    const s = createGame({ decks: [domi, deck], ai: [false, false], seed: 7, firstPlayer: 0 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const p = s.players[0], op = s.players[1]; p.hand = []; p.battle = []; op.battle = [];
+    p.mana = Array.from({ length: 12 }, (_, i) => ({ uid: 'd' + i, color: i % 2 ? 'Mind' : 'Calm', tapped: false }));
+    const cast = (id, extra = {}) => { const c = card(s, 0, id); step(s, legalActions(s, 0).find(a => a.type === 'play' && a.uid === c.uid && (!extra.target || a.target === extra.target))); return c; };
+    for (const id of ['OGN-145', 'OGN-151', 'OGN-137']) cast(id);       // three Draw 1 spells
+    assert.equal(p.hand.length, 0, 'nothing resolved yet');
+    assert.equal(p.thunks.length, 3);
+    cast('OGN-057');                                                       // 4th spell: no room, resolves now
+    assert.equal(p.thunks.length, 3);
+    const enemy = card(s, 1, 'OGN-016', 'battle');
+    cast('OGN-060', { target: enemy.uid });                                // Reaction: never a Thunk
+    assert(!op.battle.includes(enemy), 'Reaction resolved at once');
+    const before = p.hand.length;
+    step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === p.legend.uid)); // Force
+    assert.equal(p.thunks.length, 0);
+    assert.equal(p.hand.length, before + 3 + 1, '3 draws + memoization');
+    assert(p.graveyard.some(c => c.id === 'OGN-145'), 'forced spells go to the Graveyard');
+    assert(!legalActions(s, 0).some(a => a.type === 'activate' && a.uid === p.legend.uid), 'no Force without Thunks');
+  },
   'Aspect of Lore: Movie + Game played this turn channels 2 runes, once per turn'() {
     const chris = decks.find(d => d.id === 'ogn-chris');
     const s = createGame({ decks: [chris, deck], ai: [false, false], seed: 7, firstPlayer: 0 });

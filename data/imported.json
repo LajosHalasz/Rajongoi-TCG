@@ -2002,6 +2002,45 @@
     }
   },
   {
+    "id": "OGN-L-domi",
+    "set": "OGN",
+    "number": "L-domi",
+    "name": "Aspect of Excessive Detail",
+    "type": "legend",
+    "subname": "Domi",
+    "owners": [
+      "Domi"
+    ],
+    "colors": [
+      "Calm",
+      "Mind"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Lazy Evaluation",
+      "Thunks",
+      "Force",
+      "Thunks"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Lazy Evaluation#21705B}: Non-Reaction Spells you play don't resolve. Put them face down under me instead as {Thunks#6D6E6B} __(max. 3)__.\n[T]: {Force#CE356B} — Resolve all your {Thunks#6D6E6B}in any order. If you resolved exactly 3, Draw [1].",
+    "flavor": "",
+    "rarity": "epic",
+    "illustrator": "Lui",
+    "setInfo": "L07 OGN",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-L-domi.jpg",
+    "imageCrop": {
+      "x": 5.432332172151481,
+      "y": 3.5035111786226736,
+      "width": 90.74410163339384,
+      "height": 94.58499291505784
+    }
+  },
+  {
     "id": "OGN-L-lui",
     "set": "OGN",
     "number": "L-lui",

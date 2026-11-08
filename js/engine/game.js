@@ -350,7 +350,7 @@ function activateOptions(s, pi) {
     else if (g.tapped || (p.battle.includes(g) && !canAttackNow(s, g))) continue;
     if (g === p.legend && !(d.effects || []).some(e => e.on === 'activate' && (e.do !== 'recoverTribe' || p.graveyard.some(c => e.tribes.some(t => hasTribe(getDef(c.id), t)))))) continue;
     // conditional tap abilities: "If you are in Seizure, ..." / Shieldify needs a card in hand
-    if (!(d.effects || []).some(e => e.on === 'activate' && (e.requires !== 'seizure' || p.seizure) && (e.do !== 'shieldify' || p.hand.length))) continue;
+    if (!(d.effects || []).some(e => e.on === 'activate' && (e.requires !== 'seizure' || p.seizure) && (e.do !== 'shieldify' || p.hand.length) && (e.do !== 'forceThunks' || (p.thunks || []).length))) continue;
     if (!canAfford(p, d.activateCost || 0, null)) continue;
     acts.push(...withTargets(s, pi, d, { type: 'activate', uid: g.uid }, true, 'activate'));
   }
@@ -718,11 +718,47 @@ function putIntoPlay(s, pi, inst, target, modes = null, replace = null) {
     log(s, `${p.name} equips ${d.name}.`);
     runEffects(s, pi, inst, playEffects(d, modes), target);
   } else {
+    if (deferAsThunk(s, pi, inst, target, modes)) return;
     log(s, `${p.name} casts ${d.name}${target && findInst(s, target) ? ' → ' + nm(findInst(s, target).inst) : ''}.`);
     fireAll(s, pi, 'spellCast');
     runTwiceIfDoubled(s, pi, inst, playEffects(d, modes), target);
     finishSpell(s, p, inst, modes);
   }
+}
+
+// Aspect of Excessive Detail — {Lazy Evaluation}: "Non-Reaction Spells you play don't resolve.
+// Put them face down under me instead as Thunks (max. 3)."  [T]: {Force} resolves them all.
+const MAX_THUNKS = 3;
+function deferAsThunk(s, pi, inst, target, modes) {
+  const p = s.players[pi];
+  if (p.forcing || !p.legend) return false;
+  const d = getDef(inst.id);
+  if ((d.keywords || []).includes('Reaction')) return false;
+  if (!(getDef(p.legend.id).effects || []).some(e => e.on === 'static' && e.do === 'lazyEvaluation')) return false;
+  p.thunks = p.thunks || [];
+  if (p.thunks.length >= MAX_THUNKS) return false;
+  p.thunks.push({ inst, target: target ?? null, modes: modes ?? null });
+  log(s, `${d.name} becomes a Thunk under ${nm(p.legend)} (${p.thunks.length}/${MAX_THUNKS}) — Lazy Evaluation.`);
+  return true;
+}
+function forceThunks(s, pi) {
+  const p = s.players[pi];
+  const list = p.thunks || [];
+  p.thunks = [];
+  log(s, `${p.name} forces ${list.length} Thunk${list.length === 1 ? '' : 's'}!`);
+  p.forcing = true;
+  try {
+    for (const t of list) {
+      if (s.winner != null) break;
+      const d = getDef(t.inst.id);
+      const modes = resolveModes(s, pi, d, t.modes);
+      log(s, `${d.name} resolves (forced).`);
+      fireAll(s, pi, 'spellCast');
+      runTwiceIfDoubled(s, pi, t.inst, playEffects(d, modes), t.target);
+      finishSpell(s, p, t.inst, modes);
+    }
+  } finally { p.forcing = false; }
+  if (list.length === MAX_THUNKS) { log(s, 'Memoization: exactly 3 Thunks forced.'); drawCard(s, pi); }
 }
 
 function finishSpell(s, p, inst, modes) {
@@ -884,6 +920,7 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       break;
     case 'shieldify': s.queue.push({ kind: 'shieldify', player: pi, remaining: n }); break;
     case 'channel': channel(s, me, n, !!e.tapped); break;
+    case 'forceThunks': forceThunks(s, pi); break;
     case 'discard':
       for (let i = 0; i < n && op.hand.length; i++) {
         const c = op.hand.splice(Math.floor(rand(s) * op.hand.length), 1)[0];
@@ -1097,6 +1134,7 @@ function doPass(s, pd) {
   if (s.stack.length) {
     const it = s.stack.pop();
     const d = getDef(it.inst.id);
+    if (deferAsThunk(s, it.controller, it.inst, it.target, it.modes)) { pd.passes = 0; pd.player = s.combat ? other(s.combat.attackerOwner) : other(s.active); return; }
     log(s, `${d.name} resolves.`);
     const modes = resolveModes(s, it.controller, d, it.modes);
     runTwiceIfDoubled(s, it.controller, it.inst, playEffects(d, modes), it.target);
