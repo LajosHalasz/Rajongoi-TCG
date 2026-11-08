@@ -290,6 +290,18 @@ function playerRow(s, p, mine, hl) {
   const runeBg = (c) => (runeArt[c] && hasDef(runeArt[c]) && getDef(runeArt[c]).image ? `url('${getDef(runeArt[c]).image}') ${COLORS[c]?.hex}` : COLORS[c]?.hex);
   const runes = p.mana.map(r => `<span class="rune ${r.tapped ? 'tapped' : ''} ${runeArt[r.color] ? 'art' : ''}" style="background:${runeBg(r.color)}" title="${r.color}${r.tapped ? ' (tapped)' : ''}"></span>`).join('');
   const free = p.mana.filter(r => !r.tapped).length;
+  // Rune showcase: the deck's own Rune art per color, or the set's template Rune
+  const runeDef = (c) => {
+    if (runeArt[c] && hasDef(runeArt[c])) return getDef(runeArt[c]);
+    const tpl = `RUN-${c}-${String(getDef(p.legend.id).set || 'OGN').toLowerCase()}`;
+    return hasDef(tpl) ? getDef(tpl) : allCards().find(x => x.type === 'rune' && x.colors[0] === c && !x.fullArtRune);
+  };
+  const runeColors = [...new Set([...Object.keys(G.decks[p.idx].runes || {}), ...p.mana.map(r => r.color)])];
+  const runeShow = runeColors.map(c => {
+    const d = runeDef(c);
+    const tot = p.mana.filter(r => r.color === c).length, fr = p.mana.filter(r => r.color === c && !r.tapped).length;
+    return `<div class="rune-show ${tot ? '' : 'none'}" title="${esc(c)}: ${fr} untapped / ${tot} in the Mana Zone">${d ? cardHtml(d, { size: 'sm', mini: true }) : ''}<span class="rs-count"><b>${fr}</b>/${tot}</span></div>`;
+  }).join('');
   const shieldsTarget = !mine && hl.zoneTargets.has('shield');
   const directTarget = !mine && hl.zoneTargets.has('player');
   const shields = p.shields.length
@@ -305,6 +317,7 @@ function playerRow(s, p, mine, hl) {
       <span>Runes <b>${free}</b>/${p.mana.length} · Mana deck ${p.manaDeck.length}</span>
       <div class="runes">${runes}</div>
     </div>
+    ${zone('Runes', `<div class="rune-showcase">${runeShow}</div>`, 'data-runes="1"')}
     ${zone('Legend', unitCard(s, p.legend, hl, { slot: true, seizure: p.seizure, thunks: (p.thunks || []).length ? p.thunks : null }))}
     ${zone('Champion', p.championSlot ? unitCard(s, p.championSlot, hl, { slot: true, inHand: true }) : '', '', 'played')}
     ${zone('Signature', p.signatureSlot ? unitCard(s, p.signatureSlot, hl, { slot: true, inHand: true }) : '', '', 'played')}
