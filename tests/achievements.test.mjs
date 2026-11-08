@@ -130,9 +130,27 @@ const tests = {
     s.active = 1; s.phase = 'end'; s.pending = null;
     step(s, { type: 'endPhase' });
     assert(got(s).includes('art-of-deal'));
+    assert(got(s).includes('art-of-deal-3'), "it was their only Unit: gold too");
   },
-  'All 12 achievements are defined'() {
-    assert.equal(ACHIEVEMENTS.length, 12);
+  'Art of the Deal II (the gift decks them)'() {
+    const s = fresh();
+    const dm = card(s, 0, 'OGN-183', 'battle');
+    s.players[1].deck = []; s.players[1].shields = [];
+    step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === dm.uid));
+    assert.equal(s.winner, 0);
+    assert(got(s).includes('art-of-deal-2'));
+  },
+  'Art of the Deal III needs their only Unit'() {
+    const s = fresh();
+    const dm = card(s, 0, 'OGN-183', 'battle'); card(s, 1, 'OGN-181', 'battle'); card(s, 1, 'OGN-016', 'battle');
+    step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === dm.uid));
+    s.players[0].hand = []; card(s, 1, 'OGN-016');
+    s.active = 1; s.phase = 'end'; s.pending = null;
+    step(s, { type: 'endPhase' });
+    assert(got(s).includes('art-of-deal') && !got(s).includes('art-of-deal-3'));
+  },
+  'All 14 achievements are defined'() {
+    assert.equal(ACHIEVEMENTS.length, 14);
   },
 };
 let fail = 0;

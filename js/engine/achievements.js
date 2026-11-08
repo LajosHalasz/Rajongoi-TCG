@@ -81,12 +81,28 @@ export const ACHIEVEMENTS = [
     check: ({ ev, me }) => ev.type === 'shieldify' && ev.player === me && (getDef(ev.id).keywords || []).includes('Shield Trigger'),
   },
   {
-    id: 'art-of-deal', name: 'Art of the Deal', icon: '🤝',
+    id: 'art-of-deal', name: 'Art of the Deal', icon: '🤝', tier: 'bronze',
     desc: 'Make a deal with your opponent using The Dealmaker — and collect when the bill comes due.',
     hint: ({ mine }) => mine.has('OGN-183')
       ? { hu: 'Tapeld a The Dealmakert, amikor az ellenfél keze már közel van a tiédhez: a következő körödben, ha több lapja van, elviszed a legerősebb Unitját.',
         en: "Tap The Dealmaker when your opponent's hand is close to yours: next turn, if they hold more cards, you collect their strongest Unit." } : null,
     check: ({ ev, me }) => ev.type === 'contractCollected' && ev.player === me,
+  },
+  {
+    id: 'art-of-deal-2', name: 'Art of the Deal II', icon: '🤝', tier: 'silver',
+    desc: "Win the game with The Dealmaker's gift: make your opponent draw when they can't.",
+    hint: ({ mine }) => mine.has('OGN-183')
+      ? { hu: 'Ha az ellenfélnek már se paklija, se Shieldje nincs, tapeld a The Dealmakert: a „ajándék” lap húzásába belebukik.',
+        en: "When your opponent has no deck and no Shields left, tap The Dealmaker: they lose drawing your 'gift'." } : null,
+    check: ({ ev, me }) => ev.type === 'dealWin' && ev.player === me,
+  },
+  {
+    id: 'art-of-deal-3', name: 'Art of the Deal III', icon: '🤝', tier: 'gold',
+    desc: "Collect a Dealmaker contract that destroys your opponent's only Unit.",
+    hint: ({ mine }) => mine.has('OGN-183')
+      ? { hu: 'Akkor tapeld a The Dealmakert, amikor az ellenfélnek csak egy Unitja van, és tartsd kevesebb lapon a kezed, mint ő.',
+        en: 'Tap The Dealmaker when your opponent has a single Unit, and keep fewer cards in hand than they do.' } : null,
+    check: ({ ev, me }) => ev.type === 'contractCollected' && ev.player === me && ev.only,
   },
   {
     id: 'strawberry', name: 'Join the Strawberry Club', icon: '🍓',

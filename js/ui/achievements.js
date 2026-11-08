@@ -3,6 +3,11 @@ import { ACHIEVEMENTS } from '../engine/achievements.js';
 import { esc } from './card.js';
 import { sfx } from './sfx.js';
 
+const TIER = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold' };
+/** Icon (with a bronze / silver / gold ring for tiered achievements) and the tier chip. */
+export const achIcon = (a, cls = 'ach-ico') => `<div class="${cls} ${a.tier ? 'tier-' + a.tier : ''}">${a.icon}</div>`;
+export const tierChip = (a) => (a.tier ? ` <span class="ach-tier tier-${a.tier}">${TIER[a.tier]}</span>` : '');
+
 const LS = 'rajongoi.achievements.v1';
 export function unlockedMap() { try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch { return {}; } }
 function save(m) { try { localStorage.setItem(LS, JSON.stringify(m)); } catch { /* ignore */ } }
@@ -21,7 +26,7 @@ function toast(a) {
   if (!a) return;
   const el = document.createElement('div');
   el.className = 'ach-toast';
-  el.innerHTML = `<div class="ach-ico">${a.icon}</div><div><div class="ach-kicker">Achievement unlocked!</div><b>${esc(a.name)}</b><div class="ach-desc">${esc(a.desc)}</div></div>`;
+  el.innerHTML = `${achIcon(a)}<div><div class="ach-kicker">Achievement unlocked!</div><b>${esc(a.name)}</b>${tierChip(a)}<div class="ach-desc">${esc(a.desc)}</div></div>`;
   document.body.appendChild(el);
   sfx.reveal('rare');
   setTimeout(() => el.classList.add('out'), 4200);
@@ -40,8 +45,8 @@ export function renderAchievements(app) {
     <div class="ach-grid">${ACHIEVEMENTS.map(a => {
       const when = m[a.id] ? new Date(m[a.id]).toLocaleDateString() : '';
       return `<div class="ach ${m[a.id] ? 'got' : 'locked'} ${a.unobtainable ? 'unob' : ''}">
-        <div class="ach-ico">${a.icon}</div>
-        <div class="ach-body"><b>${esc(a.name)}</b><div class="ach-desc">${esc(a.desc)}</div>
+        ${achIcon(a)}
+        <div class="ach-body"><b>${esc(a.name)}</b>${tierChip(a)}<div class="ach-desc">${esc(a.desc)}</div>
           <div class="ach-state">${m[a.id] ? `✓ Unlocked ${esc(when)}` : a.unobtainable ? esc(a.unobtainable) : 'Locked'}</div></div>
       </div>`;
     }).join('')}</div>

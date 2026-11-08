@@ -876,12 +876,37 @@ ${def.text}`;
       id: "art-of-deal",
       name: "Art of the Deal",
       icon: "\u{1F91D}",
+      tier: "bronze",
       desc: "Make a deal with your opponent using The Dealmaker \u2014 and collect when the bill comes due.",
       hint: ({ mine }) => mine.has("OGN-183") ? {
         hu: "Tapeld a The Dealmakert, amikor az ellenf\xE9l keze m\xE1r k\xF6zel van a ti\xE9dhez: a k\xF6vetkez\u0151 k\xF6r\xF6dben, ha t\xF6bb lapja van, elviszed a leger\u0151sebb Unitj\xE1t.",
         en: "Tap The Dealmaker when your opponent's hand is close to yours: next turn, if they hold more cards, you collect their strongest Unit."
       } : null,
       check: ({ ev, me }) => ev.type === "contractCollected" && ev.player === me
+    },
+    {
+      id: "art-of-deal-2",
+      name: "Art of the Deal II",
+      icon: "\u{1F91D}",
+      tier: "silver",
+      desc: "Win the game with The Dealmaker's gift: make your opponent draw when they can't.",
+      hint: ({ mine }) => mine.has("OGN-183") ? {
+        hu: "Ha az ellenf\xE9lnek m\xE1r se paklija, se Shieldje nincs, tapeld a The Dealmakert: a \u201Eaj\xE1nd\xE9k\u201D lap h\xFAz\xE1s\xE1ba belebukik.",
+        en: "When your opponent has no deck and no Shields left, tap The Dealmaker: they lose drawing your 'gift'."
+      } : null,
+      check: ({ ev, me }) => ev.type === "dealWin" && ev.player === me
+    },
+    {
+      id: "art-of-deal-3",
+      name: "Art of the Deal III",
+      icon: "\u{1F91D}",
+      tier: "gold",
+      desc: "Collect a Dealmaker contract that destroys your opponent's only Unit.",
+      hint: ({ mine }) => mine.has("OGN-183") ? {
+        hu: "Akkor tapeld a The Dealmakert, amikor az ellenf\xE9lnek csak egy Unitja van, \xE9s tartsd kevesebb lapon a kezed, mint \u0151.",
+        en: "Tap The Dealmaker when your opponent has a single Unit, and keep fewer cards in hand than they do."
+      } : null,
+      check: ({ ev, me }) => ev.type === "contractCollected" && ev.player === me && ev.only
     },
     {
       id: "strawberry",
@@ -1248,6 +1273,9 @@ ${def.text}`;
   }
 
   // js/ui/achievements.js
+  var TIER = { bronze: "Bronze", silver: "Silver", gold: "Gold" };
+  var achIcon = (a, cls = "ach-ico") => `<div class="${cls} ${a.tier ? "tier-" + a.tier : ""}">${a.icon}</div>`;
+  var tierChip = (a) => a.tier ? ` <span class="ach-tier tier-${a.tier}">${TIER[a.tier]}</span>` : "";
   var LS3 = "rajongoi.achievements.v1";
   function unlockedMap() {
     try {
@@ -1274,7 +1302,7 @@ ${def.text}`;
     if (!a) return;
     const el = document.createElement("div");
     el.className = "ach-toast";
-    el.innerHTML = `<div class="ach-ico">${a.icon}</div><div><div class="ach-kicker">Achievement unlocked!</div><b>${esc(a.name)}</b><div class="ach-desc">${esc(a.desc)}</div></div>`;
+    el.innerHTML = `${achIcon(a)}<div><div class="ach-kicker">Achievement unlocked!</div><b>${esc(a.name)}</b>${tierChip(a)}<div class="ach-desc">${esc(a.desc)}</div></div>`;
     document.body.appendChild(el);
     sfx.reveal("rare");
     setTimeout(() => el.classList.add("out"), 4200);
@@ -1292,8 +1320,8 @@ ${def.text}`;
     <div class="ach-grid">${ACHIEVEMENTS.map((a) => {
       const when = m[a.id] ? new Date(m[a.id]).toLocaleDateString() : "";
       return `<div class="ach ${m[a.id] ? "got" : "locked"} ${a.unobtainable ? "unob" : ""}">
-        <div class="ach-ico">${a.icon}</div>
-        <div class="ach-body"><b>${esc(a.name)}</b><div class="ach-desc">${esc(a.desc)}</div>
+        ${achIcon(a)}
+        <div class="ach-body"><b>${esc(a.name)}</b>${tierChip(a)}<div class="ach-desc">${esc(a.desc)}</div>
           <div class="ach-state">${m[a.id] ? `\u2713 Unlocked ${esc(when)}` : a.unobtainable ? esc(a.unobtainable) : "Locked"}</div></div>
       </div>`;
     }).join("")}</div>
@@ -1423,8 +1451,8 @@ ${def.text}`;
     <details class="di-sec" open><summary>${t("howTo")}</summary>${guideHtml(deck)}</details>
     ${tips.length ? `<details class="di-sec" open><summary>${t("matchup")}</summary><ul class="di-tips">${tips.map((t2) => `<li>${t2}</li>`).join("")}</ul></details>` : ""}
     ${hints.length ? `<details class="di-sec" open><summary>${t("achs")}${theirs ? "" : t("achsRandom")}</summary>
-      <div class="di-achs">${hints.map((a) => `<div class="di-ach ${got[a.id] ? "got" : ""}"><span class="ach-ico">${a.icon}</span>
-        <div><b>${esc(a.name)}</b>${got[a.id] ? ` <span class="di-done">${t("unlocked")}</span>` : ""}<div class="muted">${esc(L(a.tip.hu, a.tip.en))}</div></div></div>`).join("")}</div></details>` : ""}
+      <div class="di-achs">${hints.map((a) => `<div class="di-ach ${got[a.id] ? "got" : ""}">${achIcon(a)}
+        <div><b>${esc(a.name)}</b>${tierChip(a)}${got[a.id] ? ` <span class="di-done">${t("unlocked")}</span>` : ""}<div class="muted">${esc(L(a.tip.hu, a.tip.en))}</div></div></div>`).join("")}</div></details>` : ""}
   </div>`;
   }
 
@@ -2516,9 +2544,9 @@ ${def.text}`;
         continue;
       }
       log(s, `The bill comes due! ${c.name} collects ${nm(target)}.`);
-      const id = target.id;
+      const id = target.id, only = op.battle.length === 1;
       destroyUnit(s, target);
-      if (!op.battle.includes(target)) emit(s, "contractCollected", { player: p.idx, victim: id });
+      if (!op.battle.includes(target)) emit(s, "contractCollected", { player: p.idx, victim: id, only });
     }
   }
   function beginTurn(s) {
@@ -2867,6 +2895,10 @@ ${def.text}`;
         break;
       case "contract":
         drawCard(s, op.idx);
+        if (s.winner === pi) {
+          emit(s, "dealWin", { player: pi });
+          break;
+        }
         log(s, `${op.name} accepts ${getDef(source.id).name}'s gift and draws a card. The bill comes due next turn\u2026`);
         (me.contracts || (me.contracts = [])).push({ name: getDef(source.id).name });
         emit(s, "deal", { player: pi });

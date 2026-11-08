@@ -669,9 +669,9 @@ function collectContracts(s, p) {
     const target = [...op.battle].sort((a, b) => power(s, b) - power(s, a))[0];
     if (!target) { log(s, `${c.name}'s contract comes due, but ${op.name} has no Units.`); continue; }
     log(s, `The bill comes due! ${c.name} collects ${nm(target)}.`);
-    const id = target.id;
+    const id = target.id, only = op.battle.length === 1;
     destroyUnit(s, target);
-    if (!op.battle.includes(target)) emit(s, 'contractCollected', { player: p.idx, victim: id });
+    if (!op.battle.includes(target)) emit(s, 'contractCollected', { player: p.idx, victim: id, only });
   }
 }
 
@@ -983,6 +983,7 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       break;
     case 'contract':
       drawCard(s, op.idx);
+      if (s.winner === pi) { emit(s, 'dealWin', { player: pi }); break; } // they couldn't draw: the gift decked them
       log(s, `${op.name} accepts ${getDef(source.id).name}'s gift and draws a card. The bill comes due next turn…`);
       (me.contracts ||= []).push({ name: getDef(source.id).name });
       emit(s, 'deal', { player: pi });

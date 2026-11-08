@@ -4,7 +4,7 @@ import { getDef, hasDef } from '../engine/cards.js';
 import { achievementHints } from '../engine/achievements.js';
 import { deckGuide } from '../data.js';
 import { cardHtml, esc } from './card.js';
-import { unlockedMap } from './achievements.js';
+import { unlockedMap, achIcon, tierChip } from './achievements.js';
 import { getLang } from './lang.js';
 
 // UI strings: [hu, en]
@@ -112,7 +112,7 @@ export function deckInfoHtml(deck, other, side) {
     <details class="di-sec" open><summary>${t('howTo')}</summary>${guideHtml(deck)}</details>
     ${tips.length ? `<details class="di-sec" open><summary>${t('matchup')}</summary><ul class="di-tips">${tips.map(t => `<li>${t}</li>`).join('')}</ul></details>` : ''}
     ${hints.length ? `<details class="di-sec" open><summary>${t('achs')}${theirs ? '' : t('achsRandom')}</summary>
-      <div class="di-achs">${hints.map(a => `<div class="di-ach ${got[a.id] ? 'got' : ''}"><span class="ach-ico">${a.icon}</span>
-        <div><b>${esc(a.name)}</b>${got[a.id] ? ` <span class="di-done">${t('unlocked')}</span>` : ''}<div class="muted">${esc(L(a.tip.hu, a.tip.en))}</div></div></div>`).join('')}</div></details>` : ''}
+      <div class="di-achs">${hints.map(a => `<div class="di-ach ${got[a.id] ? 'got' : ''}">${achIcon(a)}
+        <div><b>${esc(a.name)}</b>${tierChip(a)}${got[a.id] ? ` <span class="di-done">${t('unlocked')}</span>` : ''}<div class="muted">${esc(L(a.tip.hu, a.tip.en))}</div></div></div>`).join('')}</div></details>` : ''}
   </div>`;
 }
