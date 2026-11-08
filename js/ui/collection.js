@@ -193,7 +193,6 @@ function curveHtml(curve) {
     <p class="muted dv-note">${getLang() === 'hu' ? 'Oszlopok: a pakli · szaggatott: ajánlott görbe' : 'Bars: this deck · dashed: Assembly Guide'}</p>`;
 }
 
-const RARITY_GROUPS = [['epic', 'Epic'], ['rare', 'Rare'], ['uncommon', 'Uncommon'], ['common', 'Common']];
 
 /** One deck: its cards by rarity on the left, the hovered card in the middle, what it does on the right. */
 function renderDeckView(app, d) {
@@ -208,8 +207,14 @@ function renderDeckView(app, d) {
       <span class="dv-name">${esc(c.name)}</span>
       <span class="dv-type">${esc(TYPE_INFO[c.type]?.label || c.type)}${extra}</span></li>`;
   const slotTag = (c) => (c.id === d.champion ? ' · start' : c.id === d.signature ? ' · start' : '');
-  const groups = RARITY_GROUPS.map(([r, label]) => [label, defs.filter(c => rarityOf(c) === r)
-    .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name))]).filter(([, l]) => l.length);
+  // Legend (above), then Champions, Signatures, and every other card by mana cost
+  // (rarity still shows as the colored strip on each row)
+  const byCost = (a, b) => a.cost - b.cost || a.name.localeCompare(b.name);
+  const groups = [
+    ['Champion', defs.filter(c => c.type === 'champion').sort(byCost)],
+    ['Signature', defs.filter(c => c.type === 'signature').sort(byCost)],
+    ['Cards', defs.filter(c => !['champion', 'signature'].includes(c.type)).sort(byCost)],
+  ].filter(([, l]) => l.length);
   const first = legend || defs[0];
   app.innerHTML = `<div class="page deck-view">
     <div class="row" style="margin-bottom:10px"><a class="btn ghost" href="#/decks">← Decks</a>

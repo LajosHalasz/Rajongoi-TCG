@@ -1751,7 +1751,6 @@ ${def.text}`;
     <div class="curve-labels">${Array.from({ length: 10 }, (_, i) => `<span>${i + 1}${i === 9 ? "+" : ""}</span>`).join("")}</div>
     <p class="muted dv-note">${getLang() === "hu" ? "Oszlopok: a pakli \xB7 szaggatott: aj\xE1nlott g\xF6rbe" : "Bars: this deck \xB7 dashed: Assembly Guide"}</p>`;
   }
-  var RARITY_GROUPS = [["epic", "Epic"], ["rare", "Rare"], ["uncommon", "Uncommon"], ["common", "Common"]];
   function renderDeckView(app2, d) {
     const v = validateDeck(d);
     const legend = hasDef(d.legend) ? getDef(d.legend) : null;
@@ -1763,7 +1762,12 @@ ${def.text}`;
       <span class="dv-name">${esc(c.name)}</span>
       <span class="dv-type">${esc(TYPE_INFO[c.type]?.label || c.type)}${extra}</span></li>`;
     const slotTag = (c) => c.id === d.champion ? " \xB7 start" : c.id === d.signature ? " \xB7 start" : "";
-    const groups = RARITY_GROUPS.map(([r, label]) => [label, defs2.filter((c) => rarityOf(c) === r).sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name))]).filter(([, l]) => l.length);
+    const byCost = (a, b) => a.cost - b.cost || a.name.localeCompare(b.name);
+    const groups = [
+      ["Champion", defs2.filter((c) => c.type === "champion").sort(byCost)],
+      ["Signature", defs2.filter((c) => c.type === "signature").sort(byCost)],
+      ["Cards", defs2.filter((c) => !["champion", "signature"].includes(c.type)).sort(byCost)]
+    ].filter(([, l]) => l.length);
     const first = legend || defs2[0];
     app2.innerHTML = `<div class="page deck-view">
     <div class="row" style="margin-bottom:10px"><a class="btn ghost" href="#/decks">\u2190 Decks</a>
