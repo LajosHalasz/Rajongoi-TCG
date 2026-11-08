@@ -504,6 +504,36 @@ ${def.text}`;
     if (L2.placeholder) return d.name;
     return L2.name.split("|")[0].trim().toLowerCase() === d.owner.toLowerCase() ? L2.name : `${d.owner} | ${L2.name}`;
   }
+  var RUNE_LS = "rajongoi.runeArt.v1";
+  var PULLS_LS = "rajongoi.pulls.v1";
+  var readLS = (k) => {
+    try {
+      return JSON.parse(localStorage.getItem(k)) || {};
+    } catch {
+      return {};
+    }
+  };
+  function setRuneChoice(deckId, color, value) {
+    const all = readLS(RUNE_LS);
+    all[deckId] = { ...all[deckId] || {}, [color]: value };
+    try {
+      localStorage.setItem(RUNE_LS, JSON.stringify(all));
+    } catch {
+    }
+  }
+  function deckRuneArt(d) {
+    const art = { ...d?.runeArt || {} };
+    const own = readLS(RUNE_LS)[d?.id] || {};
+    for (const [c, v] of Object.entries(own)) {
+      if (v === "standard") delete art[c];
+      else if (hasDef(v)) art[c] = v;
+    }
+    return art;
+  }
+  function runeOptions(d, color) {
+    const pulled = readLS(PULLS_LS);
+    return allCards().filter((c) => c.type === "rune" && c.colors[0] === color && !c.templateRune && (!c.fullArtRune || pulled[c.id]) && (!d.premade || (c.owners || []).some((o) => o.toLowerCase() === String(d.owner || "").toLowerCase())));
+  }
   function findDeck(id) {
     return allDecks().find((d) => d.id === id);
   }
@@ -1566,6 +1596,25 @@ ${def.text}`;
       }
     });
   }
+  function runeBoxHtml(d) {
+    const colors = Object.keys(d.runes || {});
+    if (!colors.length) return "";
+    const art = deckRuneArt(d), hu = getLang() === "hu";
+    const setTag = String(hasDef(d.legend) && getDef(d.legend).set || "OGN").toLowerCase();
+    const rows = colors.map((c) => {
+      const opts = runeOptions(d, c);
+      const cur = art[c] && hasDef(art[c]) ? art[c] : "standard";
+      const shown = cur !== "standard" ? getDef(cur) : hasDef(`RUN-${c}-${setTag}`) ? getDef(`RUN-${c}-${setTag}`) : null;
+      return `<div class="dv-rune">${shown ? cardHtml(shown, { size: "xs" }) : ""}
+      <div><b>${esc(c)}</b> <span class="muted">\xD7 ${d.runes[c]}</span>
+        <select data-rune-color="${esc(c)}">
+          <option value="standard" ${cur === "standard" ? "selected" : ""}>${hu ? "Standard r\xFAna" : "Standard Rune"}</option>
+          ${opts.map((o) => `<option value="${esc(o.id)}" ${cur === o.id ? "selected" : ""}>${esc((o.owners || []).join(" / ") || o.name)}${o.fullArtRune ? " \u2014 full-art \u2728" : ""}</option>`).join("")}
+        </select></div></div>`;
+    }).join("");
+    return `<div class="dv-box"><h4>${hu ? "R\xFAn\xE1k" : "Runes"}</h4><div class="dv-runes-pick">${rows}</div>
+    <p class="muted dv-note">${hu ? "Full-art v\xE1ltozat akkor v\xE1laszthat\xF3, ha m\xE1r kinyitottad boosterb\u0151l." : "A full-art version can be picked once you pulled it from a booster."}</p></div>`;
+  }
   function curveHtml(curve) {
     const max = Math.max(4, ...Object.values(curve), ...Object.values(GUIDE.curve));
     return `<div class="curve dv-curve">${Array.from({ length: 10 }, (_, i) => i + 1).map((c) => `<div class="bar" title="cost ${c}${c === 10 ? "+" : ""}: ${curve[c] || 0} (guide ${GUIDE.curve[c] || 0})">
@@ -1602,11 +1651,16 @@ ${def.text}`;
       <div class="dv-card" id="dv-card"></div>
       <div class="dv-side">
         <div class="dv-box"><div class="dv-box-head"><h4>${getLang() === "hu" ? "Strat\xE9gia" : "Strategy"}</h4>${langToggleHtml()}</div>${strategyHtml(d)}</div>
+        ${runeBoxHtml(d)}
         <div class="dv-box"><h4>${getLang() === "hu" ? "Mana-g\xF6rbe" : "Mana curve"} <span class="muted">\xB7 avg ${v.stats.avgCost.toFixed(1)}</span></h4>${curveHtml(v.stats.curve)}</div>
         <div class="dv-info" id="dv-info"></div>
       </div>
     </div></div>`;
     bindLangToggle(app2, () => renderDeckView(app2, d));
+    app2.querySelectorAll("[data-rune-color]").forEach((sel) => sel.onchange = () => {
+      setRuneChoice(d.id, sel.dataset.runeColor, sel.value);
+      renderDeckView(app2, d);
+    });
     const show = (id) => {
       if (!hasDef(id)) return;
       const c = getDef(id);
@@ -3642,7 +3696,7 @@ ${def.text}`;
   }
   function playerRow(s, p, mine, hl) {
     const zone = (label, inner, attrs = "", empty = "") => `<div class="zone ${!inner && empty ? "empty-slot" : ""}" ${attrs} data-empty="${empty}"><span class="lbl">${label}</span>${inner}</div>`;
-    const runeArt = G.decks[p.idx].runeArt || {};
+    const runeArt = deckRuneArt(G.decks[p.idx]);
     const runeBg = (c) => runeArt[c] && hasDef(runeArt[c]) && getDef(runeArt[c]).image ? `url('${getDef(runeArt[c]).image}') ${COLORS[c]?.hex}` : COLORS[c]?.hex;
     const runes = p.mana.map((r) => `<span class="rune ${r.tapped ? "tapped" : ""} ${runeArt[r.color] ? "art" : ""}" style="background:${runeBg(r.color)}" title="${r.color}${r.tapped ? " (tapped)" : ""}"></span>`).join("");
     const free = p.mana.filter((r) => !r.tapped).length;

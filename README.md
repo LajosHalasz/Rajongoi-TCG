@@ -71,6 +71,9 @@ The **Boosters** page opens 15-card packs with an animation: the pack tears open
 
 Odds are set in `js/engine/booster.js`. The page remembers which cards you have pulled (in browser storage) and marks first-time pulls as **NEW**.
 
+### Rune art per deck
+Every color has a template (standard) Rune in each set. On a deck's page (*Decks → deck*) each color can use the standard Rune or a Rune card: preset decks offer their owner's own Runes (and use them by default — Anna's Order and Chaos, Chris's Mind), custom decks offer every Rune. A full-art Rune can be picked once it has been pulled from a booster; then every Rune of that color shows it in game. The choice is saved in this browser (`rajongoi.runeArt.v1`).
+
 ### Rarity ground rules
 Applied on load (`applyRarityRules` in `js/engine/cards.js`), whatever a card was added with:
 - **Legends** are Rare.

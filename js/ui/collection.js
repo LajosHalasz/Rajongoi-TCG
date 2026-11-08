@@ -2,7 +2,7 @@ import { allCards, getDef, hasDef, kindOf, rarityOf, championMatchesLegend, sign
 import { COLORS, TYPE_INFO, GUIDE, RULES } from '../engine/rules.js';
 import { validateDeck } from '../engine/deck.js';
 import { cardHtml, cardDetailsHtml, esc } from './card.js';
-import { allDecks, customDecks, saveCustomDecks, findDeck, deckName } from '../data.js';
+import { allDecks, customDecks, saveCustomDecks, findDeck, deckName, deckRuneArt, runeOptions, setRuneChoice } from '../data.js';
 import { strategyHtml } from './deckinfo.js';
 import { getLang, langToggleHtml, bindLangToggle } from './lang.js';
 
@@ -162,6 +162,27 @@ export function renderDecks(app, arg) {
 }
 
 // ------------------------------------------------------------- deck view --
+/** Rune art per color: Standard (template) or a Rune card the deck may use. */
+function runeBoxHtml(d) {
+  const colors = Object.keys(d.runes || {});
+  if (!colors.length) return '';
+  const art = deckRuneArt(d), hu = getLang() === 'hu';
+  const setTag = String((hasDef(d.legend) && getDef(d.legend).set) || 'OGN').toLowerCase();
+  const rows = colors.map(c => {
+    const opts = runeOptions(d, c);
+    const cur = art[c] && hasDef(art[c]) ? art[c] : 'standard';
+    const shown = cur !== 'standard' ? getDef(cur) : (hasDef(`RUN-${c}-${setTag}`) ? getDef(`RUN-${c}-${setTag}`) : null);
+    return `<div class="dv-rune">${shown ? cardHtml(shown, { size: 'xs' }) : ''}
+      <div><b>${esc(c)}</b> <span class="muted">× ${d.runes[c]}</span>
+        <select data-rune-color="${esc(c)}">
+          <option value="standard" ${cur === 'standard' ? 'selected' : ''}>${hu ? 'Standard rúna' : 'Standard Rune'}</option>
+          ${opts.map(o => `<option value="${esc(o.id)}" ${cur === o.id ? 'selected' : ''}>${esc((o.owners || []).join(' / ') || o.name)}${o.fullArtRune ? ' — full-art ✨' : ''}</option>`).join('')}
+        </select></div></div>`;
+  }).join('');
+  return `<div class="dv-box"><h4>${hu ? 'Rúnák' : 'Runes'}</h4><div class="dv-runes-pick">${rows}</div>
+    <p class="muted dv-note">${hu ? 'Full-art változat akkor választható, ha már kinyitottad boosterből.' : 'A full-art version can be picked once you pulled it from a booster.'}</p></div>`;
+}
+
 /** Mana curve bars (1 … 10+) with the card count on top and the Assembly Guide as a dashed line. */
 function curveHtml(curve) {
   const max = Math.max(4, ...Object.values(curve), ...Object.values(GUIDE.curve));
@@ -204,11 +225,13 @@ function renderDeckView(app, d) {
       <div class="dv-card" id="dv-card"></div>
       <div class="dv-side">
         <div class="dv-box"><div class="dv-box-head"><h4>${getLang() === 'hu' ? 'Stratégia' : 'Strategy'}</h4>${langToggleHtml()}</div>${strategyHtml(d)}</div>
+        ${runeBoxHtml(d)}
         <div class="dv-box"><h4>${getLang() === 'hu' ? 'Mana-görbe' : 'Mana curve'} <span class="muted">· avg ${v.stats.avgCost.toFixed(1)}</span></h4>${curveHtml(v.stats.curve)}</div>
         <div class="dv-info" id="dv-info"></div>
       </div>
     </div></div>`;
   bindLangToggle(app, () => renderDeckView(app, d));
+  app.querySelectorAll('[data-rune-color]').forEach(sel => sel.onchange = () => { setRuneChoice(d.id, sel.dataset.runeColor, sel.value); renderDeckView(app, d); });
   const show = (id) => {
     if (!hasDef(id)) return;
     const c = getDef(id);

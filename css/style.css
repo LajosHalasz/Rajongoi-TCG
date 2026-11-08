@@ -1024,3 +1024,7 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 .battle { --bw: calc(var(--cw) * 1.3); flex-wrap: nowrap; min-height: calc(var(--bw) * 1.4 + 14px); }
 .battle > .card { --w: var(--bw); }
 .battle.many > .card { --w: min(var(--bw), calc((100% - 10px * (var(--n) - 1)) / var(--n))); }
+.dv-runes-pick { display: grid; gap: 8px; }
+.dv-rune { display: flex; gap: 10px; align-items: center; }
+.dv-rune .card { --w: 46px; flex: none; }
+.dv-rune select { display: block; margin-top: 4px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; color: inherit; max-width: 100%; }

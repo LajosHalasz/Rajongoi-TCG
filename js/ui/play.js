@@ -3,7 +3,7 @@ import { chooseAction } from '../engine/ai.js';
 import { getDef, hasDef, kindOf, allCards } from '../engine/cards.js';
 import { COLORS, RULES } from '../engine/rules.js';
 import { validateDeck } from '../engine/deck.js';
-import { playableDecks, comingSoonDecks, findDeck, deckName } from '../data.js';
+import { playableDecks, comingSoonDecks, findDeck, deckName, deckRuneArt } from '../data.js';
 import { cardHtml, cardBackHtml, cardDetailsHtml, esc, isFoil } from './card.js';
 import { showCardModal } from './collection.js';
 import { sfx, soundForLog } from './sfx.js';
@@ -286,7 +286,7 @@ function unitCard(s, inst, hl, opts = {}) {
 
 function playerRow(s, p, mine, hl) {
   const zone = (label, inner, attrs = '', empty = '') => `<div class="zone ${!inner && empty ? 'empty-slot' : ''}" ${attrs} data-empty="${empty}"><span class="lbl">${label}</span>${inner}</div>`;
-  const runeArt = G.decks[p.idx].runeArt || {};
+  const runeArt = deckRuneArt(G.decks[p.idx]);
   const runeBg = (c) => (runeArt[c] && hasDef(runeArt[c]) && getDef(runeArt[c]).image ? `url('${getDef(runeArt[c]).image}') ${COLORS[c]?.hex}` : COLORS[c]?.hex);
   const runes = p.mana.map(r => `<span class="rune ${r.tapped ? 'tapped' : ''} ${runeArt[r.color] ? 'art' : ''}" style="background:${runeBg(r.color)}" title="${r.color}${r.tapped ? ' (tapped)' : ''}"></span>`).join('');
   const free = p.mana.filter(r => !r.tapped).length;

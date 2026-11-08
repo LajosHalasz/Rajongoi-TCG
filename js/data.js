@@ -76,4 +76,31 @@ export function deckName(d) {
   // older Legends already carry the owner: "Matyi | Always on time"
   return L.name.split('|')[0].trim().toLowerCase() === d.owner.toLowerCase() ? L.name : `${d.owner} | ${L.name}`;
 }
+// ---- Rune art per deck (this browser) ------------------------------------------
+// Preset decks default to their owner's own Runes (deck.runeArt); every deck can switch a color to
+// the standard (template) Rune or to another Rune the player may use. Full-art Runes must be pulled first.
+const RUNE_LS = 'rajongoi.runeArt.v1', PULLS_LS = 'rajongoi.pulls.v1';
+const readLS = (k) => { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; } };
+export function setRuneChoice(deckId, color, value) {
+  const all = readLS(RUNE_LS);
+  all[deckId] = { ...(all[deckId] || {}), [color]: value };
+  try { localStorage.setItem(RUNE_LS, JSON.stringify(all)); } catch { /* ignore */ }
+}
+/** color -> Rune card id used for this deck's Runes in game (missing = the standard template Rune). */
+export function deckRuneArt(d) {
+  const art = { ...(d?.runeArt || {}) };
+  const own = readLS(RUNE_LS)[d?.id] || {};
+  for (const [c, v] of Object.entries(own)) {
+    if (v === 'standard') delete art[c];
+    else if (hasDef(v)) art[c] = v;
+  }
+  return art;
+}
+/** The Rune cards a deck may use for a color: its owner's (preset decks) or all of them (custom decks). */
+export function runeOptions(d, color) {
+  const pulled = readLS(PULLS_LS);
+  return allCards().filter(c => c.type === 'rune' && c.colors[0] === color && !c.templateRune
+    && (!c.fullArtRune || pulled[c.id])
+    && (!d.premade || (c.owners || []).some(o => o.toLowerCase() === String(d.owner || '').toLowerCase())));
+}
 export function findDeck(id) { return allDecks().find(d => d.id === id); }
