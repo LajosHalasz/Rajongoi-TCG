@@ -1057,3 +1057,79 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
   box-shadow: 0 10px 40px rgba(0,0,0,.6), 0 0 24px rgba(226,87,76,.45); pointer-events: none; animation: toast-in .25s ease-out both; transition: opacity .45s, transform .45s; }
 .game-toast.out { opacity: 0; transform: translate(-50%, -60%); }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, -40%) scale(.95); } }
+
+/* =============================================================== phones ==
+   Portrait (narrow) and landscape (short) phones: a one-line header on every page; during a game
+   the whole board fits the screen without page scrolling. The log / AI-played panels open from a
+   floating button, the opponent's hand shows as a count, zone rows scroll sideways if needed. */
+.hand-count, .mob-log-btn { display: none; }
+.battle > .card { --w: min(var(--bw), calc((100% - var(--bgap, 10px) * (var(--n) - 1)) / var(--n))); }
+@media (max-width: 600px), (max-height: 500px) and (orientation: landscape) {
+  .topbar { gap: 8px; padding: 4px 8px; min-height: 0; }
+  .topbar .logo { font-size: 14px; white-space: nowrap; }
+  .topbar nav { flex: 1; min-width: 0; display: flex; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+  .topbar nav::-webkit-scrollbar { display: none; }
+  .topbar nav a { margin-right: 12px; font-size: 14px; }
+  .topbar .mute-btn { padding: 2px 8px; font-size: 14px; }
+
+  body.in-game { overflow: hidden; }
+  body.in-game .game { --tb: 34px; height: calc(100dvh - var(--tb)); grid-template-columns: minmax(0, 1fr); }
+  body.in-game .played-panel, body.in-game .side-panel { display: none; }
+  body.in-game .game.show-log .side-panel { display: flex; position: fixed; z-index: 95; right: 0; top: 34px; bottom: 0; width: min(82vw, 330px); box-shadow: -10px 0 30px rgba(0,0,0,.6); }
+  body.in-game .game.show-log .played-panel { display: flex; flex-direction: column; position: fixed; z-index: 95; left: 0; top: 34px; bottom: 0; width: min(36vw, 150px); overflow-y: auto; box-shadow: 10px 0 30px rgba(0,0,0,.6); }
+  body.in-game .game.show-log .played-panel .pp-card .card { --w: 100%; }
+  .mob-log-btn { display: grid; place-items: center; position: fixed; z-index: 96; right: 50px; top: 3px; width: 28px; height: 28px; padding: 0; border-radius: 50%; font-size: 14px; background: rgba(20,16,12,.85); }
+  body.in-game .topbar { padding-right: 84px; }
+
+  .table { padding: 4px 6px; gap: 4px; grid-template-rows: auto 1fr auto 1fr auto auto; overflow: hidden; }
+  .table > .hand-row.opp { display: none; }
+  .hand-count { display: inline; }
+  .zone-row { justify-content: flex-start; gap: 4px; overflow-x: auto; overflow-y: hidden; padding-top: 7px; scrollbar-width: none; }
+  .zone-row::-webkit-scrollbar { display: none; }
+  .zone-row > * { flex: none; }
+  .zone { padding: 3px; gap: 3px; min-height: calc(var(--cw) * 1.4 + 6px); border-radius: 8px; }
+  .zone .lbl { font-size: 9px; top: -7px; left: 4px; padding: 0 3px; }
+  .zone.empty-slot::after { font-size: 10px; }
+  .pinfo { min-width: 0; width: calc(var(--cw) * 1.5); font-size: 11px; line-height: 1.2; padding: 2px 4px; max-width: none !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pinfo .pname { font-size: 13px; }
+  .pinfo .pdeck, .pinfo .runes, .pinfo .pmana { display: none; }
+  .zone-row > .pinfo { flex: none; }
+  /* the numbers that matter most first: Shields, Deck, Graveyard; then Runes, Legend, Champion, … */
+  .zone-row > :nth-child(7) { order: 1; } .zone-row > :nth-child(8) { order: 2; } .zone-row > :nth-child(9) { order: 3; }
+  .zone-row > :nth-child(n+2):nth-child(-n+6) { order: 4; }
+  .zone-row .shields { flex: none; }
+  .zone-row .shields .card { margin-right: calc(var(--cw) * -.82); }
+  .zone-row .shields .card:last-child { margin-right: 0; }
+  .stack-pile .count { font-size: calc(var(--cw) * .45); }
+  .rs-count { font-size: 10px; } .rs-count b { font-size: 11px; }
+  .battle { --bw: calc(var(--cw) * 1.35); --bgap: 4px; gap: 4px; padding: 3px; min-height: calc(var(--bw) * 1.4 + 8px); border-radius: 8px; }
+  .battle .empty { font-size: 12px; }
+  .midbar { padding: 3px 6px; gap: 6px; border-radius: 8px; }
+  .midbar .phases { display: none; }
+  .prompt { min-width: 0; font-size: 13px; line-height: 1.2; }
+  .midbar button { padding: 5px 9px; font-size: 13px; }
+  .hand-row.mine { padding: 2px 8px 0; min-height: calc(var(--cw) * 1.25 * 1.4 + 4px); }
+  .hand-row.mine .hand-slot { --w: calc(var(--cw) * 1.25); transform: rotate(calc(var(--fr, 0deg) * .4)); }
+  .hand-row.mine .hand-slot:hover .card { transform: rotate(calc(var(--fr, 0deg) * -1)) translateY(-42%) scale(1.6); }
+  .game-toast { font-size: 15px; padding: 10px 14px; }
+}
+/* portrait: everything stacked; card size follows the screen height */
+@media (max-width: 600px) and (orientation: portrait) {
+  :root { --cw: clamp(30px, calc((100dvh - 200px) / 8.9), 58px); }
+}
+/* landscape: each side's zone row sits next to its Battle Zone */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root { --cw: clamp(26px, calc((100dvh - 128px) / 5.2), 46px); }
+  .table { grid-template-columns: minmax(0, 40%) minmax(0, 1fr); grid-template-rows: 1fr auto 1fr auto;
+    grid-template-areas: "oz ob" "mid mid" "mz mb" "hand hand"; column-gap: 6px; }
+  .table > :nth-child(2) { grid-area: oz; }
+  .table > :nth-child(3) { grid-area: ob; }
+  .table > :nth-child(4) { grid-area: mid; }
+  .table > :nth-child(5) { grid-area: mb; }
+  .table > :nth-child(6) { grid-area: mz; }
+  .table > :nth-child(7) { grid-area: hand; }
+  .zone-row { align-self: center; }
+  .battle { --bw: calc(var(--cw) * 1.3); }
+  .hand-row.mine { min-height: calc(var(--cw) * 1.25 * 1.4 * .8); padding-top: 2px; }
+  .hand-row.mine .hand-slot { margin: 0 calc(var(--cw) * -0.08); }
+}

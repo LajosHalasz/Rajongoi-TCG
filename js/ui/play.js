@@ -22,6 +22,7 @@ let G = null; // { s, app, ui, timer, decks }
 
 export function stopGame() {
   if (G?.timer) clearTimeout(G.timer);
+  document.body.classList.remove('in-game');
   G = null;
 }
 
@@ -145,7 +146,8 @@ function render() {
     ${oppPlays.map((x, i) => `<div class="pp-card ${i === 0 ? 'newest' : ''} ${i === 0 && x.n !== G.ppAnimated ? 'enter' : ''} ${x.via === 'shieldTrigger' ? 'via-trigger' : ''}" data-cid="${x.id}">
       ${x.via === 'shieldTrigger' ? '<div class="pp-tag">SHIELD TRIGGER</div>' : ''}${cardHtml(getDef(x.id), { size: 'md' })}
       <div class="pp-turn">Turn ${x.turn}</div></div>`).join('') || '<p class="muted">Nothing yet.</p>'}</aside>`;
-  app.innerHTML = `<div class="game">
+  document.body.classList.add('in-game'); // phones: compact header + full-height board
+  app.innerHTML = `<div class="game ${ui.showLog ? 'show-log' : ''}">
     ${played}
     <section class="table">
       <div class="hand-row opp">${op.hand.map(() => cardBackHtml({ size: 'sm' })).join('')}</div>
@@ -160,6 +162,7 @@ function render() {
       <div class="preview" id="preview"><span class="muted" style="align-self:center">Hover a card to inspect it · right-click for details</span></div>
       <div class="log">${s.log.map(l => `<div class="${l.startsWith('—') ? 'turn' : ''}">${esc(l)}</div>`).join('')}</div>
     </aside>
+    <button class="mob-log-btn" data-btn="mob-log" title="Game log and the AI's plays" aria-label="Game log">${ui.showLog ? '✕' : '📜'}</button>
   </div>
   ${triggerOverlay(s, legal, ui)}
   ${pickOverlay(s, legal, ui)}
@@ -322,8 +325,8 @@ function playerRow(s, p, mine, hl) {
   return `<div class="zone-row">
     <div class="pinfo player-target zone-target ${s.active === p.idx ? 'active' : ''} ${directTarget ? 'targetable' : ''}" ${!mine ? 'data-zone="player"' : ''}>
       <span class="pname">${mine ? 'You' : 'AI'}${s.active === p.idx ? ' ◆' : ''}</span>
-      <span class="muted">${esc(p.deckName)}</span>
-      <span>Runes <b>${free}</b>/${p.mana.length} · Mana deck ${p.manaDeck.length}</span>
+      <span class="muted pdeck">${esc(p.deckName)}</span>${!mine ? `<span class="hand-count">Hand <b>${p.hand.length}</b></span>` : ''}
+      <span class="prunes">Runes <b>${free}</b>/${p.mana.length}<span class="pmana"> · Mana deck ${p.manaDeck.length}</span></span>
       <div class="runes">${runes}</div>
     </div>
     ${zone('Runes', `<div class="rune-showcase">${runeShow}</div>`, 'data-runes="1"')}
@@ -927,6 +930,7 @@ function onButton(id) {
     case 'noBlock': return act({ type: 'noBlock' });
     case 'mull': { const uids = [...ui.mull]; ui.mull = new Set(); return act({ type: 'mulligan', uids }); }
     case 'cancel': ui.sel = null; return render();
+    case 'mob-log': ui.showLog = !ui.showLog; return render();
     case 'atk-shield': return act(ui.sel.options.find(a => a.target.kind === 'shield'));
     case 'atk-player': return act(ui.sel.options.find(a => a.target.kind === 'player'));
     case 'no-target': return act(ui.sel.options.find(a => !a.target));

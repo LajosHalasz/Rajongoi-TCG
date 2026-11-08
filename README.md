@@ -59,6 +59,15 @@ All sound effects are generated live with the Web Audio API (`js/ui/sfx.js`): fi
 
 The 🔊 button in the top bar mutes all sound. The setting is remembered.
 
+## Phones
+On phones (portrait up to 600 px wide, or landscape up to 500 px tall) the header is one scrollable line, and a game fits the screen without scrolling:
+- the card size follows the screen height; the opponent's hand is shown as a count;
+- each zone row starts with Shields, Deck and Graveyard, and can be swiped sideways for Runes, Legend, Champion, Signature and Gear;
+- in landscape each side's zone row sits next to its Battle Zone;
+- the 📜 button in the header opens the game log and the AI's last plays.
+
+Checked on iPhone SE / 13 and Pixel 7, portrait and landscape.
+
 ## Booster packs
 
 The **Boosters** page opens 15-card packs with an animation: the pack tears open, the cards are dealt face down, and rarer cards glow before they flip. A pack contains:
