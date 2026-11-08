@@ -14,7 +14,7 @@
   --bad: #e2574c;
   --focus: #ffd36b;
   --radius: 10px;
-  --cw: clamp(44px, min((100vw - 480px) / 11.8, 8.6vh), 104px);   /* board card width */
+  --cw: clamp(44px, min((100vw - 480px) / 13.4, 8.6vh), 104px);   /* board card width (13.4 card widths across the zone row) */
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
@@ -754,7 +754,7 @@ h1, h2, h3 { font-family: 'Lexend', sans-serif; margin: 0 0 .4em; letter-spacing
 @keyframes achout { to { transform: translate(-50%, 120%); opacity: 0; } }
 
 @media (max-width: 980px) {
-  :root { --cw: clamp(44px, min(100vw / 11.8, 8.6vh), 104px); }
+  :root { --cw: clamp(44px, min(100vw / 13.4, 8.6vh), 104px); }
   .game { grid-template-columns: 1fr; }
   .played-panel { flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--line); }
   .pp-card .card { --w: 110px; }
@@ -1048,3 +1048,12 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
 .battle .card.indestructible { outline: 2px solid #8fdcff; outline-offset: 3px; animation: indestructible-glow 1.6s ease-in-out infinite alternate; }
 @keyframes indestructible-glow { from { filter: drop-shadow(0 0 4px rgba(60,170,255,.7)); outline-color: #7fd6ff; }
   to { filter: drop-shadow(0 0 12px rgba(60,170,255,1)); outline-color: #c8f0ff; } }
+
+/* deck almost empty: the count turns red (both players) */
+.stack-pile .count.low { color: #ff5a4f; text-shadow: 0 0 10px rgba(255,70,60,.8); animation: pulse .8s infinite alternate; }
+/* limit messages */
+.game-toast { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 120; max-width: min(520px, 90vw); padding: 14px 22px;
+  background: rgba(30,14,12,.94); border: 2px solid #e2574c; border-radius: 12px; color: #fff; font-size: 19px; font-weight: 700; text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,.6), 0 0 24px rgba(226,87,76,.45); pointer-events: none; animation: toast-in .25s ease-out both; transition: opacity .45s, transform .45s; }
+.game-toast.out { opacity: 0; transform: translate(-50%, -60%); }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, -40%) scale(.95); } }

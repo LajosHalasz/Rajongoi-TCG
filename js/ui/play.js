@@ -181,6 +181,13 @@ function render() {
   const fresh = n > 0 ? s.log.slice(-n) : [];
   G.logLen = s.logTotal || 0;
   fresh.slice(-4).forEach((l, i) => setTimeout(() => soundForLog(l, s.players[HUMAN].name), i * 90));
+  // limits: a card burned because of a full hand, or no room on the Battlefield
+  for (const l of fresh) {
+    const mine = l.startsWith(s.players[HUMAN].name + "'s");
+    let m;
+    if ((m = l.match(/hand is full \((\d+)\): (.+) goes to the Graveyard/))) gameToast(mine ? `Your hand is full (${m[1]}): ${m[2]} went to the Graveyard.` : `The AI's hand is full: ${m[2]} went to its Graveyard.`);
+    else if ((m = l.match(/Battlefield is full \((\d+) Units\): (.+) can't enter/)) && mine) gameToast(`Your Battlefield is full (${m[1]} Units): ${m[2]} can't enter.`);
+  }
   // achievements from the engine's events
   const ach = checkAchievements(s, HUMAN, G.evSeen || 0, new Set(Object.keys(unlockedMap())));
   G.evSeen = s.evCount || 0;
@@ -325,7 +332,7 @@ function playerRow(s, p, mine, hl) {
     ${zone('Signature', p.signatureSlot ? unitCard(s, p.signatureSlot, hl, { slot: true, inHand: true }) : '', '', 'played')}
     ${zone(`Gear ${p.gear.length}/${RULES.GEAR_SLOTS}`, p.gear.map(g => unitCard(s, g, hl, { slot: true })).join(''), '', 'empty')}
     ${zone('Shields', shields, `data-zone="${mine ? '' : 'shield'}" data-shields="${p.idx}"`, '').replace('class="zone', `class="zone zone-target ${shieldsTarget ? 'targetable' : ''}`)}
-    ${zone('Deck', `${p.deck.length ? cardBackHtml({ size: 'sm' }) : ''}<div class="stack-pile"><span class="count" style="position:static">${p.deck.length}</span></div>`)}
+    ${zone('Deck', `${p.deck.length ? cardBackHtml({ size: 'sm' }) : ''}<div class="stack-pile"><span class="count ${p.deck.length <= 1 ? 'low' : ''}" style="position:static" title="${p.deck.length <= 1 ? 'Almost out of cards!' : 'Cards in deck'}">${p.deck.length}</span></div>`)}
     ${zone('Graveyard', `<div class="stack-pile" data-grave="${p.idx}" style="cursor:pointer">${gy ? cardHtml(getDef(gy.id), { size: 'sm', mini: true }) : `<div style="width:var(--cw)"></div>`}<span class="count">${p.graveyard.length}</span></div>`)}
   </div>`;
 }
@@ -448,6 +455,17 @@ function pickOverlay(s, legal, ui) {
 }
 
 /** Shield break: shards, red flash and a hit on that player's shield zone. */
+/** Short pop-up message in the middle of the board (limits, etc.). Same text again restarts it. */
+function gameToast(text) {
+  document.querySelectorAll('.game-toast').forEach(t => { if (t.textContent === text) t.remove(); });
+  const el = document.createElement('div');
+  el.className = 'game-toast';
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.classList.add('out'), 2600);
+  setTimeout(() => el.remove(), 3100);
+}
+
 function shieldShatter(app, pi) {
   const zone = app.querySelector(`[data-shields="${pi}"]`);
   if (!zone) return;
@@ -883,6 +901,12 @@ function onClick(e) {
   if (pd?.kind === 'shieldify' || pd?.kind === 'exploitSwap') { const a = legal.find(x => x.uid === uid); return a ? act(a) : null; }
 
   const plays = legal.filter(a => (a.type === 'play' || a.type === 'activate') && a.uid === uid);
+  // a Unit in hand that can't be played only because the Battlefield is full: say so
+  const me = s.players[HUMAN];
+  const handCard = me.hand.find(c => c.uid === uid) || [me.championSlot, me.signatureSlot].find(c => c && c.uid === uid);
+  if (!plays.length && handCard && kindOf(getDef(handCard.id)) === 'unit' && me.battle.length >= RULES.MAX_BATTLE) {
+    return gameToast(`Your Battlefield is full (${RULES.MAX_BATTLE} Units) — you can't play more Units.`);
+  }
   if (plays.length) {
     if (plays.length === 1 && !plays[0].target) return act(plays[0]);
     if (plays.some(a => a.accel)) { ui.sel = { kind: 'accel', uid, options: plays }; return render(); }
