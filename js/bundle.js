@@ -967,6 +967,93 @@ ${def.text}`;
         en: "Have Darkest Dungeoneers tapped on your winning turn: use its Defensive or attack with it."
       } : null,
       check: ({ ev, me, s }) => ev.type === "win" && ev.player === me && s.players[me].battle.some((u) => u.id === "OGN-045" && u.tapped)
+    },
+    // ---- more card stories ---------------------------------------------------------------
+    {
+      id: "checkmate",
+      name: "Checkmate Fantasy",
+      icon: "\u265B",
+      desc: "Promote a Pawn all the way to a Queen with Aspect of Foundation.",
+      hint: ({ mine }) => mine.has("OGN-L-kozi") ? { hu: "H\xE1rom k\xF6r\xF6n \xE1t tapeld a Legendet: Pawn \u2192 Knight/Bishop/Rook \u2192 Queen. V\xE9dd k\xF6zben a b\xE1but!", en: "Tap the Legend three turns in a row: Pawn \u2192 Knight/Bishop/Rook \u2192 Queen. Keep the piece alive!" } : null,
+      check: ({ ev, me }) => ev.type === "promote" && ev.player === me && ev.to === "TKN-011"
+    },
+    {
+      id: "memoization",
+      name: "Memoization",
+      icon: "\u{1F4BE}",
+      desc: "Force exactly 3 Thunks at once with Aspect of Excessive Detail.",
+      hint: ({ mine }) => mine.has("OGN-L-domi") ? { hu: "Gy\u0171jts 3 thunkot a Legend al\xE1, \xE9s csak ut\xE1na Force-old \u0151ket: plusz lapot is kapsz.", en: "Stack 3 Thunks under the Legend before you Force them \u2014 you draw an extra card too." } : null,
+      check: ({ ev, me }) => ev.type === "force" && ev.player === me && ev.count === 3
+    },
+    {
+      id: "zero-day",
+      name: "Zero-Day",
+      icon: "\u{1F573}\uFE0F",
+      desc: "Steal a Shield Trigger with Exploit \u2014 and play it for free.",
+      hint: ({ mine }) => mine.has("OGN-L-laci") ? { hu: "Side Channellel ford\xEDts fel egy Shieldet; ha Shield Trigger, a k\xF6vetkez\u0151 k\xF6rben lopd el Exploittal.", en: "Turn a Shield face up with Side Channel; if it is a Shield Trigger, steal it with Exploit next turn." } : null,
+      check: ({ ev, me, events }) => ev.type === "play" && ev.player === me && ev.via === "shieldTrigger" && events.some((e) => e.type === "exploit" && e.player === me && e.id === ev.id && e.n < ev.n)
+    },
+    {
+      id: "mad-science",
+      name: "Mad Science",
+      icon: "\u{1F9EA}",
+      desc: "Enter Seizure with Aspect of Science \u2014 and still win the game.",
+      hint: ({ mine }) => mine.has("OGN-L-anna") ? { hu: "1 Shieldn\xE9l tiszt\xE1ra s\xF6pr\xF6d a p\xE1ly\xE1t. Ut\xE1na Shieldify-olj \xE9s ford\xEDts!", en: "At 1 Shield the Field is wiped. Then Shieldify back up and turn it around!" } : null,
+      check: ({ ev, me, s }) => ev.type === "win" && ev.player === me && !!s.players[me].seizure
+    },
+    {
+      id: "pot-of-greed",
+      name: "What Does Pot of Greed Do?!",
+      icon: "\u{1F3FA}",
+      desc: "Activate Pot of Greed, which allows you to draw 2 cards from your deck.",
+      hint: ({ mine }) => mine.has("OGN-187") ? { hu: "Csak j\xE1tszd ki. Mondd is ki hangosan.", en: "Just play it. Say the line out loud." } : null,
+      check: ({ ev, me }) => ev.type === "play" && ev.player === me && ev.id === "OGN-187"
+    },
+    {
+      id: "spin-to-win",
+      name: "Spin to Win",
+      icon: "\u{1F300}",
+      desc: "Destroy 4 or more Units with a single Girl with a Spinner.",
+      hint: ({ mine }) => mine.has("OGN-013") ? { hu: "V\xE1rj, am\xEDg sok kis (nem Mighty) Unit \xE1ll a p\xE1ly\xE1n, \xE9s akkor p\xF6rgesd meg.", en: "Wait until the Field is crowded with small (non-Mighty) Units, then spin." } : null,
+      check: ({ ev, me, events }) => {
+        if (ev.type !== "destroy") return false;
+        const spin = [...events].reverse().find((e) => e.type === "play" && e.player === me && e.id === "OGN-013" && e.n < ev.n && e.turn === ev.turn);
+        if (!spin) return false;
+        const next = events.find((e) => e.type === "play" && e.n > spin.n);
+        return events.filter((e) => e.type === "destroy" && e.n > spin.n && (!next || e.n < next.n)).length >= 4;
+      }
+    },
+    {
+      id: "emperor-protects",
+      name: "The Emperor Protects",
+      icon: "\u{1F3B2}",
+      desc: "Captain Tingus loses a fight \u2014 and survives on the D6.",
+      hint: ({ mine }) => mine.has("OGN-120") ? { hu: "Captain Tingus vesztes harc ut\xE1n 4+ dob\xE1ssal t\xFAl\xE9l. Merj vele nagyobbat t\xE1madni!", en: "Captain Tingus survives a lost fight on a 4+. Dare to attack bigger Units with him!" } : null,
+      check: ({ ev, me }) => ev.type === "survive" && ev.player === me && ev.id === "OGN-120"
+    },
+    {
+      id: "not-today-satan",
+      name: "Not Today, Satan",
+      icon: "\u{1F608}",
+      desc: "Zselm\xF3 escapes from hell instead of dying.",
+      hint: ({ mine }) => mine.has("OGN-009") ? { hu: "Zselm\xF3 els\u0151 hal\xE1la helyett +1 Might-ot kap \u2014 k\xFCldd b\xE1tran harcba.", en: "Zselm\xF3's first death gives him +1 Might instead \u2014 send him into a fight." } : null,
+      check: ({ ev, me }) => ev.type === "escape" && ev.player === me && ev.id === "OGN-009"
+    },
+    {
+      id: "floodgates",
+      name: "Opened the Floodgates",
+      icon: "\u{1F30A}",
+      desc: "Land the winning direct attack with The Sluice Machine.",
+      hint: ({ mine }) => mine.has("OGN-181") ? { hu: "Tartsd meg a 8 Might-os The Sluice Machine-t a d\xF6nt\u0151 Direct Attackra.", en: "Save the 8-Might Sluice Machine for the final direct attack." } : null,
+      check: ({ ev, me }) => ev.type === "finalBlow" && ev.player === me && ev.id === "OGN-181"
+    },
+    {
+      id: "open-bar",
+      name: "Open Bar",
+      icon: "\u{1F943}",
+      desc: "Have 3 Whiskey tokens on your Battlefield at the same time.",
+      hint: ({ mine }) => mine.has("OGN-L-balu") ? { hu: "Tapeld minden k\xF6rben a Legendet, \xE9s vigy\xE1zz a Whiskey-kre.", en: "Tap the Legend every turn and keep the Whiskeys alive." } : null,
+      check: ({ me, s }) => s.players[me].battle.filter((u) => u.id === "TKN-006").length >= 3
     }
   ];
   function achievementHints(mine, theirs) {
@@ -2261,6 +2348,7 @@ ${def.text}`;
     t2.sick = true;
     p.battle.splice(i, 1, t2);
     log(s, `${nm(old)} is promoted to ${nm(t2)}!`);
+    emit(s, "promote", { player: pi, from: old.id, to: t2.id });
   }
   function hackOptions(s, p, g, d) {
     const op = s.players[other(p.idx)];
@@ -2806,6 +2894,7 @@ ${def.text}`;
     } finally {
       p.forcing = false;
     }
+    emit(s, "force", { player: pi, count: list.length });
     if (list.length === MAX_THUNKS) {
       log(s, "Memoization: exactly 3 Thunks forced.");
       drawCard(s, pi);
@@ -3165,6 +3254,7 @@ ${def.text}`;
       u.escaped = true;
       u.mods.push({ power: 1 });
       log(s, `${nm(u)} escapes from hell and gains +1 Might!`);
+      emit(s, "escape", { player: owner.idx, id: u.id });
       return;
     }
     owner.battle.splice(i, 1);
@@ -3172,6 +3262,7 @@ ${def.text}`;
     const d = getDef(u.id);
     if (!d.token && !u.temp) owner.graveyard.push(u);
     log(s, `${d.name} is destroyed.`);
+    emit(s, "destroy", { player: owner.idx, id: u.id });
     for (const src of [...owner.battle, ...owner.gear]) {
       const effs = effectsOn(getDef(src.id), "allyDied").filter((e) => !e.ifName || e.ifName === d.name);
       if (effs.length) {
@@ -3331,6 +3422,7 @@ ${def.text}`;
         if (roll) {
           const d6 = 1 + Math.floor(rand(s) * 6);
           log(s, `${nm(u)} rolls a D6: ${d6}${d6 >= roll ? " \u2014 survives!" : "."}`);
+          if (d6 >= roll) emit(s, "survive", { player: u.owner, id: u.id });
           if (d6 >= roll) continue;
         }
         const killer = u === att ? def : att;

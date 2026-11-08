@@ -149,8 +149,62 @@ const tests = {
     step(s, { type: 'endPhase' });
     assert(got(s).includes('art-of-deal') && !got(s).includes('art-of-deal-3'));
   },
-  'All 18 achievements are defined'() {
-    assert.equal(ACHIEVEMENTS.length, 18);
+  'What Does Pot of Greed Do?! + Open Bar'() {
+    const s = fresh();
+    for (let i = 0; i < 3; i++) card(s, 0, 'TKN-006', 'battle');
+    const pot = card(s, 0, 'OGN-187');
+    step(s, legalActions(s, 0).find(a => a.type === 'play' && a.uid === pot.uid));
+    assert(got(s).includes('pot-of-greed'));
+    assert(got(s).includes('open-bar'));
+  },
+  'Opened the Floodgates'() {
+    const s = fresh();
+    const sl = card(s, 0, 'OGN-181', 'battle'); s.players[1].shields = [];
+    s.phase = 'combat';
+    step(s, { type: 'attack', uid: sl.uid, target: { kind: 'player' } }); passAll(s);
+    assert.equal(s.winner, 0);
+    assert(got(s).includes('floodgates'));
+  },
+  'Spin to Win'() {
+    const s = fresh();
+    for (let i = 0; i < 4; i++) card(s, 1, 'OGN-016', 'battle');
+    const g = card(s, 0, 'OGN-013');
+    step(s, legalActions(s, 0).find(a => a.type === 'play' && a.uid === g.uid));
+    assert(got(s).includes('spin-to-win'));
+  },
+  'Not Today, Satan'() {
+    const s = fresh();
+    const z = card(s, 0, 'OGN-009', 'battle');
+    const kill = card(s, 1, 'OGN-022');
+    s.active = 1;
+    step(s, legalActions(s, 1).find(a => a.type === 'play' && a.uid === kill.uid && a.target === z.uid));
+    assert(s.players[0].battle.includes(z), 'escaped');
+    assert(got(s).includes('not-today-satan'));
+  },
+  'Checkmate Fantasy'() {
+    const kozi = decks.find(d => d.id === 'ogn-kozi');
+    const s = createGame({ decks: [kozi, LUI], ai: [false, false], seed: 3, firstPlayer: 0 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const p = s.players[0]; p.hand = []; p.battle = [];
+    p.mana = Array.from({ length: 6 }, (_, i) => ({ uid: 'k' + i, color: 'Mind', tapped: false }));
+    const L = getDef(p.legend.id);
+    const promote = (to) => { p.legend.tapped = false; p.mana.forEach(r => (r.tapped = false));
+      step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === p.legend.uid && (!to || L.modes[a.modes?.[0]]?.to === to))); };
+    promote(); promote('TKN-008'); promote('TKN-011');
+    assert(got(s).includes('checkmate'));
+  },
+  'Memoization'() {
+    const domi = decks.find(d => d.id === 'ogn-domi');
+    const s = createGame({ decks: [domi, LUI], ai: [false, false], seed: 3, firstPlayer: 0 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const p = s.players[0]; p.hand = []; p.battle = [];
+    p.mana = Array.from({ length: 12 }, (_, i) => ({ uid: 'd' + i, color: 'Mind', tapped: false }));
+    for (const id of ['OGN-145', 'OGN-151', 'OGN-137']) { const c = card(s, 0, id); step(s, legalActions(s, 0).find(a => a.type === 'play' && a.uid === c.uid)); }
+    step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === p.legend.uid));
+    assert(got(s).includes('memoization'));
+  },
+  'All 28 achievements are defined'() {
+    assert.equal(ACHIEVEMENTS.length, 28);
   },
 };
 let fail = 0;

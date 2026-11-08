@@ -154,6 +154,83 @@ export const ACHIEVEMENTS = [
         en: 'Have Darkest Dungeoneers tapped on your winning turn: use its Defensive or attack with it.' } : null,
     check: ({ ev, me, s }) => ev.type === 'win' && ev.player === me && s.players[me].battle.some(u => u.id === 'OGN-045' && u.tapped),
   },
+  // ---- more card stories ---------------------------------------------------------------
+  {
+    id: 'checkmate', name: 'Checkmate Fantasy', icon: '♛',
+    desc: 'Promote a Pawn all the way to a Queen with Aspect of Foundation.',
+    hint: ({ mine }) => mine.has('OGN-L-kozi')
+      ? { hu: 'Három körön át tapeld a Legendet: Pawn → Knight/Bishop/Rook → Queen. Védd közben a bábut!', en: 'Tap the Legend three turns in a row: Pawn → Knight/Bishop/Rook → Queen. Keep the piece alive!' } : null,
+    check: ({ ev, me }) => ev.type === 'promote' && ev.player === me && ev.to === 'TKN-011',
+  },
+  {
+    id: 'memoization', name: 'Memoization', icon: '💾',
+    desc: 'Force exactly 3 Thunks at once with Aspect of Excessive Detail.',
+    hint: ({ mine }) => mine.has('OGN-L-domi')
+      ? { hu: 'Gyűjts 3 thunkot a Legend alá, és csak utána Force-old őket: plusz lapot is kapsz.', en: 'Stack 3 Thunks under the Legend before you Force them — you draw an extra card too.' } : null,
+    check: ({ ev, me }) => ev.type === 'force' && ev.player === me && ev.count === 3,
+  },
+  {
+    id: 'zero-day', name: 'Zero-Day', icon: '🕳️',
+    desc: 'Steal a Shield Trigger with Exploit — and play it for free.',
+    hint: ({ mine }) => mine.has('OGN-L-laci')
+      ? { hu: 'Side Channellel fordíts fel egy Shieldet; ha Shield Trigger, a következő körben lopd el Exploittal.', en: 'Turn a Shield face up with Side Channel; if it is a Shield Trigger, steal it with Exploit next turn.' } : null,
+    check: ({ ev, me, events }) => ev.type === 'play' && ev.player === me && ev.via === 'shieldTrigger'
+      && events.some(e => e.type === 'exploit' && e.player === me && e.id === ev.id && e.n < ev.n),
+  },
+  {
+    id: 'mad-science', name: 'Mad Science', icon: '🧪',
+    desc: 'Enter Seizure with Aspect of Science — and still win the game.',
+    hint: ({ mine }) => mine.has('OGN-L-anna')
+      ? { hu: '1 Shieldnél tisztára söpröd a pályát. Utána Shieldify-olj és fordíts!', en: 'At 1 Shield the Field is wiped. Then Shieldify back up and turn it around!' } : null,
+    check: ({ ev, me, s }) => ev.type === 'win' && ev.player === me && !!s.players[me].seizure,
+  },
+  {
+    id: 'pot-of-greed', name: 'What Does Pot of Greed Do?!', icon: '🏺',
+    desc: 'Activate Pot of Greed, which allows you to draw 2 cards from your deck.',
+    hint: ({ mine }) => mine.has('OGN-187') ? { hu: 'Csak játszd ki. Mondd is ki hangosan.', en: 'Just play it. Say the line out loud.' } : null,
+    check: ({ ev, me }) => ev.type === 'play' && ev.player === me && ev.id === 'OGN-187',
+  },
+  {
+    id: 'spin-to-win', name: 'Spin to Win', icon: '🌀',
+    desc: 'Destroy 4 or more Units with a single Girl with a Spinner.',
+    hint: ({ mine }) => mine.has('OGN-013')
+      ? { hu: 'Várj, amíg sok kis (nem Mighty) Unit áll a pályán, és akkor pörgesd meg.', en: 'Wait until the Field is crowded with small (non-Mighty) Units, then spin.' } : null,
+    check: ({ ev, me, events }) => {
+      if (ev.type !== 'destroy') return false;
+      const spin = [...events].reverse().find(e => e.type === 'play' && e.player === me && e.id === 'OGN-013' && e.n < ev.n && e.turn === ev.turn);
+      if (!spin) return false;
+      const next = events.find(e => e.type === 'play' && e.n > spin.n);
+      return events.filter(e => e.type === 'destroy' && e.n > spin.n && (!next || e.n < next.n)).length >= 4;
+    },
+  },
+  {
+    id: 'emperor-protects', name: 'The Emperor Protects', icon: '🎲',
+    desc: 'Captain Tingus loses a fight — and survives on the D6.',
+    hint: ({ mine }) => mine.has('OGN-120')
+      ? { hu: 'Captain Tingus vesztes harc után 4+ dobással túlél. Merj vele nagyobbat támadni!', en: 'Captain Tingus survives a lost fight on a 4+. Dare to attack bigger Units with him!' } : null,
+    check: ({ ev, me }) => ev.type === 'survive' && ev.player === me && ev.id === 'OGN-120',
+  },
+  {
+    id: 'not-today-satan', name: 'Not Today, Satan', icon: '😈',
+    desc: 'Zselmó escapes from hell instead of dying.',
+    hint: ({ mine }) => mine.has('OGN-009')
+      ? { hu: 'Zselmó első halála helyett +1 Might-ot kap — küldd bátran harcba.', en: "Zselmó's first death gives him +1 Might instead — send him into a fight." } : null,
+    check: ({ ev, me }) => ev.type === 'escape' && ev.player === me && ev.id === 'OGN-009',
+  },
+  {
+    id: 'floodgates', name: 'Opened the Floodgates', icon: '🌊',
+    desc: 'Land the winning direct attack with The Sluice Machine.',
+    hint: ({ mine }) => mine.has('OGN-181')
+      ? { hu: 'Tartsd meg a 8 Might-os The Sluice Machine-t a döntő Direct Attackra.', en: 'Save the 8-Might Sluice Machine for the final direct attack.' } : null,
+    check: ({ ev, me }) => ev.type === 'finalBlow' && ev.player === me && ev.id === 'OGN-181',
+  },
+  {
+    id: 'open-bar', name: 'Open Bar', icon: '🥃',
+    desc: 'Have 3 Whiskey tokens on your Battlefield at the same time.',
+    hint: ({ mine }) => mine.has('OGN-L-balu')
+      ? { hu: 'Tapeld minden körben a Legendet, és vigyázz a Whiskey-kre.', en: 'Tap the Legend every turn and keep the Whiskeys alive.' } : null,
+    check: ({ me, s }) => s.players[me].battle.filter(u => u.id === 'TKN-006').length >= 3,
+  },
 ];
 
 /** Achievements reachable in this matchup with a tip each.

@@ -399,6 +399,7 @@ function doPromote(s, pi, d, promo, a) {
   const t = mk(s, d.modes[a.modes[0]].to, pi); t.sick = true;
   p.battle.splice(i, 1, t);
   log(s, `${nm(old)} is promoted to ${nm(t)}!`);
+  emit(s, 'promote', { player: pi, from: old.id, to: t.id });
 }
 
 // Aspect of REDACTED: "[T]: Side Channel — You may turn one of your opponent's face-down Shields.
@@ -898,6 +899,7 @@ function forceThunks(s, pi) {
       finishSpell(s, p, t.inst, modes);
     }
   } finally { p.forcing = false; }
+  emit(s, 'force', { player: pi, count: list.length });
   if (list.length === MAX_THUNKS) { log(s, 'Memoization: exactly 3 Thunks forced.'); drawCard(s, pi); }
 }
 
@@ -1167,6 +1169,7 @@ function destroyUnit(s, u) {
     u.escaped = true;
     u.mods.push({ power: 1 });
     log(s, `${nm(u)} escapes from hell and gains +1 Might!`);
+    emit(s, 'escape', { player: owner.idx, id: u.id });
     return;
   }
   owner.battle.splice(i, 1);
@@ -1174,6 +1177,7 @@ function destroyUnit(s, u) {
   const d = getDef(u.id);
   if (!d.token && !u.temp) owner.graveyard.push(u);
   log(s, `${d.name} is destroyed.`);
+  emit(s, 'destroy', { player: owner.idx, id: u.id });
   for (const src of [...owner.battle, ...owner.gear]) {
     const effs = effectsOn(getDef(src.id), 'allyDied').filter(e => !e.ifName || e.ifName === d.name);
     if (effs.length) { log(s, `${nm(src)} triggers.`); runEffects(s, owner.idx, src, effs); }
@@ -1323,6 +1327,7 @@ function resolveCombat(s) {
       if (roll) {
         const d6 = 1 + Math.floor(rand(s) * 6);
         log(s, `${nm(u)} rolls a D6: ${d6}${d6 >= roll ? ' — survives!' : '.'}`);
+        if (d6 >= roll) emit(s, 'survive', { player: u.owner, id: u.id });
         if (d6 >= roll) continue;
       }
       const killer = u === att ? def : att;
