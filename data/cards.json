@@ -1036,7 +1036,8 @@
    "cost",
    "might"
   ],
-  "rarity": "epic"
+  "rarity": "epic",
+  "legend": "OGN-L-matyi"
  },
  {
   "id": "OGN-015",
@@ -1912,7 +1913,8 @@
    "cost"
   ],
   "rarity": "epic",
-  "provisionalEffect": true
+  "provisionalEffect": true,
+  "legend": "OGN-L-matyi"
  },
  {
   "id": "OGN-042",

@@ -317,6 +317,20 @@ function toHand(s, p, card) {
 const fieldFull = (p) => p.battle.length >= RULES.MAX_BATTLE;
 function noRoom(s, p, what) { log(s, `${p.name}'s Battlefield is full (${RULES.MAX_BATTLE} Units): ${what} can't enter.`); }
 
+/** Accelerate granted to this card by its controller's Legend: { amount, color } or null. */
+function accelerateFor(p, d) {
+  const e = p.legend && (getDef(p.legend.id).effects || []).find(x => x.on === 'static' && x.do === 'tribeAccelerate');
+  return e && hasTribe(d, e.tribe) ? { amount: e.amount ?? 1, color: e.color } : null;
+}
+function canAccelerate(s, p, d, acc) {
+  // pay the card on a copy of the runes, then check what is left for Accelerate
+  // Accelerate is paid first (with its own color), then the card from what is left
+  const sim = { mana: p.mana.map(r => ({ ...r })), manaDeck: [] };
+  if (!canAfford(sim, acc.amount, [acc.color], 0)) return false;
+  tapRunes(sim, acc.amount, [acc.color]);
+  return canAfford(sim, effectiveCost(s, p.idx, d), d.colors, d.recycle || 0);
+}
+
 function playOptions(s, pi, mode) {
   const p = s.players[pi];
   const acts = [];
@@ -341,6 +355,9 @@ function playOptions(s, pi, mode) {
       // both Gear slots full: choose which Gear the new one replaces
       if (k === 'gear' && p.gear.length >= RULES.GEAR_SLOTS) for (const o of opts) for (const g of p.gear) acts.push({ ...o, replace: g.uid });
       else acts.push(...opts);
+      // Accelerate (Aspect of Fuck You: "Your Red Cubes cards have Accelerate"): pay extra to enter ready
+      const acc = k === 'unit' && accelerateFor(p, d);
+      if (acc && canAccelerate(s, p, d, acc)) acts.push(...opts.map(o => ({ ...o, accel: true })));
     }
   }
   return acts;
@@ -738,6 +755,8 @@ function doPlay(s, pi, a) {
   const d = getDef(inst.id);
   const viaArt = artDiscounted(s, pi, d);
   p.plays = (p.playTurn === s.turn ? p.plays || 0 : 0) + 1; p.playTurn = s.turn;
+  const acc = a.accel ? accelerateFor(p, d) : null;
+  if (acc) payCost(s, p, acc.amount, [acc.color], 0); // Accelerate first, with its own color
   payCost(s, p, effectiveCost(s, pi, d), d.colors, d.recycle || 0);
   if (nextDiscountFits(s, p, d)) {
     log(s, `${d.name} costs ${p.nextDiscount.amount} less (${p.nextDiscount.source}).`);
@@ -756,6 +775,11 @@ function doPlay(s, pi, a) {
     return;
   }
   putIntoPlay(s, pi, inst, a.target, a.modes, a.replace);
+  if (acc && p.battle.includes(inst)) {
+    inst.sick = false;
+    log(s, `${d.name} enters ready (Accelerate).`);
+    emit(s, 'accelerate', { player: pi, id: inst.id, via: 'legend' });
+  }
 }
 
 function resolveModes(s, pi, d, modes) {

@@ -480,6 +480,15 @@
   "keywords": [],
   "championNames": [
    "Zsófi"
+  ],
+  "effects": [
+   {
+    "on": "static",
+    "do": "tribeAccelerate",
+    "tribe": "Red Cubes",
+    "amount": 1,
+    "color": "Fury"
+   }
   ]
  },
  "DND-017": {

@@ -28,6 +28,31 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Aspect of Fuck You: Red Cubes Units may Accelerate (+1 Fury, enter ready)'() {
+    const matyi = decks.find(d => d.id === 'ogn-matyi');
+    const s = createGame({ decks: [matyi, deck], ai: [false, false], seed: 7, firstPlayer: 0 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const p = s.players[0]; p.hand = []; p.battle = [];
+    const def = getDef('OGN-130'), keep = def.tribes; // Csiikis Mirella (Body, 3) — tagged Red Cubes for the test
+    try {
+      def.tribes = ['Red Cubes'];
+      p.mana = [...Array.from({ length: 3 }, (_, i) => ({ uid: 'b' + i, color: 'Body', tapped: false })), { uid: 'f0', color: 'Fury', tapped: false }];
+      const c = card(s, 0, 'OGN-130');
+      const plays = legalActions(s, 0).filter(a => a.type === 'play' && a.uid === c.uid);
+      assert(plays.some(a => a.accel) && plays.some(a => !a.accel), 'normal and Accelerate options');
+      step(s, plays.find(a => a.accel));
+      assert(p.battle.includes(c) && !c.sick, 'enters ready');
+      assert.equal(p.mana.filter(r => !r.tapped).length, 0, 'paid 3 + 1');
+      // without a free Fury rune there is no Accelerate option
+      p.mana = Array.from({ length: 6 }, (_, i) => ({ uid: 'x' + i, color: 'Body', tapped: false }));
+      const c2 = card(s, 0, 'OGN-130');
+      assert(!legalActions(s, 0).some(a => a.uid === c2.uid && a.accel));
+      // other cards never get it
+      def.tribes = keep;
+      p.mana.push({ uid: 'f1', color: 'Fury', tapped: false });
+      assert(!legalActions(s, 0).some(a => a.uid === c2.uid && a.accel));
+    } finally { def.tribes = keep; }
+  },
   'Limits: at most 12 cards in hand (a broken Shield is burned) and 12 Units on the Battlefield'() {
     const s = fresh(); const p = s.players[0];
     for (let i = 0; i < 12; i++) card(s, 0, 'OGN-016');          // full hand

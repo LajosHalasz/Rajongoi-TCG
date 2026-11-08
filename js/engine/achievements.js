@@ -40,8 +40,8 @@ export const ACHIEVEMENTS = [
     hint: ({ mine }) => mine.has('OGN-188') && (mine.has('OGN-179') || mine.has('OGN-189'))
       ? { hu: 'Egy nagy körben készíts és gyorsíts (Accelerate) 3 Miniature-t a 3D Printerekkel, miközben a Painter lent van.',
         en: 'In one big turn make and accelerate 3 Miniatures with your 3D Printers while the Painter is on the field.' } : null,
-    check: ({ ev, me, events }) => ev.type === 'accelerate' && ev.player === me
-      && sameTurn(events, ev, e => e.type === 'accelerate' && e.player === me).length >= 3,
+    check: ({ ev, me, events }) => ev.type === 'accelerate' && ev.player === me && !ev.via
+      && sameTurn(events, ev, e => e.type === 'accelerate' && e.player === me && !e.via).length >= 3,
   },
   {
     id: 'manyika-rest', name: 'Manyika can rest finally', icon: '🪦',

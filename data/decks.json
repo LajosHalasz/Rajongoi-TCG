@@ -316,22 +316,32 @@
     "owner": "Matyi",
     "legend": "OGN-L-matyi",
     "champion": "OGN-006",
-    "signature": null,
+    "signature": "OGN-014",
     "cards": {
-      "OGN-006": 1,
       "OGN-005": 1,
+      "OGN-006": 1,
+      "OGN-009": 1,
       "OGN-010": 1,
-      "OGN-135": 1,
+      "OGN-011": 1,
+      "OGN-012": 1,
+      "OGN-013": 1,
+      "OGN-014": 1,
+      "OGN-041": 1,
+      "OGN-126": 1,
+      "OGN-127": 1,
+      "OGN-128": 1,
+      "OGN-129": 1,
       "OGN-130": 1,
+      "OGN-131": 1,
       "OGN-132": 1,
       "OGN-133": 1,
       "OGN-134": 1,
-      "OGN-136": 1,
-      "OGN-131": 1
+      "OGN-135": 1,
+      "OGN-136": 1
     },
     "runes": {
-      "Body": 6,
-      "Chaos": 6
+      "Fury": 6,
+      "Body": 6
     },
     "comingSoon": true
   },

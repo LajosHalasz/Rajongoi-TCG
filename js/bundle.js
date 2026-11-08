@@ -556,6 +556,7 @@ ${def.text}`;
     h = h.replace(/\[([A-Za-z])#([0-9a-fA-F]{6})\]/g, (_, k, c) => `<span class="ico" style="background:#${c}">${k.toUpperCase()}</span>`);
     h = h.replace(/\[([TMR])\]/g, (_, k) => ICONS[k]);
     h = h.replace(/\[U\]/g, '<span class="ico" title="Unit">\u2694</span>');
+    h = h.replace(/\[H\]/g, '<span class="ico" title="Champion">\u2605</span>');
     h = h.replace(/\[P\]/g, '<span class="ico" title="Power rune">P</span>');
     h = h.replace(/\[\+(\d+)M\]/g, "+$1 " + ICONS.M);
     h = h.replace(/\[(\d+)M\]/g, "$1" + ICONS.M);
@@ -816,7 +817,7 @@ ${def.text}`;
         hu: "Egy nagy k\xF6rben k\xE9sz\xEDts \xE9s gyors\xEDts (Accelerate) 3 Miniature-t a 3D Printerekkel, mik\xF6zben a Painter lent van.",
         en: "In one big turn make and accelerate 3 Miniatures with your 3D Printers while the Painter is on the field."
       } : null,
-      check: ({ ev, me, events }) => ev.type === "accelerate" && ev.player === me && sameTurn(events, ev, (e) => e.type === "accelerate" && e.player === me).length >= 3
+      check: ({ ev, me, events }) => ev.type === "accelerate" && ev.player === me && !ev.via && sameTurn(events, ev, (e) => e.type === "accelerate" && e.player === me && !e.via).length >= 3
     },
     {
       id: "manyika-rest",
@@ -2146,6 +2147,16 @@ ${def.text}`;
   function noRoom(s, p, what) {
     log(s, `${p.name}'s Battlefield is full (${RULES.MAX_BATTLE} Units): ${what} can't enter.`);
   }
+  function accelerateFor(p, d) {
+    const e = p.legend && (getDef(p.legend.id).effects || []).find((x) => x.on === "static" && x.do === "tribeAccelerate");
+    return e && hasTribe(d, e.tribe) ? { amount: e.amount ?? 1, color: e.color } : null;
+  }
+  function canAccelerate(s, p, d, acc) {
+    const sim = { mana: p.mana.map((r) => ({ ...r })), manaDeck: [] };
+    if (!canAfford(sim, acc.amount, [acc.color], 0)) return false;
+    tapRunes(sim, acc.amount, [acc.color]);
+    return canAfford(sim, effectiveCost(s, p.idx, d), d.colors, d.recycle || 0);
+  }
   function playOptions(s, pi, mode) {
     const p = s.players[pi];
     const acts = [];
@@ -2169,6 +2180,8 @@ ${def.text}`;
         const opts = withTargets(s, pi, d, { type: "play", uid: inst.uid, ...m ? { modes: m } : {} }, k === "spell", "play", m);
         if (k === "gear" && p.gear.length >= RULES.GEAR_SLOTS) for (const o of opts) for (const g of p.gear) acts.push({ ...o, replace: g.uid });
         else acts.push(...opts);
+        const acc = k === "unit" && accelerateFor(p, d);
+        if (acc && canAccelerate(s, p, d, acc)) acts.push(...opts.map((o) => ({ ...o, accel: true })));
       }
     }
     return acts;
@@ -2609,6 +2622,8 @@ ${def.text}`;
     const viaArt = artDiscounted(s, pi, d);
     p.plays = (p.playTurn === s.turn ? p.plays || 0 : 0) + 1;
     p.playTurn = s.turn;
+    const acc = a.accel ? accelerateFor(p, d) : null;
+    if (acc) payCost(s, p, acc.amount, [acc.color], 0);
     payCost(s, p, effectiveCost(s, pi, d), d.colors, d.recycle || 0);
     if (nextDiscountFits(s, p, d)) {
       log(s, `${d.name} costs ${p.nextDiscount.amount} less (${p.nextDiscount.source}).`);
@@ -2630,6 +2645,11 @@ ${def.text}`;
       return;
     }
     putIntoPlay(s, pi, inst, a.target, a.modes, a.replace);
+    if (acc && p.battle.includes(inst)) {
+      inst.sick = false;
+      log(s, `${d.name} enters ready (Accelerate).`);
+      emit(s, "accelerate", { player: pi, id: inst.id, via: "legend" });
+    }
   }
   function resolveModes(s, pi, d, modes) {
     if (d.opponentChooses && d.modes?.length) {
@@ -3759,6 +3779,9 @@ ${def.text}`;
         const pl = ui.sel.options.find((a) => a.target.kind === "player");
         if (sh) buttons += btn("atk-shield", "Attack shields", "primary");
         if (pl) buttons += btn("atk-player", "Direct attack!", "primary");
+      } else if (ui.sel.kind === "accel") {
+        prompt2 = `<b>${esc(d.name)}</b> has <b>Accelerate</b>: pay 1 more Fury rune to have it enter ready?`;
+        buttons += btn("acc-no", "Play normally", "primary") + btn("acc-yes", "Accelerate (+1, enters ready)", "primary");
       } else if (ui.sel.kind === "mode") {
         prompt2 = `<b>${esc(d.name)}</b> \u2014 choose ${d.chooseModes > 1 ? d.chooseModes : "one"}:`;
         const seen = /* @__PURE__ */ new Set();
@@ -3771,7 +3794,7 @@ ${def.text}`;
       } else if (ui.sel.options.some((a) => a.replace)) {
         prompt2 = `Both Gear slots are full: click the Gear that <b>${esc(d.name)}</b> replaces (it goes to the Graveyard).`;
       } else prompt2 = `Choose a target for <b>${esc(d.name)}</b>.`;
-      if (ui.sel.kind !== "mode" && ui.sel.options.some((a) => !a.target && !a.replace && a.type !== "attack")) buttons += btn("no-target", "Play without target");
+      if (ui.sel.kind !== "mode" && ui.sel.kind !== "accel" && ui.sel.options.some((a) => !a.target && !a.replace && a.type !== "attack")) buttons += btn("no-target", "Play without target");
       buttons += btn("cancel", "Cancel", "ghost");
     } else if (pd?.kind === "mulligan") {
       prompt2 = `Mulligan: click up to ${RULES.MULLIGAN_MAX} cards to put on the bottom of your deck.`;
@@ -4300,6 +4323,10 @@ ${def.text}`;
     const plays = legal.filter((a) => (a.type === "play" || a.type === "activate") && a.uid === uid);
     if (plays.length) {
       if (plays.length === 1 && !plays[0].target) return act(plays[0]);
+      if (plays.some((a) => a.accel)) {
+        ui.sel = { kind: "accel", uid, options: plays };
+        return render();
+      }
       const modeKeys = new Set(plays.map((a) => (a.modes || []).join(",")));
       ui.sel = { kind: modeKeys.size > 1 ? "mode" : "play", uid, options: plays };
       return render();
@@ -4334,6 +4361,14 @@ ${def.text}`;
         return act(ui.sel.options.find((a) => a.target.kind === "player"));
       case "no-target":
         return act(ui.sel.options.find((a) => !a.target));
+      case "acc-yes":
+      case "acc-no": {
+        const opts = ui.sel.options.filter((a) => !!a.accel === (id === "acc-yes"));
+        if (opts.length === 1 && !opts[0].target) return act(opts[0]);
+        const modeKeys = new Set(opts.map((a) => (a.modes || []).join(",")));
+        ui.sel = { ...ui.sel, kind: modeKeys.size > 1 ? "mode" : "play", options: opts };
+        return render();
+      }
       case "pick-ok": {
         const uids = [...ui.pick?.sel || []];
         ui.pick = null;

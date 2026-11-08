@@ -2164,35 +2164,38 @@
     "id": "OGN-L-matyi",
     "set": "OGN",
     "number": "L-matyi",
-    "name": "Matyi | Always on time",
+    "name": "Aspect of Fuck You",
     "type": "legend",
+    "subname": "Matyi",
     "owners": [
       "Matyi"
     ],
     "colors": [
-      "Body",
-      "Chaos"
+      "Fury",
+      "Body"
     ],
     "cost": 0,
     "power": 0,
     "keywords": [
-      "Obsessed"
+      "Obsessed",
+      "Red Cubes",
+      "Accelerate"
     ],
     "effects": [],
     "tribes": [],
-    "text": "{Obsessed#CE356B}: Zsófi can be your [H] Champion Unit.",
+    "text": "{Obsessed#CE356B}: Zsófi can be your Champion Unit [H].\nYour {Red Cubes#6D6E6B}cards have __{Accelerate#21705B}__(You may pay [1][f#d70d1b] as an additional cost to have me enter ready.)\n",
     "flavor": "",
     "rarity": "rare",
-    "illustrator": "Matyi",
-    "setInfo": "OGN 007/300",
+    "illustrator": "Lui",
+    "setInfo": "L09 OGN",
     "source": "riftcardmaker",
     "recycle": 0,
     "image": "data/img/OGN-L-matyi.jpg",
     "imageCrop": {
-      "x": 0.728126702390015,
-      "y": 21.06188202788927,
-      "width": 85.94172464640963,
-      "height": 68.53888589932312
+      "x": 1.0530387254371534,
+      "y": 0.14525346537403436,
+      "width": 90.74410163339384,
+      "height": 94.58499291505784
     }
   },
   {

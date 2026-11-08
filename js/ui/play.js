@@ -358,6 +358,9 @@ function midbar(s, legal, ui) {
       const pl = ui.sel.options.find(a => a.target.kind === 'player');
       if (sh) buttons += btn('atk-shield', 'Attack shields', 'primary');
       if (pl) buttons += btn('atk-player', 'Direct attack!', 'primary');
+    } else if (ui.sel.kind === 'accel') {
+      prompt = `<b>${esc(d.name)}</b> has <b>Accelerate</b>: pay 1 more Fury rune to have it enter ready?`;
+      buttons += btn('acc-no', 'Play normally', 'primary') + btn('acc-yes', 'Accelerate (+1, enters ready)', 'primary');
     } else if (ui.sel.kind === 'mode') {
       prompt = `<b>${esc(d.name)}</b> — choose ${d.chooseModes > 1 ? d.chooseModes : 'one'}:`;
       const seen = new Set();
@@ -370,7 +373,7 @@ function midbar(s, legal, ui) {
     } else if (ui.sel.options.some(a => a.replace)) {
       prompt = `Both Gear slots are full: click the Gear that <b>${esc(d.name)}</b> replaces (it goes to the Graveyard).`;
     } else prompt = `Choose a target for <b>${esc(d.name)}</b>.`;
-    if (ui.sel.kind !== 'mode' && ui.sel.options.some(a => !a.target && !a.replace && a.type !== 'attack')) buttons += btn('no-target', 'Play without target');
+    if (ui.sel.kind !== 'mode' && ui.sel.kind !== 'accel' && ui.sel.options.some(a => !a.target && !a.replace && a.type !== 'attack')) buttons += btn('no-target', 'Play without target');
     buttons += btn('cancel', 'Cancel', 'ghost');
   } else if (pd?.kind === 'mulligan') {
     prompt = `Mulligan: click up to ${RULES.MULLIGAN_MAX} cards to put on the bottom of your deck.`;
@@ -880,6 +883,7 @@ function onClick(e) {
   const plays = legal.filter(a => (a.type === 'play' || a.type === 'activate') && a.uid === uid);
   if (plays.length) {
     if (plays.length === 1 && !plays[0].target) return act(plays[0]);
+    if (plays.some(a => a.accel)) { ui.sel = { kind: 'accel', uid, options: plays }; return render(); }
     const modeKeys = new Set(plays.map(a => (a.modes || []).join(',')));
     ui.sel = { kind: modeKeys.size > 1 ? 'mode' : 'play', uid, options: plays };
     return render();
@@ -900,6 +904,13 @@ function onButton(id) {
     case 'atk-shield': return act(ui.sel.options.find(a => a.target.kind === 'shield'));
     case 'atk-player': return act(ui.sel.options.find(a => a.target.kind === 'player'));
     case 'no-target': return act(ui.sel.options.find(a => !a.target));
+    case 'acc-yes': case 'acc-no': {
+      const opts = ui.sel.options.filter(a => !!a.accel === (id === 'acc-yes'));
+      if (opts.length === 1 && !opts[0].target) return act(opts[0]);
+      const modeKeys = new Set(opts.map(a => (a.modes || []).join(',')));
+      ui.sel = { ...ui.sel, kind: modeKeys.size > 1 ? 'mode' : 'play', options: opts };
+      return render();
+    }
     case 'pick-ok': {
       const uids = [...(ui.pick?.sel || [])];
       ui.pick = null;
