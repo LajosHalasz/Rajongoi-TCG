@@ -776,14 +776,7 @@
     "illustrator": "Chris",
     "setInfo": "OGN 021/300",
     "source": "riftcardmaker",
-    "recycle": 1,
-    "image": "data/img/OGN-021.jpg",
-    "imageCrop": {
-      "x": 10.745108892552603,
-      "y": -9.33780570866804,
-      "width": 76.56967840735071,
-      "height": 191.5098444282284
-    }
+    "recycle": 1
   },
   {
     "id": "OGN-022",
