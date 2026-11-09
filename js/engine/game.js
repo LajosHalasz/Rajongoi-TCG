@@ -726,6 +726,11 @@ function doEndPhase(s) {
     c.tapped = false;
     log(s, `${nm(c)} untaps (Vigilance).`);
   }
+  // Aspect of Optimization — Recovery Ride: "At the end of your turn, ready one of your tapped Units." (the strongest)
+  if ((getDef(ap.legend.id).effects || []).some(e => e.on === 'static' && e.do === 'recoveryRide')) {
+    const u = ap.battle.filter(x => x.tapped).sort((a, b) => power(s, b) - power(s, a))[0];
+    if (u) { u.tapped = false; log(s, `Recovery Ride: ${nm(u)} readies.`); }
+  }
   ap.doubleNext = false;
   ap.artTurn = null;
   for (const L of ap.lawPending || []) {
@@ -1161,6 +1166,12 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       const choosable = seen.filter(c => hasTribe(getDef(c.id), e.tribe)).map(c => c.uid);
       s.queue.push({ kind: 'pick', player: pi, mode: 'keep', tribe: e.tribe, uids: seen.map(c => c.uid), choosable, min: 0, max: choosable.length,
         title: `Keep ${e.tribe} cards`, source: source?.id });
+      break;
+    }
+    case 'ftpTest': {
+      // Aspect of Optimization — FTP Test: +1 Might for each Rune tapped this turn (max. +3), until end of turn
+      const n = Math.min(e.max ?? 3, me.mana.filter(r => r.tapped).length);
+      for (const u of targets) { u.mods.push({ power: n, until: 'eot' }); log(s, `FTP Test: ${nm(u)} gets +${n} Might this turn.`); }
       break;
     }
     case 'enough': {

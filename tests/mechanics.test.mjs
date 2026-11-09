@@ -28,6 +28,26 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Aspect of Optimization: FTP Test (+1 Might per tapped Rune, max +3) and Recovery Ride (ready the strongest tapped Unit)'() {
+    const vince = decks.find(d => d.id === 'ogn-vince');
+    const s = createGame({ decks: [vince, deck], ai: [false, false], seed: 7, firstPlayer: 0 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const V = s.players[0]; V.battle = []; V.hand = [];
+    V.mana = Array.from({ length: 6 }, (_, i) => ({ uid: 'v' + i, color: 'Body', tapped: i < 2 })); // 2 tapped this turn
+    const u = card(s, 0, 'OGN-016', 'battle');
+    s.active = 0; s.phase = 'play'; s.pending = null;
+    step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === V.legend.uid && a.target === u.uid));
+    assert.equal(power(s, u), getDef('OGN-016').power + 2, '+2 for 2 tapped Runes');
+    V.legend.tapped = false; V.mana.forEach(r => (r.tapped = true));
+    step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === V.legend.uid && a.target === u.uid));
+    assert.equal(power(s, u), getDef('OGN-016').power + 2 + 3, 'capped at +3');
+    // Recovery Ride
+    const small = card(s, 0, 'OGN-174', 'battle'), big = card(s, 0, 'OGN-181', 'battle');
+    small.tapped = true; big.tapped = true;
+    s.phase = 'combat'; step(s, { type: 'endPhase' });
+    assert(!big.tapped, 'the strongest tapped Unit readies');
+    assert(small.tapped);
+  },
   'Aspect of Loyalty: Ride or Die (+1 Might to the weakest ally) and Hot Take (right guess draws 1)'() {
     const varon = decks.find(d => d.id === 'ogn-varon');
     const s = createGame({ decks: [varon, deck], ai: [false, false], seed: 7, firstPlayer: 0 });

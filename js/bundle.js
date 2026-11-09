@@ -2711,6 +2711,13 @@ ${def.text}`;
       c.tapped = false;
       log(s, `${nm(c)} untaps (Vigilance).`);
     }
+    if ((getDef(ap.legend.id).effects || []).some((e) => e.on === "static" && e.do === "recoveryRide")) {
+      const u = ap.battle.filter((x) => x.tapped).sort((a, b) => power(s, b) - power(s, a))[0];
+      if (u) {
+        u.tapped = false;
+        log(s, `Recovery Ride: ${nm(u)} readies.`);
+      }
+    }
     ap.doubleNext = false;
     ap.artTurn = null;
     for (const L2 of ap.lawPending || []) {
@@ -3236,6 +3243,14 @@ ${def.text}`;
           title: `Keep ${e.tribe} cards`,
           source: source?.id
         });
+        break;
+      }
+      case "ftpTest": {
+        const n2 = Math.min(e.max ?? 3, me.mana.filter((r) => r.tapped).length);
+        for (const u of targets) {
+          u.mods.push({ power: n2, until: "eot" });
+          log(s, `FTP Test: ${nm(u)} gets +${n2} Might this turn.`);
+        }
         break;
       }
       case "enough": {

@@ -2303,6 +2303,43 @@
     }
   },
   {
+    "id": "OGN-L-vince",
+    "set": "OGN",
+    "number": "L-vince",
+    "name": "Aspect of Optimization",
+    "type": "legend",
+    "subname": "Vince",
+    "owners": [
+      "Vince"
+    ],
+    "colors": [
+      "Calm",
+      "Body"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "FTP Test",
+      "Recovery Ride"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{FTP Test#CE356B} — [T]: Choose a friendly Unit. It gets +1[M] for each Rune you have tapped this turn (max. +3) until end of turn.\n{Recovery Ride#21705B}: At the end of your turn, ready one of your tapped Units.",
+    "flavor": "",
+    "rarity": "rare",
+    "illustrator": "Lui",
+    "setInfo": "L13 OGN",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-L-vince.jpg",
+    "imageCrop": {
+      "x": 5.24666218242096,
+      "y": 3.4541463873341076,
+      "width": 90.74410163339384,
+      "height": 94.58499291505784
+    }
+  },
+  {
     "id": "RUN-Chaos-anna",
     "set": "RUN",
     "number": "Chaos-anna",

@@ -952,5 +952,21 @@
     "do": "hotTake"
    }
   ]
+ },
+ "OGN-L-vince": {
+  "keywords": [],
+  "activateCost": 0,
+  "effects": [
+   {
+    "on": "activate",
+    "do": "ftpTest",
+    "target": "friendlyUnit",
+    "max": 3
+   },
+   {
+    "on": "static",
+    "do": "recoveryRide"
+   }
+  ]
  }
 }
