@@ -455,7 +455,7 @@ function activateOptions(s, pi) {
     else if (g.tapped || (p.battle.includes(g) && !canAttackNow(s, g))) continue;
     if (g === p.legend && !(d.effects || []).some(e => e.on === 'activate' && (e.do !== 'recoverTribe' || p.graveyard.some(c => e.tribes.some(t => hasTribe(getDef(c.id), t)))))) continue;
     // conditional tap abilities: "If you are in Seizure, ..." / Shieldify needs a card in hand
-    if (!(d.effects || []).some(e => e.on === 'activate' && (e.requires !== 'seizure' || p.seizure) && (e.do !== 'shieldify' || p.hand.length) && (e.do !== 'forceThunks' || (p.thunks || []).length))) continue;
+    if (!(d.effects || []).some(e => e.on === 'activate' && (e.requires !== 'seizure' || p.seizure) && (e.do !== 'shieldify' || p.hand.length) && (e.do !== 'forceThunks' || (p.thunks || []).length) && (e.do !== 'rabbitHole' || p.deck.length))) continue;
     if (!canAfford(p, d.activateCost || 0, null)) continue;
     const promo = (d.effects || []).find(e => e.on === 'activate' && e.do === 'promote');
     if (promo) { acts.push(...promoteOptions(p, g, d, promo)); continue; }
@@ -1134,6 +1134,22 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
         title: `Keep ${e.tribe} cards`, source: source?.id });
       break;
     }
+    case 'rabbitHole': {
+      // Aspect of Curiosity: look at the top 3, one goes to hand, the rest to the bottom;
+      // Curious: three different types (Unit, Spell, Gear) channel 1
+      const seen = me.deck.splice(0, e.amount ?? 3);
+      if (!seen.length) { log(s, 'The deck is empty — nothing to look at.'); break; }
+      me.reveal = [...(me.reveal || []), ...seen];
+      log(s, `${me.name} goes down the Rabbit Hole: ${seen.map(nm).join(', ')}.`);
+      if (seen.length === 3 && new Set(seen.map(c => kindOf(getDef(c.id)))).size === 3) {
+        log(s, 'Curious: three different types!');
+        channel(s, me, 1, false);
+        emit(s, 'curious', { player: pi });
+      }
+      s.queue.push({ kind: 'pick', player: pi, mode: 'rabbit', uids: seen.map(c => c.uid), choosable: seen.map(c => c.uid), min: 1, max: 1,
+        title: 'Rabbit Hole: put one into your hand (the rest go to the bottom)', source: source?.id });
+      break;
+    }
     case 'recoverTribe': {
       const pool = me.graveyard.filter(c => (e.tribes || []).some(t => hasTribe(getDef(c.id), t)));
       if (!pool.length) { log(s, 'Nothing to return.'); break; }
@@ -1234,6 +1250,13 @@ function doPick(s, pi, a) {
     p.deck.push(...seen.filter(c => !picked.has(c.uid)));
     shuffle(s, p.deck);
     log(s, `${p.name} keeps ${keep.length ? keep.map(nm).join(', ') : 'nothing'} and shuffles the rest back.`);
+  } else if (q.mode === 'rabbit') {
+    const seen = q.uids.map(uid => p.reveal.find(c => c.uid === uid)).filter(Boolean);
+    p.reveal = p.reveal.filter(c => !seen.includes(c));
+    const keep = seen.filter(c => picked.has(c.uid));
+    for (const c of keep) toHand(s, p, c);
+    p.deck.push(...seen.filter(c => !picked.has(c.uid)));
+    log(s, `${p.name} takes ${keep.map(nm).join(', ') || 'nothing'}; the rest go to the bottom of the deck.`);
   } else if (q.mode === 'recover') {
     for (const uid of a.uids) {
       const c = p.graveyard.find(x => x.uid === uid);

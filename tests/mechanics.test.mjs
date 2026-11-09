@@ -28,6 +28,29 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Aspect of Curiosity: Rabbit Hole takes one of the top 3, the rest go to the bottom; 3 types channel 1'() {
+    const tatai = decks.find(d => d.id === 'ogn-tatai');
+    const s = createGame({ decks: [tatai, deck], ai: [false, false], seed: 7, firstPlayer: 0 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const p = s.players[0]; p.hand = [];
+    const mk = (id) => ({ uid: 'rh' + (++n), id, owner: 0, tapped: false, sick: false, mods: [], uses: null, fast: false });
+    const top = [mk('OGN-016'), mk('OGN-022'), mk('OGN-175')]; // Unit, Spell, Gear
+    p.deck = [...top, mk('OGN-181'), mk('OGN-182')];
+    const runes = p.mana.length;
+    step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === p.legend.uid));
+    assert.equal(p.mana.length, runes + 1, 'Curious: three different types channel 1');
+    assert.equal(s.pending.kind, 'pick');
+    step(s, { type: 'pick', uids: [top[1].uid] });
+    assert(p.hand.includes(top[1]), 'the chosen card is in hand');
+    assert.deepEqual(p.deck.slice(-2).map(c => c.uid), [top[0].uid, top[2].uid], 'the rest on the bottom');
+    assert.equal(p.deck[0].id, 'OGN-181');
+    // same types: no Rune
+    p.legend.tapped = false;
+    p.deck = [mk('OGN-016'), mk('OGN-181'), mk('OGN-182')];
+    const r2 = p.mana.length;
+    step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === p.legend.uid));
+    assert.equal(p.mana.length, r2);
+  },
   'Defensive is inactive while a Unit is Indestructible'() {
     const s = fresh();
     const wall = card(s, 0, 'OGN-182', 'battle'); // The Solar Boat Team: Defensive

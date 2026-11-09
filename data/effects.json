@@ -886,5 +886,19 @@
     "cost": 2
    }
   ]
+ },
+ "OGN-L-tatai": {
+  "keywords": [],
+  "activateCost": 0,
+  "championNames": [
+   "RontapParty HDR"
+  ],
+  "effects": [
+   {
+    "on": "activate",
+    "do": "rabbitHole",
+    "amount": 3
+   }
+  ]
  }
 }
