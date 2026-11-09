@@ -28,6 +28,33 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Aspect of Loyalty: Ride or Die (+1 Might to the weakest ally) and Hot Take (right guess draws 1)'() {
+    const varon = decks.find(d => d.id === 'ogn-varon');
+    const s = createGame({ decks: [varon, deck], ai: [false, false], seed: 7, firstPlayer: 0 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const V = s.players[0], O = s.players[1]; V.battle = []; O.battle = []; V.hand = [];
+    const weak = card(s, 0, 'OGN-016', 'battle'), big = card(s, 0, 'OGN-181', 'battle'), dies = card(s, 0, 'OGN-174', 'battle'); // dies: 2 Might
+    const kill = card(s, 1, 'OGN-022'); s.active = 1;
+    O.mana = Array.from({ length: 4 }, (_, i) => ({ uid: 'x' + i, color: 'Fury', tapped: false }));
+    step(s, legalActions(s, 1).find(a => a.type === 'play' && a.uid === kill.uid && a.target === dies.uid));
+    assert(!V.battle.includes(dies));
+    assert.equal(power(s, weak), getDef('OGN-016').power + 1, 'the weakest ally gets +1');
+    assert.equal(power(s, big), getDef('OGN-181').power);
+    // Hot Take
+    s.active = 0; s.phase = 'play'; s.pending = null;
+    const L = getDef(V.legend.id);
+    O.deck.unshift({ uid: 'top', id: 'OGN-022', owner: 1, tapped: false, sick: false, mods: [], uses: null }); // a Spell on top
+    const opts = legalActions(s, 0).filter(a => a.type === 'activate' && a.uid === V.legend.uid);
+    assert.equal(opts.length, 3, 'Unit / Spell / Gear');
+    const hand = V.hand.length;
+    step(s, opts.find(a => L.modes[a.modes[0]].kind === 'spell'));
+    assert.equal(V.hand.length, hand + 1, 'right: draw 1');
+    assert.equal(O.deck[0].uid, 'top', 'the revealed card stays on top');
+    V.legend.tapped = false;
+    const hand2 = V.hand.length;
+    step(s, legalActions(s, 0).find(a => a.type === 'activate' && a.uid === V.legend.uid && L.modes[a.modes[0]].kind === 'unit'));
+    assert.equal(V.hand.length, hand2, 'wrong: nothing');
+  },
   'Aspect of Forgiveness: Patience from the opponent\'s Calm / Fury cards; [T] at 3 destroys an enemy Unit'() {
     const emese = decks.find(d => d.id === 'ogn-emese');
     const s = createGame({ decks: [emese, deck], ai: [false, false], seed: 7, firstPlayer: 1 });

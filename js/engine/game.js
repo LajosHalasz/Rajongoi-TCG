@@ -445,6 +445,19 @@ function doExploitSwap(s, pi, a) {
   nextFromQueue(s);
 }
 
+// Aspect of Loyalty — Hot Take: "[T]: Name a card type, then reveal the top card of your opponent's deck.
+// If you were right, draw 1."  (d.modes: Unit / Spell / Gear)
+function doHotTake(s, pi, d, a) {
+  const p = s.players[pi], op = s.players[other(pi)];
+  const guess = d.modes[a.modes?.[0] ?? 0].kind;
+  const top = op.deck[0];
+  if (!top) { log(s, `${op.name} has no deck to reveal.`); return; }
+  const kind = kindOf(getDef(top.id));
+  log(s, `Hot Take: ${p.name} says "${d.modes[a.modes?.[0] ?? 0].name}!" — ${op.name}'s top card is ${nm(top)}.`);
+  if (kind === guess) { log(s, 'Told you so!'); drawCard(s, pi); emit(s, 'hotTake', { player: pi, right: true }); }
+  else { log(s, 'Wrong… (but he was still right, obviously).'); emit(s, 'hotTake', { player: pi, right: false }); }
+}
+
 function activateOptions(s, pi) {
   const p = s.players[pi];
   const acts = [];
@@ -461,6 +474,10 @@ function activateOptions(s, pi) {
     const promo = (d.effects || []).find(e => e.on === 'activate' && e.do === 'promote');
     if (promo) { acts.push(...promoteOptions(p, g, d, promo)); continue; }
     if ((d.effects || []).some(e => e.on === 'activate' && e.do === 'sideChannel')) { acts.push(...hackOptions(s, p, g, d)); continue; }
+    if ((d.effects || []).some(e => e.on === 'activate' && e.do === 'hotTake')) {
+      if (s.players[other(pi)].deck.length) d.modes.forEach((_, i) => acts.push({ type: 'activate', uid: g.uid, modes: [i] }));
+      continue;
+    }
     acts.push(...withTargets(s, pi, d, { type: 'activate', uid: g.uid }, true, 'activate'));
   }
   return acts;
@@ -964,6 +981,7 @@ function doActivate(s, pi, a) {
   const promo = (d.effects || []).find(e => e.on === 'activate' && e.do === 'promote');
   if (promo) { doPromote(s, pi, d, promo, a); consumeUse(s, pi, g); return; }
   if ((d.effects || []).some(e => e.on === 'activate' && e.do === 'sideChannel')) { doHack(s, pi, d, a); return; }
+  if ((d.effects || []).some(e => e.on === 'activate' && e.do === 'hotTake')) { doHotTake(s, pi, d, a); return; }
   runTwiceIfDoubled(s, pi, g, effectsOn(d, 'activate'), a.target);
   consumeUse(s, pi, g);
 }
@@ -1213,11 +1231,22 @@ function destroyUnit(s, u) {
   if (!d.token && !u.temp) owner.graveyard.push(u);
   log(s, `${d.name} is destroyed.`);
   emit(s, 'destroy', { player: owner.idx, id: u.id });
+  rideOrDie(s, owner);
   for (const src of [...owner.battle, ...owner.gear]) {
     const effs = effectsOn(getDef(src.id), 'allyDied').filter(e => !e.ifName || e.ifName === d.name);
     if (effs.length) { log(s, `${nm(src)} triggers.`); runEffects(s, owner.idx, src, effs); }
   }
   runEffects(s, owner.idx, u, effectsOn(d, 'destroyed').filter(e => !SINGLE_TARGETS.has(e.target)));
+}
+
+// Aspect of Loyalty — Ride or Die: "Whenever one of your Units is destroyed, another Unit of yours gets +1 Might
+// permanently." The weakest one gets it (the one who needs it most).
+function rideOrDie(s, p) {
+  if (!p.legend || !(getDef(p.legend.id).effects || []).some(e => e.on === 'static' && e.do === 'rideOrDie')) return;
+  const ally = [...p.battle].sort((a, b) => power(s, a) - power(s, b))[0];
+  if (!ally) return;
+  ally.mods.push({ power: 1 });
+  log(s, `Ride or Die: ${nm(ally)} gets +1 Might for the squad.`);
 }
 
 function destroyGear(s, g) {

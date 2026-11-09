@@ -920,5 +920,37 @@
     "cost": 3
    }
   ]
+ },
+ "OGN-L-varon": {
+  "keywords": [],
+  "activateCost": 0,
+  "championNames": [
+   "Emese",
+   "Mari"
+  ],
+  "modes": [
+   {
+    "name": "Unit",
+    "kind": "unit"
+   },
+   {
+    "name": "Spell",
+    "kind": "spell"
+   },
+   {
+    "name": "Gear",
+    "kind": "gear"
+   }
+  ],
+  "effects": [
+   {
+    "on": "static",
+    "do": "rideOrDie"
+   },
+   {
+    "on": "activate",
+    "do": "hotTake"
+   }
+  ]
  }
 }

@@ -2397,6 +2397,25 @@ ${def.text}`;
     }
     nextFromQueue(s);
   }
+  function doHotTake(s, pi, d, a) {
+    const p = s.players[pi], op = s.players[other(pi)];
+    const guess = d.modes[a.modes?.[0] ?? 0].kind;
+    const top = op.deck[0];
+    if (!top) {
+      log(s, `${op.name} has no deck to reveal.`);
+      return;
+    }
+    const kind = kindOf(getDef(top.id));
+    log(s, `Hot Take: ${p.name} says "${d.modes[a.modes?.[0] ?? 0].name}!" \u2014 ${op.name}'s top card is ${nm(top)}.`);
+    if (kind === guess) {
+      log(s, "Told you so!");
+      drawCard(s, pi);
+      emit(s, "hotTake", { player: pi, right: true });
+    } else {
+      log(s, "Wrong\u2026 (but he was still right, obviously).");
+      emit(s, "hotTake", { player: pi, right: false });
+    }
+  }
   function activateOptions(s, pi) {
     const p = s.players[pi];
     const acts = [];
@@ -2416,6 +2435,10 @@ ${def.text}`;
       }
       if ((d.effects || []).some((e) => e.on === "activate" && e.do === "sideChannel")) {
         acts.push(...hackOptions(s, p, g, d));
+        continue;
+      }
+      if ((d.effects || []).some((e) => e.on === "activate" && e.do === "hotTake")) {
+        if (s.players[other(pi)].deck.length) d.modes.forEach((_, i) => acts.push({ type: "activate", uid: g.uid, modes: [i] }));
         continue;
       }
       acts.push(...withTargets(s, pi, d, { type: "activate", uid: g.uid }, true, "activate"));
@@ -2972,6 +2995,10 @@ ${def.text}`;
       doHack(s, pi, d, a);
       return;
     }
+    if ((d.effects || []).some((e) => e.on === "activate" && e.do === "hotTake")) {
+      doHotTake(s, pi, d, a);
+      return;
+    }
     runTwiceIfDoubled(s, pi, g, effectsOn(d, "activate"), a.target);
     consumeUse(s, pi, g);
   }
@@ -3308,6 +3335,7 @@ ${def.text}`;
     if (!d.token && !u.temp) owner.graveyard.push(u);
     log(s, `${d.name} is destroyed.`);
     emit(s, "destroy", { player: owner.idx, id: u.id });
+    rideOrDie(s, owner);
     for (const src of [...owner.battle, ...owner.gear]) {
       const effs = effectsOn(getDef(src.id), "allyDied").filter((e) => !e.ifName || e.ifName === d.name);
       if (effs.length) {
@@ -3316,6 +3344,13 @@ ${def.text}`;
       }
     }
     runEffects(s, owner.idx, u, effectsOn(d, "destroyed").filter((e) => !SINGLE_TARGETS.has(e.target)));
+  }
+  function rideOrDie(s, p) {
+    if (!p.legend || !(getDef(p.legend.id).effects || []).some((e) => e.on === "static" && e.do === "rideOrDie")) return;
+    const ally = [...p.battle].sort((a, b) => power(s, a) - power(s, b))[0];
+    if (!ally) return;
+    ally.mods.push({ power: 1 });
+    log(s, `Ride or Die: ${nm(ally)} gets +1 Might for the squad.`);
   }
   function destroyGear(s, g) {
     const owner = s.players[g.owner];

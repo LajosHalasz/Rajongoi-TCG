@@ -2266,6 +2266,43 @@
     }
   },
   {
+    "id": "OGN-L-varon",
+    "set": "OGN",
+    "number": "L-varon",
+    "name": "Aspect of Loyalty",
+    "type": "legend",
+    "subname": "Varon",
+    "owners": [
+      "Varon"
+    ],
+    "colors": [
+      "Fury",
+      "Calm"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Ride or Die",
+      "Hot Take"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Ride or Die#CE356B}: Whenever one of your Units is destroyed, another Unit of yours gets +1[M] permanently.\n{Hot Take#21705B} — [T]: Name a card type, then reveal the top card of your opponent's deck. If you were right, draw [1].",
+    "flavor": "",
+    "rarity": "rare",
+    "illustrator": "Lui",
+    "setInfo": "L13 OGN",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-L-varon.jpg",
+    "imageCrop": {
+      "x": 2.2827070868013615,
+      "y": 0.8040619517817877,
+      "width": 95.14747859181732,
+      "height": 99.17474994518909
+    }
+  },
+  {
     "id": "RUN-Chaos-anna",
     "set": "RUN",
     "number": "Chaos-anna",
