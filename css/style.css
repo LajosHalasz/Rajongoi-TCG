@@ -1133,3 +1133,8 @@ a.btn:hover, label.ed-btn-sm:hover { border-color: var(--copper-hi); }
   .hand-row.mine { min-height: calc(var(--cw) * 1.25 * 1.4 * .8); padding-top: 2px; }
   .hand-row.mine .hand-slot { margin: 0 calc(var(--cw) * -0.08); }
 }
+
+/* Aspect of Forgiveness: Patience counters on the Legend */
+.card .badge-patience { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); z-index: 6; white-space: nowrap; padding: 1.2cqw 3.5cqw;
+  background: #2e6b8f; color: #fff; font-family: 'Lexend'; font-weight: 800; font-size: 8cqw; border-radius: 2cqw; box-shadow: 0 0 0 .8cqw rgba(255,255,255,.8), 0 1cqw 3cqw rgba(0,0,0,.5); }
+.card .badge-patience.ready { background: #ce356b; animation: pulse .8s infinite alternate; }

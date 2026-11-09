@@ -2407,7 +2407,7 @@ ${def.text}`;
         if (g.activatedTurn === s.turn) continue;
       } else if (g.tapped || p.battle.includes(g) && !canAttackNow(s, g)) continue;
       if (g === p.legend && !(d.effects || []).some((e) => e.on === "activate" && (e.do !== "recoverTribe" || p.graveyard.some((c) => e.tribes.some((t2) => hasTribe(getDef(c.id), t2)))))) continue;
-      if (!(d.effects || []).some((e) => e.on === "activate" && (e.requires !== "seizure" || p.seizure) && (e.do !== "shieldify" || p.hand.length) && (e.do !== "forceThunks" || (p.thunks || []).length) && (e.do !== "rabbitHole" || p.deck.length))) continue;
+      if (!(d.effects || []).some((e) => e.on === "activate" && (e.requires !== "seizure" || p.seizure) && (e.do !== "shieldify" || p.hand.length) && (e.do !== "forceThunks" || (p.thunks || []).length) && (e.do !== "rabbitHole" || p.deck.length) && (e.do !== "enough" || (p.patience || 0) >= (e.cost ?? 3)))) continue;
       if (!canAfford(p, d.activateCost || 0, null)) continue;
       const promo = (d.effects || []).find((e) => e.on === "activate" && e.do === "promote");
       if (promo) {
@@ -2806,6 +2806,14 @@ ${def.text}`;
     s.plays = [...s.plays || [], { player: pi, id, via, turn: s.turn, n: s.playCount = (s.playCount || 0) + 1 }].slice(-12);
     emit(s, "play", { player: pi, id, via });
     checkTribeCombo(s, pi, id);
+    checkPatience(s, pi, id);
+  }
+  function checkPatience(s, pi, id) {
+    const op = s.players[other(pi)];
+    const e = op.legend && (getDef(op.legend.id).effects || []).find((x) => x.on === "static" && x.do === "patience");
+    if (!e || !(getDef(id).colors || []).some((c) => e.colors.includes(c))) return;
+    op.patience = (op.patience || 0) + 1;
+    log(s, `${nm(op.legend)} gains a Patience counter (${op.patience}).`);
   }
   function checkTribeCombo(s, pi, id) {
     const p = s.players[pi];
@@ -3201,6 +3209,13 @@ ${def.text}`;
           title: `Keep ${e.tribe} cards`,
           source: source?.id
         });
+        break;
+      }
+      case "enough": {
+        me.patience = Math.max(0, (me.patience || 0) - (e.cost ?? 3));
+        log(s, `Enough! ${getDef(source.id).name} spends her Patience (${me.patience} left).`);
+        for (const u of targets) destroyUnit(s, u);
+        emit(s, "enough", { player: pi });
         break;
       }
       case "rabbitHole": {
@@ -3895,7 +3910,7 @@ ${def.text}`;
       power: pw,
       cost,
       classes: cls.join(" "),
-      badges: iconCol + tapHint + uses + (opts.seizure ? '<div class="badge-seizure" title="Seizure: all Units were banished; [T] to Shieldify 1">SEIZURE</div>' : "") + (opts.thunks ? `<div class="badge-thunks" title="${esc(opts.thunks.map((t2) => getDef(t2.inst.id).name).join(", "))} \u2014 [T] Force resolves them">${opts.thunks.length}/3 THUNK${opts.thunks.length > 1 ? "S" : ""}</div>` : "")
+      badges: iconCol + tapHint + uses + (opts.seizure ? '<div class="badge-seizure" title="Seizure: all Units were banished; [T] to Shieldify 1">SEIZURE</div>' : "") + (opts.patience != null ? `<div class="badge-patience ${opts.patience >= 3 ? "ready" : ""}" title="Patience counters \u2014 at 3, [T] Enough!: destroy an enemy Unit">PATIENCE ${opts.patience}</div>` : "") + (opts.thunks ? `<div class="badge-thunks" title="${esc(opts.thunks.map((t2) => getDef(t2.inst.id).name).join(", "))} \u2014 [T] Force resolves them">${opts.thunks.length}/3 THUNK${opts.thunks.length > 1 ? "S" : ""}</div>` : "")
     });
   }
   function playerRow(s, p, mine, hl) {
@@ -3927,7 +3942,12 @@ ${def.text}`;
       <div class="runes">${runes}</div>
     </div>
     ${zone("Runes", `<div class="rune-showcase">${runeShow}</div>`, 'data-runes="1"')}
-    ${zone("Legend", unitCard(s, p.legend, hl, { slot: true, seizure: p.seizure, thunks: (p.thunks || []).length ? p.thunks : null }))}
+    ${zone("Legend", unitCard(s, p.legend, hl, {
+      slot: true,
+      seizure: p.seizure,
+      thunks: (p.thunks || []).length ? p.thunks : null,
+      patience: (getDef(p.legend.id).effects || []).some((e) => e.do === "patience") ? p.patience || 0 : null
+    }))}
     ${zone("Champion", p.championSlot ? unitCard(s, p.championSlot, hl, { slot: true, inHand: true }) : "", "", "played")}
     ${zone("Signature", p.signatureSlot ? unitCard(s, p.signatureSlot, hl, { slot: true, inHand: true }) : "", "", "played")}
     ${zone(`Gear ${p.gear.length}/${RULES.GEAR_SLOTS}`, p.gear.map((g) => unitCard(s, g, hl, { slot: true })).join(""), "", "empty")}

@@ -900,5 +900,25 @@
     "amount": 3
    }
   ]
+ },
+ "OGN-L-emese": {
+  "keywords": [],
+  "activateCost": 0,
+  "effects": [
+   {
+    "on": "static",
+    "do": "patience",
+    "colors": [
+     "Calm",
+     "Fury"
+    ]
+   },
+   {
+    "on": "activate",
+    "do": "enough",
+    "target": "enemyUnit",
+    "cost": 3
+   }
+  ]
  }
 }

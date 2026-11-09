@@ -2050,6 +2050,43 @@
     }
   },
   {
+    "id": "OGN-L-emese",
+    "set": "OGN",
+    "number": "L-emese",
+    "name": "Aspect of Forgiveness",
+    "type": "legend",
+    "subname": "Emese",
+    "owners": [
+      "Emese"
+    ],
+    "colors": [
+      "Body",
+      "Order"
+    ],
+    "cost": 0,
+    "power": 0,
+    "keywords": [
+      "Patience",
+      "Enough!"
+    ],
+    "effects": [],
+    "tribes": [],
+    "text": "{Patience#21705B}: Whenever your opponent plays a Calm or Fury card, put a Patience counter on me.\n{Enough!#CE356B} — [T], remove 3 Patience: Destroy target enemy Unit.",
+    "flavor": "",
+    "rarity": "rare",
+    "illustrator": "Lui",
+    "setInfo": "L12 OGN",
+    "source": "riftcardmaker",
+    "recycle": 0,
+    "image": "data/img/OGN-L-emese.jpg",
+    "imageCrop": {
+      "x": 3.3052026692398533,
+      "y": 0.7523017234278391,
+      "width": 95.14747859181732,
+      "height": 99.17474994518909
+    }
+  },
+  {
     "id": "OGN-L-kozi",
     "set": "OGN",
     "number": "L-kozi",

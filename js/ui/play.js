@@ -293,6 +293,7 @@ function unitCard(s, inst, hl, opts = {}) {
   const uses = inst.uses != null && !opts.inHand ? `<div class="badge-uses">${inst.uses} left</div>` : '';
   return cardHtml(d, { size: 'sm', mini: !(opts.inHand && !opts.slot), uid: inst.uid, tapped: inst.tapped && !opts.inHand, power: pw, cost,
     classes: cls.join(' '), badges: iconCol + tapHint + uses + (opts.seizure ? '<div class="badge-seizure" title="Seizure: all Units were banished; [T] to Shieldify 1">SEIZURE</div>' : '')
+      + (opts.patience != null ? `<div class="badge-patience ${opts.patience >= 3 ? 'ready' : ''}" title="Patience counters — at 3, [T] Enough!: destroy an enemy Unit">PATIENCE ${opts.patience}</div>` : '')
       + (opts.thunks ? `<div class="badge-thunks" title="${esc(opts.thunks.map(t => getDef(t.inst.id).name).join(', '))} — [T] Force resolves them">${opts.thunks.length}/3 THUNK${opts.thunks.length > 1 ? 'S' : ''}</div>` : '') });
 }
 
@@ -330,7 +331,8 @@ function playerRow(s, p, mine, hl) {
       <div class="runes">${runes}</div>
     </div>
     ${zone('Runes', `<div class="rune-showcase">${runeShow}</div>`, 'data-runes="1"')}
-    ${zone('Legend', unitCard(s, p.legend, hl, { slot: true, seizure: p.seizure, thunks: (p.thunks || []).length ? p.thunks : null }))}
+    ${zone('Legend', unitCard(s, p.legend, hl, { slot: true, seizure: p.seizure, thunks: (p.thunks || []).length ? p.thunks : null,
+      patience: (getDef(p.legend.id).effects || []).some(e => e.do === 'patience') ? (p.patience || 0) : null }))}
     ${zone('Champion', p.championSlot ? unitCard(s, p.championSlot, hl, { slot: true, inHand: true }) : '', '', 'played')}
     ${zone('Signature', p.signatureSlot ? unitCard(s, p.signatureSlot, hl, { slot: true, inHand: true }) : '', '', 'played')}
     ${zone(`Gear ${p.gear.length}/${RULES.GEAR_SLOTS}`, p.gear.map(g => unitCard(s, g, hl, { slot: true })).join(''), '', 'empty')}

@@ -122,7 +122,10 @@ function convert(j) {
   if (type === 'legend') {
     // Legends are keyed by their owner so they replace that deck's placeholder Legend
     // the deck owner is in the name ("Matyi | Always on time") or, on newer exports, in the subname ("Lui")
-    const knownOwners = new Set(dbCards.flatMap(c => c.owners || []).map(o => o.toLowerCase()));
+    // card owners, plus deck owners that have no cards yet (Emese, Lutheria, …)
+    const deckOwners = fs.existsSync(path.join(root, 'data', 'decks.json'))
+      ? JSON.parse(fs.readFileSync(path.join(root, 'data', 'decks.json'), 'utf8')).map(d => d.owner).filter(Boolean) : [];
+    const knownOwners = new Set([...dbCards.flatMap(c => c.owners || []), ...deckOwners].map(o => o.toLowerCase()));
     const sub = (j.subname || '').trim();
     const owner = (sub && knownOwners.has(sub.toLowerCase()) ? sub : '') || baseName(j.name) || j.illustrator;
     owners = [owner];

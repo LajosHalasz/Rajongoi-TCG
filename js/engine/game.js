@@ -455,7 +455,8 @@ function activateOptions(s, pi) {
     else if (g.tapped || (p.battle.includes(g) && !canAttackNow(s, g))) continue;
     if (g === p.legend && !(d.effects || []).some(e => e.on === 'activate' && (e.do !== 'recoverTribe' || p.graveyard.some(c => e.tribes.some(t => hasTribe(getDef(c.id), t)))))) continue;
     // conditional tap abilities: "If you are in Seizure, ..." / Shieldify needs a card in hand
-    if (!(d.effects || []).some(e => e.on === 'activate' && (e.requires !== 'seizure' || p.seizure) && (e.do !== 'shieldify' || p.hand.length) && (e.do !== 'forceThunks' || (p.thunks || []).length) && (e.do !== 'rabbitHole' || p.deck.length))) continue;
+    if (!(d.effects || []).some(e => e.on === 'activate' && (e.requires !== 'seizure' || p.seizure) && (e.do !== 'shieldify' || p.hand.length) && (e.do !== 'forceThunks' || (p.thunks || []).length) && (e.do !== 'rabbitHole' || p.deck.length)
+      && (e.do !== 'enough' || (p.patience || 0) >= (e.cost ?? 3)))) continue;
     if (!canAfford(p, d.activateCost || 0, null)) continue;
     const promo = (d.effects || []).find(e => e.on === 'activate' && e.do === 'promote');
     if (promo) { acts.push(...promoteOptions(p, g, d, promo)); continue; }
@@ -808,6 +809,16 @@ function notePlay(s, pi, id, via) {
   s.plays = [...(s.plays || []), { player: pi, id, via, turn: s.turn, n: (s.playCount = (s.playCount || 0) + 1) }].slice(-12);
   emit(s, 'play', { player: pi, id, via });
   checkTribeCombo(s, pi, id);
+  checkPatience(s, pi, id);
+}
+
+// Aspect of Forgiveness: "Whenever your opponent plays a Calm or Fury card, put a Patience counter on me."
+function checkPatience(s, pi, id) {
+  const op = s.players[other(pi)];
+  const e = op.legend && (getDef(op.legend.id).effects || []).find(x => x.on === 'static' && x.do === 'patience');
+  if (!e || !(getDef(id).colors || []).some(c => e.colors.includes(c))) return;
+  op.patience = (op.patience || 0) + 1;
+  log(s, `${nm(op.legend)} gains a Patience counter (${op.patience}).`);
 }
 
 // Aspect of Lore: "Once per turn, if you have played both a Movie and a Game card, Channel [P][P]."
@@ -1132,6 +1143,14 @@ function applyEffect(s, pi, source, e, targetUid, subject) {
       const choosable = seen.filter(c => hasTribe(getDef(c.id), e.tribe)).map(c => c.uid);
       s.queue.push({ kind: 'pick', player: pi, mode: 'keep', tribe: e.tribe, uids: seen.map(c => c.uid), choosable, min: 0, max: choosable.length,
         title: `Keep ${e.tribe} cards`, source: source?.id });
+      break;
+    }
+    case 'enough': {
+      // "Enough!" — [T], remove 3 Patience: destroy target enemy Unit
+      me.patience = Math.max(0, (me.patience || 0) - (e.cost ?? 3));
+      log(s, `Enough! ${getDef(source.id).name} spends her Patience (${me.patience} left).`);
+      for (const u of targets) destroyUnit(s, u);
+      emit(s, 'enough', { player: pi });
       break;
     }
     case 'rabbitHole': {

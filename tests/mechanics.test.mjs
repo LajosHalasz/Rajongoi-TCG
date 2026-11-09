@@ -28,6 +28,30 @@ const card = (s, pi, id, zone = 'hand') => {
 };
 const play = (s, uid, extra = {}) => step(s, { type: 'play', uid, ...extra });
 const tests = {
+  'Aspect of Forgiveness: Patience from the opponent\'s Calm / Fury cards; [T] at 3 destroys an enemy Unit'() {
+    const emese = decks.find(d => d.id === 'ogn-emese');
+    const s = createGame({ decks: [emese, deck], ai: [false, false], seed: 7, firstPlayer: 1 });
+    step(s, { type: 'mulligan', uids: [] }); step(s, { type: 'mulligan', uids: [] });
+    const E = s.players[0], O = s.players[1]; O.hand = []; O.battle = []; E.battle = [];
+    O.mana = Array.from({ length: 12 }, (_, i) => ({ uid: 'o' + i, color: 'Fury', tapped: false }));
+    s.active = 1; s.phase = 'play'; s.pending = null;
+    for (let i = 0; i < 3; i++) {                               // the opponent plays three Fury cards
+      const c = card(s, 1, 'OGN-016');
+      step(s, legalActions(s, 1).find(a => a.type === 'play' && a.uid === c.uid));
+    }
+    const order = card(s, 1, 'OGN-174'); for (let i = 0; i < 3; i++) O.mana.push({ uid: 'oo' + i, color: 'Order', tapped: false });
+    step(s, legalActions(s, 1).find(a => a.type === 'play' && a.uid === order.uid)); // Order: no counter
+    assert.equal(E.patience, 3);
+    s.active = 0; s.phase = 'play'; E.legend.tapped = false;
+    const target = O.battle[0];
+    const act = legalActions(s, 0).find(a => a.type === 'activate' && a.uid === E.legend.uid && a.target === target.uid);
+    assert(act, 'Enough! is offered at 3 Patience');
+    step(s, act);
+    assert(!O.battle.includes(target), 'destroyed');
+    assert.equal(E.patience, 0);
+    E.legend.tapped = false;
+    assert(!legalActions(s, 0).some(a => a.type === 'activate' && a.uid === E.legend.uid), 'not without 3 Patience');
+  },
   'Aspect of Curiosity: Rabbit Hole takes one of the top 3, the rest go to the bottom; 3 types channel 1'() {
     const tatai = decks.find(d => d.id === 'ogn-tatai');
     const s = createGame({ decks: [tatai, deck], ai: [false, false], seed: 7, firstPlayer: 0 });
