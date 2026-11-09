@@ -392,7 +392,7 @@ def build_decks(cards, imported, overrides):
 #   Emese: her own deck (separate from Varon's), placeholder Legend until her cards exist.
 #   Lutheria: the DnD DLC deck around the Lutheria Legend (DND-017), from the DND cards in her colors.
 EXTRA_DECKS = [
-    {'owner': 'Emese', 'colors': ['Calm', 'Fury']},
+    {'owner': 'Emese', 'colors': ['Body', 'Order']},
     {'owner': 'Lutheria', 'set': 'DND', 'legend': 'DND-017'},
 ]
 
